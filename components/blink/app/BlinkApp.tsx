@@ -140,8 +140,8 @@ export default function BlinkApp({ email }: { email: string }) {
       setPeople([]);
       return;
     }
-    const { data } = await supabase.rpc("blink_user_exists", { target: trimmed });
-    setPeople(data ? [{ id: trimmed }] : []);
+    const { data } = await supabase.from("user_ids").select("id").eq("id", trimmed).maybeSingle();
+    setPeople(data ? [{ id: data.id }] : []);
   }
 
   async function sendFriendRequest(person: Person) {
