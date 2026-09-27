@@ -2,9 +2,9 @@
 import { FormEvent,useState } from "react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
-import BlinkInput from "@/components/blink/forms/BlinkInput";
-import BlinkPasswordInput from "@/components/blink/forms/BlinkPasswordInput";
-import BlinkSecurityAlert from "@/components/blink/security/BlinkSecurityAlert";
+import { BlinkInput } from "@/components/blink/forms/BlinkInput";
+import { BlinkPasswordInput } from "@/components/blink/forms/BlinkPasswordInput";
+import { BlinkSecurityAlert } from "@/components/blink/security/BlinkSecurityAlert";
 const schema=z.object({email:z.string().email("Enter a valid email address."),password:z.string().min(8,"Password must be at least 8 characters.")});
 export default function LoginForm(){const[mode,setMode]=useState<"login"|"signup">("login");const[email,setEmail]=useState("");const[password,setPassword]=useState("");const[message,setMessage]=useState("");const[error,setError]=useState("");const[busy,setBusy]=useState(false);
 async function submit(e:FormEvent){e.preventDefault();setError("");setMessage("");const parsed=schema.safeParse({email,password});if(!parsed.success){setError(parsed.error.issues[0]?.message??"Invalid details.");return}setBusy(true);const supabase=createClient();const result=mode==="login"?await supabase.auth.signInWithPassword({email,password}):await supabase.auth.signUp({email,password,options:{emailRedirectTo:`${window.location.origin}/auth/callback`}});setBusy(false);if(result.error){setError(result.error.message);return}if(mode==="signup"){setMessage("Account created. Check your email if confirmation is enabled.");return}window.location.assign("/home");}
