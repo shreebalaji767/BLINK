@@ -144,7 +144,7 @@ export default function BlinkApp({ email }:{email:string}) {
   async function sendChatFile(file:File){
     if(!conversationId||!me)return;
     if(file.size>50*1024*1024){notify("File is too large.");return}
-    const path=me+"/chat/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+    const path=me+"/chat/"+crypto.randomUUID();
     setBusy(true);
     const {error:up}=await supabase.storage.from("blink-ephemeral").upload(path,file,{contentType:file.type});
     if(up){setBusy(false);notify(up.message);return}
@@ -183,7 +183,7 @@ export default function BlinkApp({ email }:{email:string}) {
     const file=(window as any).__blinkSnapFile as File|undefined;
     if(!file||!me||selectedRecipients.length===0){notify("Choose at least one friend.");return}
     setBusy(true);
-    const id=crypto.randomUUID();const path=me+"/snaps/"+id+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+    const id=crypto.randomUUID();const path=me+"/snaps/"+id;
     const {error:up}=await supabase.storage.from("blink-ephemeral").upload(path,file,{contentType:file.type});
     if(up){setBusy(false);notify(up.message);return}
     const {error:se}=await supabase.from("snaps").insert({id,sender_id:me,media_path:path,media_type:file.type.startsWith("video/")?"video":"image",caption:snapCaption,duration_seconds:10,expires_at:new Date(Date.now()+7*24*3600e3).toISOString()});
@@ -193,7 +193,7 @@ export default function BlinkApp({ email }:{email:string}) {
 
   async function publishStory(){
     if(!storyFile||!me)return;
-    setBusy(true);const id=crypto.randomUUID();const path=me+"/stories/"+id+"-"+storyFile.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+    setBusy(true);const id=crypto.randomUUID();const path=me+"/stories/"+id;
     const {error:up}=await supabase.storage.from("blink-ephemeral").upload(path,storyFile,{contentType:storyFile.type});
     if(up){setBusy(false);notify(up.message);return}
     const {error}=await supabase.from("stories").insert({id,user_id:me,media_path:path,media_type:storyFile.type.startsWith("video/")?"video":"image",privacy:"friends",expires_at:new Date(Date.now()+24*3600e3).toISOString()});
