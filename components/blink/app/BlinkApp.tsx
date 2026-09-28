@@ -10,7 +10,7 @@ type Message = {
   id: string; conversation_id: string; sender_id: string | null;
   body: string | null; media_path: string | null; message_type: string; created_at: string; expires_at: string;
 };
-type Story = { id: string; user_id: string; media_path: string; media_type: string; caption: string | null; created_at: string; expires_at: string };
+type Story = { id: string; user_id: string; media_path: string; media_type: string; caption: string | null; created_at: string; expires_at: string; visibility: "private" | "friends" | "public" };
 type Snap = { id: string; sender_id: string; media_path: string; media_type: string; caption: string | null; duration_seconds: number; created_at: string; expires_at: string };
 
 const supabase = createClient();
@@ -60,6 +60,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [chatRetention, setChatRetention] = useState("24h");
   const [snapRetention, setSnapRetention] = useState("24h");
   const [storyRetention, setStoryRetention] = useState("24h");
+  const [storyPrivacy, setStoryPrivacy] = useState<"private" | "friends" | "public">("friends");
   const [spotlight, setSpotlight] = useState<any[]>([]);
   const [memoryItems, setMemoryItems] = useState<any[]>([]);
   const [memoryPrivate, setMemoryPrivate] = useState(false);
@@ -82,6 +83,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [activePerson, setActivePerson] = useState<Person | null>(null);
   const [message, setMessage] = useState("");
   const [stories, setStories] = useState<Story[]>([]);
+  const [receivedStories, setReceivedStories] = useState<Story[]>([]);
   const [snaps, setSnaps] = useState<Snap[]>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [snapCaption, setSnapCaption] = useState("");
@@ -96,6 +98,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const snapFileRef = useRef<HTMLInputElement>(null);
   const storyFileRef = useRef<HTMLInputElement>(null);
   const realtimeChannelRef = useRef<any>(null);
+  const publicStoryChannelRef = useRef<any>(null);
   const conversationIdRef = useRef("");
   conversationIdRef.current = conversationId;
 
@@ -345,6 +348,8 @@ export default function BlinkApp({ email }: { email: string }) {
       setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
       setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "24h");
       setStoryRetention(window.localStorage.getItem("blink_story_retention") || "24h");
+      const storedStoryPrivacy = window.localStorage.getItem("blink_story_privacy_" + user.id);
+      setStoryPrivacy(storedStoryPrivacy === "private" || storedStoryPrivacy === "public" ? storedStoryPrivacy : "friends");
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.access_token) {
         await supabase.realtime.setAuth(sessionData.session.access_token);
@@ -354,6 +359,26 @@ export default function BlinkApp({ email }: { email: string }) {
         .on("broadcast", { event: "blink" }, (event: any) => {
           const payload = event?.payload;
           if (!payload || payload.recipient_id !== user.id || payload.sender_id === user.id) return;
+          if (payload.kind === "story") {
+            const incomingStory: Story = {
+              id: String(payload.id || crypto.randomUUID()),
+              user_id: String(payload.sender_id),
+              media_path: String(payload.media_path || ""),
+              media_type: payload.media_type === "video" ? "video" : "image",
+              caption: payload.caption ?? null,
+              created_at: payload.created_at || new Date().toISOString(),
+              expires_at: payload.expires_at || new Date(Date.now() + 24 * 3600000).toISOString(),
+              visibility: payload.visibility === "public" ? "public" : "friends"
+            };
+            const key = "blink_received_stories_" + user.id;
+            const current: Story[] = JSON.parse(window.localStorage.getItem(key) || "[]");
+            const active = [...current.filter((s) => s.id !== incomingStory.id), incomingStory]
+              .filter((s) => new Date(s.expires_at).getTime() > Date.now());
+            window.localStorage.setItem(key, JSON.stringify(active));
+            setReceivedStories(active);
+            notify("New Story received.");
+            return;
+          }
           const senderId = String(payload.sender_id);
           const cid = "friend:" + senderId;
           if (payload.kind === "chat" || payload.kind === "media") {
@@ -394,7 +419,32 @@ export default function BlinkApp({ email }: { email: string }) {
         })
         .subscribe();
       realtimeChannelRef.current = channel;
-      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadSnaps(user.id)]);
+      const publicStoryChannel = supabase
+        .channel("blink-public-stories", { config: { private: true } })
+        .on("broadcast", { event: "story" }, (event: any) => {
+          const payload = event?.payload;
+          if (!payload || payload.sender_id === user.id || payload.visibility !== "public") return;
+          const incomingStory: Story = {
+            id: String(payload.id || crypto.randomUUID()),
+            user_id: String(payload.sender_id),
+            media_path: String(payload.media_path || ""),
+            media_type: payload.media_type === "video" ? "video" : "image",
+            caption: payload.caption ?? null,
+            created_at: payload.created_at || new Date().toISOString(),
+            expires_at: payload.expires_at || new Date(Date.now() + 24 * 3600000).toISOString(),
+            visibility: "public"
+          };
+          const key = "blink_received_stories_" + user.id;
+          const current: Story[] = JSON.parse(window.localStorage.getItem(key) || "[]");
+          const active = [...current.filter((s) => s.id !== incomingStory.id), incomingStory]
+            .filter((s) => new Date(s.expires_at).getTime() > Date.now());
+          window.localStorage.setItem(key, JSON.stringify(active));
+          setReceivedStories(active);
+          notify("New public Story received.");
+        })
+        .subscribe();
+      publicStoryChannelRef.current = publicStoryChannel;
+      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id)]);
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
@@ -409,6 +459,10 @@ export default function BlinkApp({ email }: { email: string }) {
       if (realtimeChannelRef.current) {
         supabase.removeChannel(realtimeChannelRef.current);
         realtimeChannelRef.current = null;
+      }
+      if (publicStoryChannelRef.current) {
+        supabase.removeChannel(publicStoryChannelRef.current);
+        publicStoryChannelRef.current = null;
       }
     };
   }, []);
@@ -471,6 +525,7 @@ export default function BlinkApp({ email }: { email: string }) {
           if (key === localChatKey(conversationIdRef.current)) setMessages(active);
           if (key === "blink_snaps_" + me) setSnaps(active);
           if (key === localStoriesKey(me)) setStories(active);
+          if (key === "blink_received_stories_" + me) setReceivedStories(active.filter((item: Story) => item.visibility === "public" || item.visibility === "friends"));
         } catch {}
       }
     };
@@ -493,6 +548,22 @@ export default function BlinkApp({ email }: { email: string }) {
       window.localStorage.setItem(localStoriesKey(userId), JSON.stringify(active));
     } catch {
       setStories([]);
+    }
+  }
+
+  async function loadReceivedStories(userId: string) {
+    try {
+      const key = "blink_received_stories_" + userId;
+      const raw = window.localStorage.getItem(key);
+      const now = Date.now();
+      const items = raw ? JSON.parse(raw) : [];
+      const active = Array.isArray(items)
+        ? items.filter((s: Story) => (s.visibility === "public" || s.visibility === "friends") && new Date(s.expires_at).getTime() > now)
+        : [];
+      setReceivedStories(active);
+      window.localStorage.setItem(key, JSON.stringify(active));
+    } catch {
+      setReceivedStories([]);
     }
   }
 
@@ -972,14 +1043,53 @@ export default function BlinkApp({ email }: { email: string }) {
         media_type: storyFile.type.startsWith("video/") ? "video" : "image",
         caption: null,
         created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + retentionMs(storyRetention)).toISOString()
+        expires_at: new Date(Date.now() + retentionMs(storyRetention)).toISOString(),
+        visibility: storyPrivacy
       };
       const current = JSON.parse(window.localStorage.getItem(localStoriesKey(me)) || "[]");
       const next = [story, ...current].slice(0, 100);
       window.localStorage.setItem(localStoriesKey(me), JSON.stringify(next));
       setStories(next);
+
+      const payload = {
+        kind: "story",
+        id: story.id,
+        sender_id: me,
+        media_path: story.media_path,
+        media_type: story.media_type,
+        caption: story.caption,
+        created_at: story.created_at,
+        expires_at: story.expires_at,
+        visibility: story.visibility
+      };
+
+      if (storyPrivacy === "friends") {
+        for (const friendId of friends.map((friend) => friend.id)) {
+          const channel = supabase.channel("blink-user:" + friendId, { config: { private: true } });
+          await channel.send({
+            type: "broadcast",
+            event: "blink",
+            payload: { ...payload, recipient_id: friendId }
+          });
+          await supabase.removeChannel(channel);
+        }
+      } else if (storyPrivacy === "public") {
+        const channel = supabase.channel("blink-public-stories", { config: { private: true } });
+        const result = await channel.send({
+          type: "broadcast",
+          event: "story",
+          payload
+        });
+        await supabase.removeChannel(channel);
+        if (result === "error") notify("Public Story could not be delivered.");
+      }
+
       setStoryFile(null);
-      notify("Story saved only in this browser for " + storyRetention + ".");
+      notify(storyPrivacy === "public"
+        ? "Public Story posted. It is visible to authenticated BLINK users while it remains active."
+        : storyPrivacy === "friends"
+          ? "Friends-only Story posted to your friends while it remains active."
+          : "Private Story saved only in this browser.");
     } catch {
       notify("Browser storage is full. Delete older local content first.");
     }
@@ -1249,12 +1359,35 @@ export default function BlinkApp({ email }: { email: string }) {
         <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" capture="environment" onChange={(e) => {
           const f = e.target.files?.[0]; if (f) { setStoryFile(f); notify("Story ready."); }
         }} />
-        {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b><select className="blink-search" defaultValue="friends" onChange={(e) => (window as any).__blinkStoryPrivacy = e.target.value}><option value="friends">My Story · Friends</option><option value="public">My Story · Public</option><option value="private">Private Story</option></select><button className="blink-primary" onClick={publishStory} disabled={busy}>Post Story</button></div>}
-        <div className="blink-story-grid">{stories.map((s) =>
-          <button key={s.id} className="blink-story-card" onClick={() => { if (s.media_path) window.open(s.media_path, "_blank", "noopener,noreferrer"); }}>
-            <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div><b>{s.user_id === me ? "Your Story" : shortId(s.user_id)}</b><small>browser-local · expires {Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 3600000))}h</small>
-          </button>
-        )}</div>
+        {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b>
+          <select className="blink-search" value={storyPrivacy} onChange={(e) => {
+            const value = e.target.value as "private" | "friends" | "public";
+            setStoryPrivacy(value);
+            window.localStorage.setItem("blink_story_privacy_" + me, value);
+          }}>
+            <option value="friends">My Story · Friends</option>
+            <option value="public">My Story · Public</option>
+            <option value="private">Private Story</option>
+          </select>
+          <button className="blink-primary" onClick={publishStory} disabled={busy}>Post Story</button>
+        </div>}
+        <div className="blink-feature-note">Story privacy is enforced by delivery: <b>Private</b> stays on your device, <b>Friends</b> is delivered only to your accepted friends, and <b>Public</b> is delivered to authenticated BLINK users. Owners and Admins do not receive special access to private or friends-only Stories.</div>
+        <div className="blink-story-grid">
+          {stories.map((s) =>
+            <button key={s.id} className="blink-story-card" onClick={() => { if (s.media_path) window.open(s.media_path, "_blank", "noopener,noreferrer"); }}>
+              <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div>
+              <b>Your Story</b>
+              <small>{s.visibility === "public" ? "Public" : s.visibility === "friends" ? "Friends only" : "Private"} · expires {Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 3600000))}h</small>
+            </button>
+          )}
+          {receivedStories.map((s) =>
+            <button key={"received-" + s.id} className="blink-story-card" onClick={() => { if (s.media_path) window.open(s.media_path, "_blank", "noopener,noreferrer"); }}>
+              <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div>
+              <b>@{directory.find((p) => p.id === s.user_id)?.username || shortId(s.user_id)}</b>
+              <small>{s.visibility === "public" ? "Public" : "Friends only"} · expires {Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 3600000))}h</small>
+            </button>
+          )}
+        </div>
       </div>}
 
 
@@ -1301,7 +1434,7 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
 
         {adminRole === "owner" ? <>
-          <p className="blink-feature-note">Owner access includes every Admin privilege plus owner-only visibility for platform totals, usage signals, misuse indicators, performance checks and security status. No disappearing chat, Snap, Story or Memory content is stored in Supabase.</p>
+          <p className="blink-feature-note">Owner access includes every Admin privilege plus owner-only visibility for platform totals, usage signals, misuse indicators, dashboards, performance checks and security status. Owner/Admin access never overrides user-content privacy: non-public chats, recipient-only Snaps and non-public Stories remain inaccessible unless the Owner/Admin is an authorized recipient.</p>
 
           <div className="blink-settings-section">
             <span className="blink-eyebrow">TOTAL USERS</span>
@@ -1333,11 +1466,15 @@ export default function BlinkApp({ email }: { email: string }) {
           </div>
 
           <div className="blink-settings-section">
-            <span className="blink-eyebrow">SECURITY</span>
+            <span className="blink-eyebrow">SECURITY & PRIVACY</span>
             <div className="blink-setting-readonly"><span>Admin authorization</span><b>RLS protected</b></div>
             <div className="blink-setting-readonly"><span>Private Realtime channels</span><b>Friend + block checks</b></div>
-            <div className="blink-setting-readonly"><span>Ephemeral content storage</span><b>Browser only</b></div>
-            <small>Owner privileges are granted from the protected blink_admins table. Admins cannot promote themselves or change owner accounts.</small>
+            <div className="blink-setting-readonly"><span>Chat visibility to Owner/Admin</span><b>Denied</b></div>
+            <div className="blink-setting-readonly"><span>Private / Friends Story visibility to Owner/Admin</span><b>Denied unless recipient</b></div>
+            <div className="blink-setting-readonly"><span>Private Snap visibility to Owner/Admin</span><b>Denied unless recipient</b></div>
+            <div className="blink-setting-readonly"><span>Public Story visibility</span><b>Allowed for all authenticated users</b></div>
+            <div className="blink-setting-readonly"><span>Ephemeral content storage</span><b>Browser + transient delivery only</b></div>
+            <small>Owner/Admin privileges are for platform administration and non-content metadata. They do not create a backdoor into private chats, private Stories, friends-only Stories or recipient-only Snaps. A public Story is intentionally viewable by authenticated BLINK users.</small>
           </div>
 
           <div className="blink-settings-section">
