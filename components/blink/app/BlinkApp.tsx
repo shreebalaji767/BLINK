@@ -525,7 +525,7 @@ export default function BlinkApp({ email }: { email: string }) {
         })
         .subscribe();
       publicStoryChannelRef.current = publicStoryChannel;
-      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id), loadMyProfile(user.id), loadMyAdminRole(user.id)]);
+      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id), loadMyProfile(user.id)]);
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
