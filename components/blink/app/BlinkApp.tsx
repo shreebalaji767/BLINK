@@ -841,7 +841,7 @@ export default function BlinkApp({ email }: { email: string }) {
     }
   }
 
-  async function startCamera(requestedFacing: "user" | "environment" = cameraFacing) {
+  async function startCamera(requestedFacing: "user" | "environment" = requestedFacing) {
     if (typeof window === "undefined") return;
     if (!window.isSecureContext) {
       notify("Camera needs HTTPS. Open the deployed BLINK address, not an insecure HTTP page.");
@@ -1123,7 +1123,7 @@ export default function BlinkApp({ email }: { email: string }) {
             {cameraLens !== "none" && <div className="blink-camera-lens" aria-hidden="true">{cameraLens === "hearts" ? "💗  💗" : cameraLens === "dog" ? "🐶" : cameraLens === "crown" ? "👑" : "👽"}</div>}
             <div className="blink-camera-toolbar">
               <button className={cameraFacing === "user" ? "active" : ""} onClick={() => { if (cameraFacing !== "user") { stopCamera(); setCameraFacing("user"); void startCamera("user"); } }} aria-label="Use front camera" title="Front camera">🤳 Front</button>
-              <button className={requestedFacing === "environment" ? "active" : ""} onClick={() => { if (cameraFacing !== "environment") { stopCamera(); setCameraFacing("environment"); void startCamera("environment"); } }} aria-label="Use back camera" title="Back camera">📷 Back</button>
+              <button className={cameraFacing === "environment" ? "active" : ""} onClick={() => { if (cameraFacing !== "environment") { stopCamera(); setCameraFacing("environment"); void startCamera("environment"); } }} aria-label="Use back camera" title="Back camera">📷 Back</button>
               <button className={flashOn ? "active" : ""} onClick={async () => {
                 const track = streamRef.current?.getVideoTracks()[0];
                 const capabilities = track?.getCapabilities?.() as any;
