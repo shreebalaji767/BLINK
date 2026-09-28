@@ -91,28 +91,13 @@ export default function BlinkApp({ email }: { email: string }) {
     window.setTimeout(() => setToast(""), 2400);
   }
 
-  async function loadFriends(userId: string) {
-    const [{ data: accepted }, { data: incoming }, { data: sent }] = await Promise.all([
-      supabase.from("friendships").select("requester_id,addressee_id").eq("status", "accepted")
-        .or("requester_id.eq." + userId + ",addressee_id.eq." + userId),
-      supabase.from("friendships").select("requester_id").eq("addressee_id", userId).eq("status", "pending"),
-      supabase.from("friendships").select("addressee_id").eq("requester_id", userId).eq("status", "pending")
-    ]);
-    const ids = (accepted ?? []).map((r: any) => r.requester_id === userId ? r.addressee_id : r.requester_id);
-    const allIds = [...new Set([
-      ...ids,
-      ...(incoming ?? []).map((r: any) => r.requester_id),
-      ...(sent ?? []).map((r: any) => r.addressee_id)
-    ])];
-    const names = new Map(directory.map((p) => [p.id, p.username]));
-    setFriends(ids.map((id: string) => ({ id, username: names.get(id) ?? "" })));
-    setRequests((incoming ?? []).map((r: any) => ({ id: r.requester_id, username: names.get(r.requester_id) ?? "" })));
-    setOutgoing((sent ?? []).map((r: any) => ({ id: r.addressee_id, username: names.get(r.addressee_id) ?? "" })));
-  }
-
-  async function loadBlocked(userId: string) {
-    const { data } = await supabase.from("blocks").select("blocked_id").eq("blocker_id", userId);
-    setBlocked((data ?? []).map((x: any) => ({ id: x.blocked_id, username: "" })));
+  async function loadDirectory() {
+    const { data, error } = await supabase.from("profiles").select("id, username").order("username").limit(5000);
+    if (error) {
+      notify("Could not load the username directory.");
+      return;
+    }
+    setDirectory((data ?? []).map((p: { id: string; username: string }) => ({ id: p.id, username: p.username })));
   }
 
   function localStoriesKey(userId: string) {
