@@ -45,7 +45,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [snapTimer, setSnapTimer] = useState(0);
   const [flashOn, setFlashOn] = useState(false);
   const [chatRetention, setChatRetention] = useState("24h");
-  const [snapRetention, setSnapRetention] = useState("seen");
+  const [snapRetention, setSnapRetention] = useState("24h");
   const [storyRetention, setStoryRetention] = useState("24h");
   const [spotlight, setSpotlight] = useState<any[]>([]);
   const [memoryItems, setMemoryItems] = useState<any[]>([]);
@@ -316,7 +316,7 @@ export default function BlinkApp({ email }: { email: string }) {
       setGhostMode(storedGhost === null ? true : storedGhost === "true");
       setAppearance(storedAppearance === "light" ? "light" : "dark");
       setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
-      setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "seen");
+      setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "24h");
       setStoryRetention(window.localStorage.getItem("blink_story_retention") || "24h");
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.access_token) {
@@ -420,15 +420,30 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   function retentionMs(value: string) {
-    if (value === "10s") return 10 * 1000;
-    if (value === "1m") return 60 * 1000;
-    if (value === "5m") return 5 * 60 * 1000;
-    if (value === "1h") return 60 * 60 * 1000;
-    if (value === "24h") return 24 * 60 * 60 * 1000;
-    if (value === "6h") return 6 * 60 * 60 * 1000;
-    if (value === "12h") return 12 * 60 * 60 * 1000;
-    if (value === "7d") return 7 * 24 * 60 * 60 * 1000;
-    return 0;
+    const map: Record<string, number> = {
+      "10s": 10 * 1000,
+      "30s": 30 * 1000,
+      "1m": 60 * 1000,
+      "5m": 5 * 60 * 1000,
+      "10m": 10 * 60 * 1000,
+      "30m": 30 * 60 * 1000,
+      "1h": 60 * 60 * 1000,
+      "6h": 6 * 60 * 60 * 1000,
+      "12h": 12 * 60 * 60 * 1000,
+      "24h": 24 * 60 * 60 * 1000,
+      "3d": 3 * 24 * 60 * 60 * 1000,
+      "7d": 7 * 24 * 60 * 60 * 1000
+    };
+    return map[value] ?? 24 * 60 * 60 * 1000;
+  }
+
+  function retentionLabel(value: string) {
+    const labels: Record<string, string> = {
+      "10s": "10 seconds", "30s": "30 seconds", "1m": "1 minute", "5m": "5 minutes",
+      "10m": "10 minutes", "30m": "30 minutes", "1h": "1 hour", "6h": "6 hours",
+      "12h": "12 hours", "24h": "24 hours", "3d": "3 days", "7d": "7 days"
+    };
+    return labels[value] ?? value;
   }
 
   function loadLocalChat(cid: string) {
@@ -823,7 +838,7 @@ export default function BlinkApp({ email }: { email: string }) {
         caption: snapCaption,
         duration_seconds: 10,
         created_at: new Date().toISOString(),
-        expires_at: snapRetention === "seen" ? new Date(Date.now() + 7 * 86400000).toISOString() : new Date(Date.now() + retentionMs(snapRetention)).toISOString()
+        expires_at: new Date(Date.now() + retentionMs(snapRetention)).toISOString()
       };
       const raw = window.localStorage.getItem(localSnapKey());
       const current: Snap[] = raw ? JSON.parse(raw) : [];
@@ -1012,13 +1027,18 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-ephemeral-settings">
           <label>Delete chat messages
             <select className="blink-search" value={chatRetention} onChange={(e) => { setChatRetention(e.target.value); window.localStorage.setItem("blink_chat_retention", e.target.value); }}>
-              <option value="seen">After seen</option>
-              <option value="10s">After 10 seconds</option>
-              <option value="1m">After 1 minute</option>
-              <option value="5m">After 5 minutes</option>
-              <option value="1h">After 1 hour</option>
-              <option value="24h">After 24 hours</option>
-              <option value="7d">After 7 days</option>
+              <option value="10s">10 seconds</option>
+              <option value="30s">30 seconds</option>
+              <option value="1m">1 minute</option>
+              <option value="5m">5 minutes</option>
+              <option value="10m">10 minutes</option>
+              <option value="30m">30 minutes</option>
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
+              <option value="12h">12 hours</option>
+              <option value="24h">24 hours</option>
+              <option value="3d">3 days</option>
+              <option value="7d">7 days</option>
             </select>
           </label>
           <label>Delete Snaps
@@ -1042,7 +1062,7 @@ export default function BlinkApp({ email }: { email: string }) {
           <aside className="blink-chat-list">
             {friends.length ? friends.map((f) =>
               <button key={f.id} className={activePerson?.id === f.id ? "blink-chat-row selected" : "blink-chat-row"} onClick={() => openFriendChat(f)}>
-                <Avatar id={f.id} /><span className="blink-chat-copy"><b>{f.username || shortId(f.id)}</b><small>Browser-only · {chatRetention === "seen" ? "after seen" : chatRetention}</small></span>
+                <Avatar id={f.id} /><span className="blink-chat-copy"><b>{f.username || shortId(f.id)}</b><small>Browser-only · {retentionLabel(chatRetention)}</small></span>
               </button>
             ) : <div className="blink-empty">Add a friend to start messaging.</div>}
           </aside>
@@ -1114,17 +1134,21 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
       {tab === "stories" && <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">BROWSER ONLY · {storyRetention === "24h" ? "24 HOURS" : storyRetention.toUpperCase()}</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">BROWSER ONLY · {storyRetention === "24h" ? "24 HOURS" : retentionLabel(storyRetention).toUpperCase()}</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
         <div className="blink-ephemeral-settings">
           <label>Keep Story for
             <select className="blink-search" value={storyRetention} onChange={(e) => { setStoryRetention(e.target.value); window.localStorage.setItem("blink_story_retention", e.target.value); }}>
               <option value="10s">10 seconds</option>
+              <option value="30s">30 seconds</option>
               <option value="1m">1 minute</option>
               <option value="5m">5 minutes</option>
+              <option value="10m">10 minutes</option>
+              <option value="30m">30 minutes</option>
               <option value="1h">1 hour</option>
               <option value="6h">6 hours</option>
               <option value="12h">12 hours</option>
               <option value="24h">24 hours</option>
+              <option value="3d">3 days</option>
               <option value="7d">7 days</option>
             </select>
           </label>
@@ -1248,7 +1272,7 @@ export default function BlinkApp({ email }: { email: string }) {
             <div className="blink-settings-section">
               <span className="blink-eyebrow">BLINK RULES</span>
               <div className="blink-setting-readonly"><span>Data retention</span><b>Browser-local</b></div>
-              <div className="blink-setting-readonly"><span>Local content expiry</span><b>Chat: {chatRetention === "seen" ? "after seen" : chatRetention} / Snap: {snapRetention === "seen" ? "after seen" : snapRetention} / Story: {storyRetention}</b></div>
+              <div className="blink-setting-readonly"><span>Local content expiry</span><b>Chat: {chatRetention === "seen" ? "after seen" : chatRetention} / Snap: {retentionLabel(snapRetention)} / Story: {retentionLabel(storyRetention)}</b></div>
               <small>Chats, Snaps and Memories are browser-local only. BLINK does not write their contents to the database.</small>
             </div>
           </div>
