@@ -212,3 +212,43 @@ html[data-theme="light"] video {
 
 
 .blink-real-map{position:relative;overflow:hidden;min-height:460px;padding:0}.blink-map-iframe{display:block;width:100%;height:460px;border:0;background:#111}.blink-real-map .blink-map-label{z-index:2}.blink-map-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.blink-map-controls button{min-height:42px}
+
+
+
+/* BLINK map zoom controls */
+.blink-real-map { position: relative; overflow: hidden; }
+.blink-map-zoom-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.blink-map-zoom-controls button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 10px;
+  background: rgba(10,10,10,.88);
+  color: #fff;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.28);
+}
+.blink-map-zoom-controls button:hover:not(:disabled) { background: rgba(35,35,35,.96); }
+.blink-map-zoom-controls button:disabled { opacity: .35; cursor: not-allowed; }
+.blink-map-zoom-level {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 5;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(10,10,10,.78);
+  color: #fff;
+  font-size: 12px;
+  pointer-events: none;
+}
