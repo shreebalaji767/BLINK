@@ -85,6 +85,28 @@ export default function BlinkApp({ email }: { email: string }) {
   const conversationIdRef = useRef("");
   conversationIdRef.current = conversationId;
 
+  const validTabs: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile"];
+
+  function navigateTab(next: Tab) {
+    setTab(next);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", next);
+      window.history.pushState({ blinkTab: next }, "", url.toString());
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const readTabFromUrl = () => {
+      const requested = new URLSearchParams(window.location.search).get("tab") as Tab | null;
+      navigateTab(requested && validTabs.includes(requested) ? requested : "camera");
+    };
+    readTabFromUrl();
+    window.addEventListener("popstate", readTabFromUrl);
+    return () => window.removeEventListener("popstate", readTabFromUrl);
+  }, []);
+
   function notify(text: string) {
     setToast(text);
     window.setTimeout(() => setToast(""), 2400);
@@ -525,7 +547,7 @@ export default function BlinkApp({ email }: { email: string }) {
     groups.unshift({ id: localConversationId, title: groupTitle.trim(), members });
     window.localStorage.setItem("blink_groups_" + me, JSON.stringify(groups));
     setGroupTitle(""); setGroupMembers([]);
-    setConversationId(localConversationId); setActivePerson(null); setTab("chat");
+    setConversationId(localConversationId); setActivePerson(null); navigateTab("chat");
     notify("Local group chat created. Chat data stays in this browser.");
   }
 
@@ -575,7 +597,7 @@ export default function BlinkApp({ email }: { email: string }) {
     setActivePerson(friend);
     
     setConversationId("friend:" + friend.id);
-    setTab("chat");
+    navigateTab("chat");
     loadLocalChat("friend:" + friend.id);
   }
 
@@ -914,9 +936,9 @@ export default function BlinkApp({ email }: { email: string }) {
 
   return <main className="blink-app">
     <header className="blink-topbar">
-      <button className="blink-brand" onClick={() => setTab("camera")}>BLINK</button>
+      <button className="blink-brand" onClick={() => navigateTab("camera")}>BLINK</button>
       <div className="blink-top-actions">
-        <button className="blink-round" onClick={() => setTab("friends")}>⌕</button><button className="blink-round" onClick={() => setTab("spotlight")}>▷</button><button className="blink-round" onClick={() => setTab("memories")}>▣</button>
+        <button className="blink-round" onClick={() => navigateTab("friends")}>⌕</button><button className="blink-round" onClick={() => navigateTab("spotlight")}>▷</button><button className="blink-round" onClick={() => navigateTab("memories")}>▣</button>
         <button className="blink-round" onClick={() => notify(snaps.length ? snaps.length + " new Snap(s)" : "No new Snaps")}>♡</button>
         <SignOutButton />
       </div>
@@ -982,7 +1004,7 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
       {tab === "chat" && <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">DEVICE-LOCAL EPHEMERAL CHAT</span><h1>Chat</h1></div><button className="blink-primary small" onClick={() => setTab("friends")}>＋ New chat</button><button className="blink-button secondary small" onClick={() => notify("Select friends below to create a group.")}>👥 Group</button></div>
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">DEVICE-LOCAL EPHEMERAL CHAT</span><h1>Chat</h1></div><button className="blink-primary small" onClick={() => navigateTab("friends")}>＋ New chat</button><button className="blink-button secondary small" onClick={() => notify("Select friends below to create a group.")}>👥 Group</button></div>
         <div className="blink-ephemeral-settings">
           <label>Delete chat messages
             <select className="blink-search" value={chatRetention} onChange={(e) => { setChatRetention(e.target.value); window.localStorage.setItem("blink_chat_retention", e.target.value); }}>
@@ -1103,7 +1125,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
       {tab === "spotlight" && (
         <div className="blink-panel">
-          <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => setTab("camera")}>＋ Create</button></div>
+          <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => navigateTab("camera")}>＋ Create</button></div>
           <p className="blink-feature-note">Spotlight is browser-local in BLINK. Posts, likes and media stay on this device and are not written to the database.</p>
           <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
             <div className="blink-spotlight-media">{p.media_path ? <button onClick={()=>{ if(p.media_path) window.open(p.media_path,"_blank","noopener,noreferrer") }}>▶ Open Snap</button> : null}</div>
@@ -1223,7 +1245,7 @@ export default function BlinkApp({ email }: { email: string }) {
     </section>
 
     <nav className="blink-bottom-nav" aria-label="Main navigation">{nav.map(([id, icon, label]) =>
-      <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span className="blink-icon">{icon}</span><small>{label}</small></button>
+      <button key={id} className={tab === id ? "active" : ""} onClick={() => navigateTab(id)}><span className="blink-icon">{icon}</span><small>{label}</small></button>
     )}</nav>
     {toast && <div className="blink-toast" role="status">{toast}</div>}
   </main>;
