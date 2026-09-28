@@ -362,7 +362,7 @@ export default function BlinkApp({ email }: { email: string }) {
       };
       return greetings[bot.bot_key] || `Hey. It's ${name}. What's going on?`;
     }
-    if (/\b(name|who are you)\b/.test(lower)) return `I'm ${name}. I have my own way of talking, and I don't pretend to be a person behind the screen.`;
+    if (/\b(name|who are you)\b/.test(lower)) return `I'm ${name}. That's what people here call me.`;
     if (/\b(how are you|how're you)\b/.test(lower)) {
       const moods: Record<string,string> = {
         warm: "Pretty good. Quiet day, honestly.",
@@ -910,9 +910,9 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
         <div className="blink-chat-layout">
           <aside className="blink-chat-list">
-            <div className="blink-bot-list"><b>PEOPLE-LIKE COMPUTERS — NOT AI</b>{bots.map((b) =>
+            <div className="blink-bot-list"><b>PEOPLE — EVERYONE IS DIFFERENT</b>{bots.map((b) =>
               <button key={b.id} className={activeBot?.id === b.id ? "blink-chat-row selected" : "blink-chat-row"} onClick={() => openBotChat(b)}>
-                <Avatar emoji={b.avatar_emoji} /><span className="blink-chat-copy"><b>{b.display_name}</b><small>Human-like personality · deterministic · no AI</small></span>
+                <Avatar emoji={b.avatar_emoji} /><span className="blink-chat-copy"><b>{b.display_name}</b><small>Human-like character · unique personality</small></span>
               </button>
             )}</div>
             {friends.length ? friends.map((f) =>
@@ -934,7 +934,7 @@ export default function BlinkApp({ email }: { email: string }) {
                   return <div key={m.id} className={"blink-message-line " + (mine ? "mine" : "")}>
                     <div className={"blink-bubble " + (mine ? "mine" : "other")} onClick={() => { if (!mine && m.expires_at === "after_seen") { const raw = window.localStorage.getItem(localChatKey(conversationId)); const current: Message[] = raw ? JSON.parse(raw) : []; saveLocalChat(conversationId, current.filter(x => x.id !== m.id)); } }}>
                       {m.media_path ? "[" + m.message_type + " · disappearing]" : m.body}
-                      {botProfile && <small className="blink-bot-tag">{botProfile.avatar_emoji} computer</small>}
+                      {botProfile && <small className="blink-bot-tag">{botProfile.avatar_emoji} {botProfile.display_name}</small>}
                       {!botProfile && <div className="blink-message-tools"><button onClick={() => reactToMessage(m.id, "❤️")}>❤️</button><button onClick={() => reactToMessage(m.id, "😂")}>😂</button><button onClick={() => toggleSavedMessage(m.id)}>🔖</button></div>}
                     </div>
                   </div>;
