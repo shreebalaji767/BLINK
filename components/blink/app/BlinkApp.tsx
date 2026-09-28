@@ -32,6 +32,19 @@ function RoleBadge({ role }: { role?: "owner" | "admin" | null }) {
   );
 }
 
+const AVATAR_OPTIONS = [
+  { id: "m01", gender: "Male", emoji: "👨🏻" }, { id: "m02", gender: "Male", emoji: "👨🏼" },
+  { id: "m03", gender: "Male", emoji: "👨🏽" }, { id: "m04", gender: "Male", emoji: "👨🏾" },
+  { id: "m05", gender: "Male", emoji: "👨🏿" }, { id: "m06", gender: "Male", emoji: "🧔🏻" },
+  { id: "m07", gender: "Male", emoji: "👨‍🦱" }, { id: "m08", gender: "Male", emoji: "👨‍🦰" },
+  { id: "m09", gender: "Male", emoji: "👨‍🦳" }, { id: "m10", gender: "Male", emoji: "👨‍🎓" },
+  { id: "f01", gender: "Female", emoji: "👩🏻" }, { id: "f02", gender: "Female", emoji: "👩🏼" },
+  { id: "f03", gender: "Female", emoji: "👩🏽" }, { id: "f04", gender: "Female", emoji: "👩🏾" },
+  { id: "f05", gender: "Female", emoji: "👩🏿" }, { id: "f06", gender: "Female", emoji: "👩‍🦱" },
+  { id: "f07", gender: "Female", emoji: "👩‍🦰" }, { id: "f08", gender: "Female", emoji: "👩‍🦳" },
+  { id: "f09", gender: "Female", emoji: "👩‍🎓" }, { id: "f10", gender: "Female", emoji: "👩‍💻" }
+];
+
 export default function BlinkApp({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>("camera");
   const [me, setMe] = useState("");
@@ -1537,19 +1550,43 @@ export default function BlinkApp({ email }: { email: string }) {
               <label>Username
                 <input className="blink-search" value={settingsUsername} maxLength={24} onChange={(e) => setSettingsUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="username" />
               </label>
-              <label>Avatar
-                <select className="blink-search" value={avatarEmoji} onChange={(e) => saveAvatar(e.target.value)}>
-                  <option value="3F">3F</option>
-                  <option value="⚡">⚡</option>
-                  <option value="★">★</option>
-                  <option value="●">●</option>
-                  <option value="◆">◆</option>
-                  <option value="✦">✦</option>
-                  <option value="👻">👻</option>
-                  <option value="🙂">🙂</option>
-                  <option value="😎">😎</option>
-                </select>
-              </label>
+              <div className="blink-avatar-picker">
+                <div className="blink-avatar-picker-head">
+                  <span>Avatar</span>
+                  <small>Choose 1 of 20 avatars</small>
+                </div>
+                <div className="blink-avatar-gender-label">Male</div>
+                <div className="blink-avatar-grid">
+                  {AVATAR_OPTIONS.filter((avatar) => avatar.gender === "Male").map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      type="button"
+                      className={"blink-avatar-option " + (avatarEmoji === avatar.emoji ? "selected" : "")}
+                      onClick={() => saveAvatar(avatar.emoji)}
+                      aria-label={"Male avatar " + avatar.id}
+                      title={"Male avatar"}
+                    >
+                      {avatar.emoji}
+                    </button>
+                  ))}
+                </div>
+                <div className="blink-avatar-gender-label">Female</div>
+                <div className="blink-avatar-grid">
+                  {AVATAR_OPTIONS.filter((avatar) => avatar.gender === "Female").map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      type="button"
+                      className={"blink-avatar-option " + (avatarEmoji === avatar.emoji ? "selected" : "")}
+                      onClick={() => saveAvatar(avatar.emoji)}
+                      aria-label={"Female avatar " + avatar.id}
+                      title={"Female avatar"}
+                    >
+                      {avatar.emoji}
+                    </button>
+                  ))}
+                </div>
+                <small className="blink-avatar-picker-note">Your avatar is saved on this device and shown across BLINK.</small>
+              </div>
               <button className="blink-primary" disabled={settingsBusy} onClick={saveProfileSettings}>{settingsBusy ? "Saving…" : "Save profile"}</button>
             </div>
 
