@@ -394,6 +394,34 @@ export default function BlinkApp({ email }: { email: string }) {
     setDirectory((data ?? []).map((p: { id: string; username: string }) => ({ id: p.id, username: p.username })));
   }
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const purgeExpired = () => {
+      const now = Date.now();
+      const keys = Object.keys(window.localStorage);
+      for (const key of keys) {
+        if (!key.startsWith("blink_chat_") && !key.startsWith("blink_snaps_") && !key.startsWith("blink_stories_")) continue;
+        try {
+          const raw = window.localStorage.getItem(key);
+          const items = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(items)) continue;
+          const active = items.filter((item: any) => {
+            if (item.expires_at === "after_seen") return true;
+            const expiry = new Date(item.expires_at).getTime();
+            return Number.isFinite(expiry) && expiry > now;
+          });
+          if (active.length !== items.length) window.localStorage.setItem(key, JSON.stringify(active));
+          if (key === localChatKey(conversationIdRef.current)) setMessages(active);
+          if (key === "blink_snaps_" + me) setSnaps(active);
+          if (key === localStoriesKey(me)) setStories(active);
+        } catch {}
+      }
+    };
+    purgeExpired();
+    const timer = window.setInterval(purgeExpired, 1000);
+    return () => window.clearInterval(timer);
+  }, [me, conversationId]);
+  
   function localStoriesKey(userId: string) {
     return "blink_stories_" + userId;
   }
@@ -1043,13 +1071,18 @@ export default function BlinkApp({ email }: { email: string }) {
           </label>
           <label>Delete Snaps
             <select className="blink-search" value={snapRetention} onChange={(e) => { setSnapRetention(e.target.value); window.localStorage.setItem("blink_snap_retention", e.target.value); }}>
-              <option value="seen">After seen</option>
-              <option value="10s">After 10 seconds</option>
-              <option value="1m">After 1 minute</option>
-              <option value="5m">After 5 minutes</option>
-              <option value="1h">After 1 hour</option>
-              <option value="24h">After 24 hours</option>
-              <option value="7d">After 7 days</option>
+              <option value="10s">10 seconds</option>
+              <option value="30s">30 seconds</option>
+              <option value="1m">1 minute</option>
+              <option value="5m">5 minutes</option>
+              <option value="10m">10 minutes</option>
+              <option value="30m">30 minutes</option>
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
+              <option value="12h">12 hours</option>
+              <option value="24h">24 hours</option>
+              <option value="3d">3 days</option>
+              <option value="7d">7 days</option>
             </select>
           </label>
         </div>
