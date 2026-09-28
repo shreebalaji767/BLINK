@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/blink/auth/SignOutButton";
 
 type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile" | "admin";
-type Person = { id: string; username: string; online?: boolean; role?: "owner" | "admin" | null };
+type Person = { id: string; username: string; avatar_emoji?: string | null; online?: boolean; role?: "owner" | "admin" | null };
 type Message = {
   id: string; conversation_id: string; sender_id: string | null;
   body: string | null; media_path: string | null; message_type: string; created_at: string; expires_at: string;
@@ -19,7 +19,7 @@ function shortId(id: string) {
   return id.slice(0, 8);
 }
 
-function Avatar({ id, emoji, large = false }: { id?: string; emoji?: string; large?: boolean }) {
+function Avatar({ id, emoji, large = false }: { id?: string; emoji?: string | null; large?: boolean }) {
   return <span className={"blink-avatar " + (large ? "large" : "")}>{emoji ?? shortId(id ?? "?").slice(0, 2).toUpperCase()}</span>;
 }
 
@@ -151,6 +151,22 @@ export default function BlinkApp({ email }: { email: string }) {
     window.setTimeout(() => setToast(""), 2400);
   }
 
+  async function loadMyProfile(userId: string) {
+    const { data } = await supabase.from("profiles").select("id, username, avatar_emoji").eq("id", userId).maybeSingle();
+    if (!data) return;
+    if (data.avatar_emoji) {
+      setAvatarEmoji(data.avatar_emoji);
+      window.localStorage.setItem("blink_avatar_" + userId, data.avatar_emoji);
+    }
+    setMeUsername(data.username ?? "");
+    setSettingsUsername(data.username ?? "");
+    setDirectory((current) => {
+      const merged = new Map(current.map((p) => [p.id, p]));
+      merged.set(userId, { id: userId, username: data.username ?? "", avatar_emoji: data.avatar_emoji ?? null });
+      return Array.from(merged.values());
+    });
+  }
+
   async function loadMyAdminRole(userId: string) {
     const { data } = await supabase.from("blink_admins").select("role, permissions, enabled").eq("user_id", userId).maybeSingle();
     if (!data?.enabled) {
@@ -182,22 +198,23 @@ export default function BlinkApp({ email }: { email: string }) {
       ...(sent ?? []).map((r: { addressee_id: string }) => r.addressee_id)
     ])];
     const names = new Map(directory.map((p) => [p.id, p.username]));
+    const avatars = new Map(directory.map((p) => [p.id, p.avatar_emoji]));
     const roleMap = await loadUserRoles(allIds);
     const roleFor = (id: string) => roleMap.get(id) ?? null;
     if (allIds.length) {
-      const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", allIds);
-      (profiles ?? []).forEach((p: { id: string; username: string }) => names.set(p.id, p.username));
+      const { data: profiles } = await supabase.from("profiles").select("id, username, avatar_emoji").in("id", allIds);
+      (profiles ?? []).forEach((p: { id: string; username: string; avatar_emoji?: string | null }) => { names.set(p.id, p.username); avatars.set(p.id, p.avatar_emoji ?? null); });
       if (profiles?.length) {
         setDirectory((current) => {
           const merged = new Map(current.map((p) => [p.id, p]));
-          profiles.forEach((p: { id: string; username: string }) => merged.set(p.id, p));
+          profiles.forEach((p: { id: string; username: string; avatar_emoji?: string | null }) => merged.set(p.id, p));
           return Array.from(merged.values());
         });
       }
     }
-    setFriends(ids.map((id: string) => ({ id, username: names.get(id) ?? "", role: roleFor(id) })));
-    setRequests((incoming ?? []).map((r: { requester_id: string }) => ({ id: r.requester_id, username: names.get(r.requester_id) ?? "", role: roleFor(r.requester_id) })));
-    setOutgoing((sent ?? []).map((r: { addressee_id: string }) => ({ id: r.addressee_id, username: names.get(r.addressee_id) ?? "", role: roleFor(r.addressee_id) })));
+    setFriends(ids.map((id: string) => ({ id, username: names.get(id) ?? "", avatar_emoji: avatars.get(id) ?? null, role: roleFor(id) })));
+    setRequests((incoming ?? []).map((r: { requester_id: string }) => ({ id: r.requester_id, username: names.get(r.requester_id) ?? "", avatar_emoji: avatars.get(r.requester_id) ?? null, role: roleFor(r.requester_id) })));
+    setOutgoing((sent ?? []).map((r: { addressee_id: string }) => ({ id: r.addressee_id, username: names.get(r.addressee_id) ?? "", avatar_emoji: avatars.get(r.addressee_id) ?? null, role: roleFor(r.addressee_id) })));
   }
 
   async function loadUserRoles(ids: string[]) {
@@ -280,9 +297,18 @@ export default function BlinkApp({ email }: { email: string }) {
     notify("Person unblocked.");
   }
 
-  function saveAvatar(value: string) {
+  async function saveAvatar(value: string) {
+    if (!me) return;
     setAvatarEmoji(value);
     window.localStorage.setItem("blink_avatar_" + me, value);
+    const { error } = await supabase.from("profiles").update({ avatar_emoji: value }).eq("id", me);
+    if (error) {
+      notify("Could not save avatar to your profile.");
+      return;
+    }
+    setDirectory((current) => current.map((p) => p.id === me ? { ...p, avatar_emoji: value } : p));
+    setFriends((current) => current.map((p) => p.id === me ? { ...p, avatar_emoji: value } : p));
+    notify("Avatar updated. Other users will now see it on your profile.");
   }
 
   function saveGhostMode(value: boolean) {
@@ -485,7 +511,7 @@ export default function BlinkApp({ email }: { email: string }) {
         })
         .subscribe();
       publicStoryChannelRef.current = publicStoryChannel;
-      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id), loadMyAdminRole(user.id)]);
+      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id), loadMyProfile(user.id), loadMyAdminRole(user.id)]);
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
@@ -1162,7 +1188,7 @@ export default function BlinkApp({ email }: { email: string }) {
     }
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username")
+      .select("id, username, avatar_emoji")
       .ilike("username", value + "%")
       .neq("id", me)
       .limit(30);
@@ -1171,9 +1197,10 @@ export default function BlinkApp({ email }: { email: string }) {
       notify("Could not search usernames right now.");
       return;
     }
-    const results = (data ?? []).map((p: { id: string; username: string }) => ({
+    const results = (data ?? []).map((p: { id: string; username: string; avatar_emoji?: string | null }) => ({
       id: p.id,
       username: p.username,
+      avatar_emoji: p.avatar_emoji ?? null,
     }));
     setPeople(results);
     setDirectory((current) => {
@@ -1250,7 +1277,7 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
         {friends.length > 0 && <div className="blink-recipient-strip"><b>Send to:</b>
           {friends.map((f) => <button key={f.id} className={selectedRecipients.includes(f.id) ? "selected" : ""} onClick={() => setSelectedRecipients((s) => s.includes(f.id) ? s.filter((x) => x !== f.id) : [...s, f.id])}>
-            <Avatar id={f.id} /><span>{f.username || shortId(f.id)}</span>
+            <Avatar id={f.id} emoji={f.avatar_emoji} /><span>{f.username || shortId(f.id)}</span>
           </button>)}
           <input value={snapCaption} onChange={(e) => setSnapCaption(e.target.value)} placeholder="Caption…" />
         </div>}
@@ -1312,7 +1339,7 @@ export default function BlinkApp({ email }: { email: string }) {
           <section className="blink-conversation">
             {activePerson ? <>
               <div className="blink-conversation-head">
-                <Avatar id={activePerson?.id} />
+                <Avatar id={activePerson?.id} emoji={activePerson?.avatar_emoji} />
                 <div><b>@{activePerson?.username ?? shortId(activePerson?.id ?? "")}</b><small>Friend · browser-only chat · {chatRetention === "seen" ? "disappears after seen" : "expires " + chatRetention}</small></div>
               </div>
               <div className="blink-messages">
@@ -1359,11 +1386,11 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-panel-head"><div><span className="blink-eyebrow">USERNAME DIRECTORY</span><h1>Friends</h1></div></div>
         <input className="blink-search" value={query} onChange={(e) => findUser(e.target.value)} placeholder="Search people by username…" />
         {requests.length > 0 && <div className="blink-request-box"><b>Friend requests</b>{requests.map((p) =>
-          <div key={p.id}><Avatar id={p.id} /><span>@{p.username || "blink_user"}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => declineRequest(p)}>Decline</button></div>
+          <div key={p.id}><Avatar id={p.id} emoji={p.avatar_emoji} /><span>@{p.username || "blink_user"}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => declineRequest(p)}>Decline</button></div>
         )}</div>}
         <div className="blink-friend-grid">
           {(query ? people : directory).map((p) => <article className="blink-friend-card" key={p.id}>
-            <Avatar id={p.id} large /><h3>@{p.username || "blink_user"}</h3><p>BLINK member · username searchable</p>
+            <Avatar id={p.id} emoji={p.avatar_emoji} large /><h3>@{p.username || "blink_user"}</h3><p>BLINK member · username searchable</p>
             <div className="blink-card-actions">
               {friendIds.has(p.id) ? <button onClick={() => openFriendChat(p)}>Chat</button> : outgoing.some((x) => x.id === p.id) ? <button onClick={() => cancelRequest(p)}>Requested · Cancel</button> : requests.some((x) => x.id === p.id) ? <button onClick={() => respondToRequest(p, "accepted")}>Accept request</button> : <button onClick={() => sendFriendRequest(p)}>＋ Add friend</button>}
               <button onClick={() => blocked.some((b) => b.id === p.id) ? unblockUser(p) : blockUser(p)}>{blocked.some((b) => b.id === p.id) ? "Unblock" : "Block"}</button>
