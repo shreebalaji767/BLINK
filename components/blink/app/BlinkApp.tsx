@@ -800,7 +800,7 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
 
-      {tab === "spotlight" && <div className="blink-panel">
+      {tab === "spotlight" && (\n        <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => setTab("camera")}>＋ Create</button></div>
         <p className="blink-feature-note">A public short-video/photo feed for discovery. Posts can be liked and remain separate from private chats.</p>
         <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
@@ -809,7 +809,7 @@ export default function BlinkApp({ email }: { email: string }) {
         </article>)}</div>
         {!spotlight.length && <div className="blink-empty">No Spotlight posts yet. Create the first one from Camera.</div>}
       </div>
-      {tab === "memories" && <div className="blink-panel">
+      {tab === "memories" && (\n        <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">PRIVATE ARCHIVE</span><h1>Memories</h1></div><button className="blink-primary small" onClick={() => (memoryPrivate ? setMemoryUnlocked(false) : setMemoryPrivate(false))}>{memoryUnlocked ? "Lock" : "My Eyes Only"}</button></div>
         <div className="blink-memory-toolbar">
           <input className="blink-search" type="password" value={memoryPasscode} onChange={e=>setMemoryPasscode(e.target.value)} placeholder="Device-only passcode for My Eyes Only" />
