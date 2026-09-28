@@ -106,3 +106,50 @@ html[data-theme="light"] video {
 .blink-memory-card small{color:#858c9c;font-size:10px}
 .blink-memory-card button{border:1px solid #303542;background:#181b23;color:#fff;border-radius:9px;padding:6px 8px}
 @media(max-width:800px){.blink-memory-grid{grid-template-columns:repeat(2,1fr)}.blink-memory-toolbar{grid-template-columns:1fr 1fr}.blink-memory-toolbar .blink-search{grid-column:1/-1}.blink-bottom-nav{overflow:auto;justify-content:flex-start;gap:3px}.blink-bottom-nav button{flex:0 0 64px}}
+
+
+/* BLINK polish: clearer identity, personality chips, responsive chat and safer touch targets */
+.blink-bot-list{display:grid;gap:2px}
+.blink-bot-list>b{display:block;padding:12px 10px 8px;color:#8e96a8;font-size:11px;letter-spacing:.12em}
+.blink-chat-row .blink-chat-copy b{letter-spacing:-.01em}
+.blink-chat-row.selected .blink-chat-copy b{color:#fff}
+.blink-chat-row.selected .blink-chat-copy small{color:#aeb5c5}
+.blink-message-line{animation:blink-message-in .16s ease-out}
+@keyframes blink-message-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.blink-bubble{line-height:1.42;word-break:break-word;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+.blink-bubble.other{border:1px solid rgba(255,255,255,.055)}
+.blink-bubble.mine{font-weight:500}
+.blink-message-tools{visibility:hidden}
+.blink-bubble:hover .blink-message-tools,.blink-bubble:focus-within .blink-message-tools{visibility:visible}
+.blink-friend-card h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blink-friend-card p{font-size:12px}
+.blink-card-actions button{min-height:42px}
+.blink-composer{position:sticky;bottom:0;background:rgba(13,15,20,.92);backdrop-filter:blur(18px)}
+.blink-composer input{height:44px}
+.blink-composer button{min-width:43px;height:44px}
+.blink-conversation-head{background:rgba(13,15,20,.78);backdrop-filter:blur(18px)}
+.blink-conversation-head b{font-size:15px}
+.blink-conversation-head small{font-size:11px}
+.blink-request-box button{min-height:38px}
+.blink-panel-head-actions{display:flex;gap:8px}
+@media(max-width:800px){
+  .blink-chat-layout{min-height:calc(100svh - 180px)}
+  .blink-chat-list{max-height:260px}
+  .blink-messages{padding:16px 12px}
+  .blink-bubble{max-width:86%}
+  .blink-message-tools{visibility:visible}
+}
+@media(max-width:520px){
+  .blink-top-actions{gap:4px}
+  .blink-top-actions .blink-round{width:38px;height:38px}
+  .blink-content{padding-bottom:18px}
+  .blink-chat-layout{border-radius:18px}
+  .blink-chat-list{max-height:245px}
+  .blink-chat-row{padding:10px 8px}
+  .blink-chat-row .blink-avatar{width:40px;height:40px;flex-basis:40px}
+  .blink-conversation{min-height:calc(100svh - 430px)}
+  .blink-messages{min-height:300px}
+  .blink-composer{padding:8px}
+  .blink-composer button{min-width:40px;width:40px}
+  .blink-panel-head-actions{width:100%;justify-content:flex-end}
+}
