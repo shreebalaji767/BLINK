@@ -36,6 +36,10 @@ export default function BlinkApp({ email }: { email: string }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [settingsBusy, setSettingsBusy] = useState(false);
+  const [settingsEmail, setSettingsEmail] = useState(email);
+  const [avatarEmoji, setAvatarEmoji] = useState("3F");
+  const [appearance, setAppearance] = useState<"dark" | "light">("dark");
+  const [ghostMode, setGhostMode] = useState(true);
   const [people, setPeople] = useState<Person[]>([]);
   const [directory, setDirectory] = useState<Person[]>([]);
   const [outgoing, setOutgoing] = useState<Person[]>([]);
@@ -58,7 +62,6 @@ export default function BlinkApp({ email }: { email: string }) {
   const [cameraOn, setCameraOn] = useState(false);
   const [snapPreview, setSnapPreview] = useState("");
   const [storyFile, setStoryFile] = useState<File | null>(null);
-  const [ghostMode, setGhostMode] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chatFileRef = useRef<HTMLInputElement>(null);
@@ -130,6 +133,15 @@ export default function BlinkApp({ email }: { email: string }) {
       const { data } = await supabase.auth.getUser();
       if (!alive || !data.user) return;
       setMe(data.user.id);
+      setSettingsEmail(data.user.email ?? email);
+      if (typeof window !== "undefined") {
+        const savedAvatar = window.localStorage.getItem("blink_avatar_emoji");
+        const savedAppearance = window.localStorage.getItem("blink_appearance");
+        const savedGhost = window.localStorage.getItem("blink_ghost_mode");
+        if (savedAvatar) setAvatarEmoji(savedAvatar);
+        if (savedAppearance === "light" || savedAppearance === "dark") setAppearance(savedAppearance);
+        if (savedGhost !== null) setGhostMode(savedGhost !== "false");
+      }
       const { data: myProfile } = await supabase.from("profiles").select("username").eq("id", data.user.id).single();
       setMeUsername(myProfile?.username ?? "");
       await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id), loadBots()]);
@@ -191,6 +203,45 @@ export default function BlinkApp({ email }: { email: string }) {
     setDisplayName(name);
     setDirectory((items) => items);
     notify("Profile updated.");
+  }
+
+  async function changeEmail() {
+    const nextEmail = settingsEmail.trim().toLowerCase();
+    if (!nextEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
+      notify("Enter a valid email address.");
+      return;
+    }
+    if (nextEmail === email.toLowerCase()) {
+      notify("Email is already unchanged.");
+      return;
+    }
+    setSettingsBusy(true);
+    const { error } = await supabase.auth.updateUser({ email: nextEmail });
+    setSettingsBusy(false);
+    if (error) {
+      notify(error.message);
+      return;
+    }
+    notify("Email change requested. Check your email to confirm it.");
+  }
+
+  function saveAppearance(value: "dark" | "light") {
+    setAppearance(value);
+    window.localStorage.setItem("blink_appearance", value);
+    document.documentElement.dataset.theme = value;
+    notify(value === "light" ? "Light appearance enabled." : "Dark appearance enabled.");
+  }
+
+  function saveAvatar(value: string) {
+    setAvatarEmoji(value);
+    window.localStorage.setItem("blink_avatar_emoji", value);
+    notify("Profile avatar updated.");
+  }
+
+  function saveGhostMode(value: boolean) {
+    setGhostMode(value);
+    window.localStorage.setItem("blink_ghost_mode", String(value));
+    notify(value ? "Ghost Mode ON." : "Temporary location sharing enabled.");
   }
 
   async function changePassword() {
@@ -595,32 +646,85 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
       {tab === "profile" && <div className="blink-profile-page">
-        <div className="blink-profile-cover"><Avatar id={me} large /></div>
+        <div className="blink-profile-cover"><Avatar id={me} emoji={avatarEmoji} large /></div>
         <div className="blink-profile-body"><span className="blink-eyebrow">ACCOUNT</span><h1>{displayName || meUsername || "BLINK User"}</h1>
           <p>@{meUsername || "username"}</p>
           <div className="blink-id-box"><code>{me}</code><button onClick={() => navigator.clipboard.writeText(me).then(() => notify("User ID copied."))}>Copy</button></div>
 
           <div className="blink-profile-settings">
             <div className="blink-settings-section">
-              <span className="blink-eyebrow">PROFILE SETTINGS</span>
-              <label>Name<input className="blink-search" value={settingsName} maxLength={80} onChange={(e) => setSettingsName(e.target.value)} placeholder="Your name" /></label>
-              <label>Username<input className="blink-search" value={settingsUsername} maxLength={24} onChange={(e) => setSettingsUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="username" /></label>
-              <button className="blink-primary" disabled={settingsBusy} onClick={saveProfileSettings}>{settingsBusy ? "Saving…" : "Save name & username"}</button>
+              <span className="blink-eyebrow">PROFILE</span>
+              <label>Name
+                <input className="blink-search" value={settingsName} maxLength={80} onChange={(e) => setSettingsName(e.target.value)} placeholder="Your name" />
+              </label>
+              <label>Username
+                <input className="blink-search" value={settingsUsername} maxLength={24} onChange={(e) => setSettingsUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="username" />
+              </label>
+              <label>Avatar
+                <select className="blink-search" value={avatarEmoji} onChange={(e) => saveAvatar(e.target.value)}>
+                  <option value="3F">3F</option>
+                  <option value="⚡">⚡</option>
+                  <option value="★">★</option>
+                  <option value="●">●</option>
+                  <option value="◆">◆</option>
+                  <option value="✦">✦</option>
+                  <option value="👻">👻</option>
+                  <option value="🙂">🙂</option>
+                  <option value="😎">😎</option>
+                </select>
+              </label>
+              <button className="blink-primary" disabled={settingsBusy} onClick={saveProfileSettings}>{settingsBusy ? "Saving…" : "Save profile"}</button>
+            </div>
+
+            <div className="blink-settings-section">
+              <span className="blink-eyebrow">EMAIL</span>
+              <label>Email address
+                <input className="blink-search" type="email" value={settingsEmail} onChange={(e) => setSettingsEmail(e.target.value)} autoComplete="email" />
+              </label>
+              <button className="blink-primary" disabled={settingsBusy} onClick={changeEmail}>{settingsBusy ? "Updating…" : "Change email"}</button>
+              <small>Supabase may send a confirmation link before the new email becomes active.</small>
             </div>
 
             <div className="blink-settings-section">
               <span className="blink-eyebrow">PASSWORD</span>
-              <input className="blink-search" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password (optional)" autoComplete="current-password" />
+              <input className="blink-search" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" autoComplete="current-password" />
               <input className="blink-search" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" autoComplete="new-password" />
               <input className="blink-search" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" autoComplete="new-password" />
               <button className="blink-primary" disabled={settingsBusy} onClick={changePassword}>{settingsBusy ? "Updating…" : "Change password"}</button>
+            </div>
+
+            <div className="blink-settings-section">
+              <span className="blink-eyebrow">PRIVACY</span>
+              <label className="blink-setting-toggle">
+                <span>Ghost Mode</span>
+                <input type="checkbox" checked={ghostMode} onChange={(e) => saveGhostMode(e.target.checked)} />
+              </label>
+              <small>When ON, BLINK does not share your location.</small>
+            </div>
+
+            <div className="blink-settings-section">
+              <span className="blink-eyebrow">APPEARANCE</span>
+              <label>Theme
+                <select className="blink-search" value={appearance} onChange={(e) => saveAppearance(e.target.value as "dark" | "light")}>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="blink-settings-section">
+              <span className="blink-eyebrow">BLINK RULES</span>
+              <div className="blink-setting-readonly"><span>Data retention</span><b>Ephemeral</b></div>
+              <div className="blink-setting-readonly"><span>Disappearing content</span><b>24h / Snap expiry</b></div>
+              <div className="blink-setting-readonly"><span>Computer bots</span><b>NO AI</b></div>
+              <small>These are app-wide BLINK rules, so they are shown here but cannot be changed per account.</small>
             </div>
           </div>
 
           <div className="blink-settings-list">
             <button onClick={() => notify("Your username is used for finding and connecting with other BLINK users.")}>◆ <span>Username search</span><b>@{meUsername || "—"}</b></button>
             <button onClick={() => notify("Messages, Snaps and Stories are deleted after expiry.")}>◌ <span>Disappearing content</span><b>24h / Snap expiry</b></button>
-            <button onClick={() => setGhostMode(true)}>👻 <span>Ghost Mode</span><b>ON</b></button>
+            <button onClick={() => saveGhostMode(!ghostMode)}>👻 <span>Ghost Mode</span><b>{ghostMode ? "ON" : "OFF"}</b></button>
             <button onClick={() => notify("Bots are deterministic computer programs, not AI.")}>💻 <span>Computer bots</span><b>NO AI</b></button>
           </div>
           <p className="blink-account">{email}</p>
