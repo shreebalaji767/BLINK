@@ -22,6 +22,7 @@ export default function LoginForm() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,6 +37,10 @@ export default function LoginForm() {
       setError(parsed.error.issues[0]?.message ?? "Invalid details.");
       return;
     }
+    if (mode === "signup" && !/^[a-z0-9_]{3,24}$/.test(username.trim().toLowerCase())) {
+      setError("Username must be 3–24 characters using lowercase letters, numbers, or underscore.");
+      return;
+    }
 
     setBusy(true);
     const supabase = createClient();
@@ -48,6 +53,7 @@ export default function LoginForm() {
             email,
             password,
             options: {
+              data: { username: username.trim().toLowerCase() },
               emailRedirectTo: `${siteUrl}/auth/callback?next=/home`
             }
           });
@@ -112,6 +118,18 @@ export default function LoginForm() {
       )}
 
       <form className="blink-form" onSubmit={submit}>
+        {mode === "signup" && (
+          <BlinkInput
+            id="username"
+            label="Username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+            autoComplete="username"
+            maxLength={24}
+          />
+        )}
+
         <BlinkInput
           id="email"
           label="Email"
