@@ -85,6 +85,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const chatFileRef = useRef<HTMLInputElement>(null);
   const snapFileRef = useRef<HTMLInputElement>(null);
   const storyFileRef = useRef<HTMLInputElement>(null);
+  const realtimeChannelRef = useRef<any>(null);
 
   function notify(text: string) {
     setToast(text);
@@ -296,9 +297,56 @@ export default function BlinkApp({ email }: { email: string }) {
       setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
       setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "seen");
       loadBots();
+      await supabase.realtime.setAuth();
+      const channel = supabase
+        .channel("blink-user:" + user.id, { config: { private: true } })
+        .on("broadcast", { event: "blink" }, (event: any) => {
+          const payload = event?.payload;
+          if (!payload || payload.recipient_id !== user.id || payload.sender_id === user.id) return;
+          const senderId = String(payload.sender_id);
+          const cid = "friend:" + senderId;
+          if (payload.kind === "chat" || payload.kind === "media") {
+            const incoming: Message = {
+              id: String(payload.id || crypto.randomUUID()),
+              conversation_id: cid,
+              sender_id: senderId,
+              sender_bot_id: null,
+              body: payload.body ?? null,
+              media_path: payload.media_path ?? null,
+              message_type: payload.message_type || "text",
+              created_at: payload.created_at || new Date().toISOString(),
+              expires_at: payload.expires_at || "after_seen"
+            };
+            const key = "blink_chat_" + user.id + "_" + cid;
+            const current: Message[] = JSON.parse(window.localStorage.getItem(key) || "[]");
+            const active = [...current.filter((m) => m.id !== incoming.id), incoming]
+              .filter((m) => m.expires_at === "after_seen" || new Date(m.expires_at).getTime() > Date.now());
+            window.localStorage.setItem(key, JSON.stringify(active));
+            if (conversationId === cid) setMessages(active);
+          } else if (payload.kind === "snap") {
+            const snap: Snap = {
+              id: String(payload.id || crypto.randomUUID()),
+              sender_id: senderId,
+              media_path: String(payload.media_path || ""),
+              media_type: payload.media_type === "video" ? "video" : "image",
+              caption: payload.caption ?? null,
+              duration_seconds: Number(payload.duration_seconds || 10),
+              created_at: payload.created_at || new Date().toISOString(),
+              expires_at: payload.expires_at || new Date(Date.now() + 7 * 86400000).toISOString()
+            };
+            const key = "blink_snaps_" + user.id;
+            const current: Snap[] = JSON.parse(window.localStorage.getItem(key) || "[]");
+            const next = [...current.filter((s) => s.id !== snap.id), snap];
+            window.localStorage.setItem(key, JSON.stringify(next));
+            setSnaps(next.filter((s) => new Date(s.expires_at).getTime() > Date.now() && !(s as any).opened_at));
+            notify("New Snap received.");
+          }
+        })
+        .subscribe();
+      realtimeChannelRef.current = channel;
       await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadSnaps(user.id)]);
       if (!cancelled) {
-        loadSpotlight();
+        loadSpotlight(user.id);
         loadMemories(user.id);
       }
     }
@@ -307,6 +355,10 @@ export default function BlinkApp({ email }: { email: string }) {
       cancelled = true;
       streamRef.current?.getTracks().forEach((track) => track.stop());
       voiceRecorderRef.current?.stop();
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
     };
   }, []);
 
@@ -386,9 +438,9 @@ export default function BlinkApp({ email }: { email: string }) {
     }
   }
 
-  function loadSpotlight() {
+  function loadSpotlight(userId = me) {
     try {
-      const raw = window.localStorage.getItem("blink_spotlight_" + me);
+      const raw = window.localStorage.getItem("blink_spotlight_" + userId);
       const items = raw ? JSON.parse(raw) : [];
       setSpotlight(Array.isArray(items) ? items : []);
     } catch {
@@ -646,6 +698,25 @@ export default function BlinkApp({ email }: { email: string }) {
     const current: Message[] = raw ? JSON.parse(raw) : [];
     const next = [...current, item];
     saveLocalChat(conversationId, next);
+    if (activePerson) {
+      const channel = supabase.channel("blink-user:" + activePerson.id, { config: { private: true } });
+      const result = await channel.send({
+        type: "broadcast",
+        event: "blink",
+        payload: {
+          kind: "chat",
+          id: item.id,
+          sender_id: me,
+          recipient_id: activePerson.id,
+          body,
+          message_type: "text",
+          created_at: item.created_at,
+          expires_at: item.expires_at
+        }
+      });
+      await supabase.removeChannel(channel);
+      if (result === "error") notify("Message could not be delivered. The friend may be offline.");
+    }
     if (activeBot) {
       let replyBody = "";
       const base = (process.env.NEXT_PUBLIC_BLINK_COMPUTER_URL || "").replace(/\/$/, "");
@@ -694,7 +765,27 @@ export default function BlinkApp({ email }: { email: string }) {
     const current: Message[] = raw ? JSON.parse(raw) : [];
     try {
       saveLocalChat(conversationId, [...current, item]);
-      if (activeBot) notify("Media saved in this browser. Computer bots reply to text commands.");
+      if (activePerson) {
+        const channel = supabase.channel("blink-user:" + activePerson.id, { config: { private: true } });
+        const result = await channel.send({
+          type: "broadcast",
+          event: "blink",
+          payload: {
+            kind: "media",
+            id: item.id,
+            sender_id: me,
+            recipient_id: activePerson.id,
+            media_path: dataUrl,
+            message_type: type,
+            created_at: item.created_at,
+            expires_at: item.expires_at
+          }
+        });
+        await supabase.removeChannel(channel);
+        if (result === "error") notify("Media could not be delivered. The friend may be offline.");
+      } else if (activeBot) {
+        notify("Media saved in this browser. Character chats reply to text.");
+      }
     } catch {
       notify("Browser storage is full. Delete older local chats or media.");
     }
@@ -766,6 +857,27 @@ export default function BlinkApp({ email }: { email: string }) {
       const raw = window.localStorage.getItem(localSnapKey());
       const current: Snap[] = raw ? JSON.parse(raw) : [];
       window.localStorage.setItem(localSnapKey(), JSON.stringify([...current, snap]));
+      for (const recipientId of selectedRecipients) {
+        const channel = supabase.channel("blink-user:" + recipientId, { config: { private: true } });
+        const result = await channel.send({
+          type: "broadcast",
+          event: "blink",
+          payload: {
+            kind: "snap",
+            id: snap.id,
+            sender_id: me,
+            recipient_id: recipientId,
+            media_path: snap.media_path,
+            media_type: snap.media_type,
+            caption: snap.caption,
+            duration_seconds: snap.duration_seconds,
+            created_at: snap.created_at,
+            expires_at: snap.expires_at
+          }
+        });
+        await supabase.removeChannel(channel);
+        if (result === "error") notify("A Snap could not be delivered to one or more recipients.");
+      }
       setSnapPreview("");
       setSnapCaption("");
       setSelectedRecipients([]);
