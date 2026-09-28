@@ -297,7 +297,10 @@ export default function BlinkApp({ email }: { email: string }) {
       setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
       setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "seen");
       loadBots();
-      await supabase.realtime.setAuth();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.access_token) {
+        await supabase.realtime.setAuth(sessionData.session.access_token);
+      }
       const channel = supabase
         .channel("blink-user:" + user.id, { config: { private: true } })
         .on("broadcast", { event: "blink" }, (event: any) => {
