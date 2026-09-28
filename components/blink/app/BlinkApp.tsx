@@ -487,7 +487,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
       {tab === "friends" && <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">USERNAME DIRECTORY</span><h1>Friends</h1></div></div>
-        <input className="blink-search" value={query} onChange={(e) => findUserId(e.target.value)} placeholder="Search people by username…" />
+        <input className="blink-search" value={query} onChange={(e) => findUser(e.target.value)} placeholder="Search people by username…" />
         {requests.length > 0 && <div className="blink-request-box"><b>Friend requests</b>{requests.map((p) =>
           <div key={p.id}><Avatar id={p.id} /><span>{p.username || shortId(p.id)}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => declineRequest(p)}>Decline</button></div>
         )}</div>}
