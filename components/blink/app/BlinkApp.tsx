@@ -403,18 +403,23 @@ export default function BlinkApp({ email }: { email: string }) {
       setDisplayName(name);
       setSettingsName(name);
 
-      const { data: adminRecord } = await supabase
+      const { data: adminRecord, error: adminRoleError } = await supabase
         .from("blink_admins")
         .select("role, permissions, enabled")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (adminRecord?.enabled && (adminRecord.role === "owner" || adminRecord.role === "admin")) {
+      if (adminRoleError) {
+        console.error("BLINK admin role lookup failed:", adminRoleError);
+        setAdminRole(null);
+        setAdminPermissions({});
+      } else if (adminRecord?.enabled && (adminRecord.role === "owner" || adminRecord.role === "admin")) {
         setAdminRole(adminRecord.role);
         setAdminPermissions((adminRecord.permissions ?? {}) as Record<string, boolean>);
       } else {
         setAdminRole(null);
         setAdminPermissions({});
       }
+      setAdminAccessChecked(true);
 
       const storedAppearance = window.localStorage.getItem("blink_appearance_" + user.id);
       const storedGhost = window.localStorage.getItem("blink_ghost_mode_" + user.id);
