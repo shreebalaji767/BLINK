@@ -678,7 +678,7 @@ export default function BlinkApp({ email }: { email: string }) {
                 if (capabilities?.torch) { await track?.applyConstraints({ advanced: [{ torch: !flashOn }] } as any); setFlashOn(!flashOn); }
                 else notify("Flash/torch is not available on this device.");
               }}>⚡</button>
-              <button onClick={() => setCameraFacing(cameraFacing === "user" ? "environment" : "user").then?.(() => undefined)}>↔</button>
+              <button onClick={() => { stopCamera(); setCameraFacing(cameraFacing === "user" ? "environment" : "user"); window.setTimeout(startCamera, 120); }}>↔</button>
               <button onClick={() => setCameraFilter(cameraFilter === "normal" ? "mono" : cameraFilter === "mono" ? "sepia" : cameraFilter === "sepia" ? "vivid" : cameraFilter === "vivid" ? "cool" : "normal")}>✦</button>
               <button onClick={() => setCameraLens(cameraLens === "none" ? "hearts" : cameraLens === "hearts" ? "dog" : cameraLens === "dog" ? "crown" : cameraLens === "crown" ? "alien" : "none")}>◎</button>
               <button onClick={() => snapFileRef.current?.click()}>▣</button>
