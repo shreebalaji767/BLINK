@@ -879,7 +879,7 @@ export default function BlinkApp({ email }: { email: string }) {
       window.localStorage.setItem(localStoriesKey(me), JSON.stringify(next));
       setStories(next);
       setStoryFile(null);
-      notify("Story saved only in this browser for 24 hours.");
+      notify("Story saved only in this browser for " + storyRetention + ".");
     } catch {
       notify("Browser storage is full. Delete older local content first.");
     }
