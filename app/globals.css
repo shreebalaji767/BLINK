@@ -192,3 +192,20 @@ html[data-theme="light"] video {
 .blink-options-button{font-weight:800;letter-spacing:.04em;min-width:112px}.blink-admin-user-actions{position:relative}.blink-admin-user-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;display:grid;min-width:190px;padding:6px;background:#171a22;border:1px solid #3a4050;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45)}.blink-admin-user-menu button{width:100%;text-align:left;border:0!important;background:transparent!important;padding:10px 12px;border-radius:8px}.blink-admin-user-menu button:hover{background:#252a35!important}.blink-admin-user-menu button.danger{color:#ff8d9a}
 
 .blink-admin-user-protected{padding:10px 12px;color:#aeb6c8;font-weight:800;font-size:.86rem;white-space:nowrap}
+
+.blink-platform-controls{overflow:hidden}
+.blink-platform-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.blink-platform-control{display:grid;grid-template-columns:38px 1fr auto;grid-template-rows:auto auto;align-items:center;gap:4px 10px;padding:14px;border:1px solid #303646;border-radius:16px;background:linear-gradient(145deg,#171a22,#11141b);cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.blink-platform-control:hover{transform:translateY(-2px);border-color:#596174;box-shadow:0 10px 28px rgba(0,0,0,.25)}
+.blink-platform-control-icon{grid-row:1/3;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#242936;font-size:20px}
+.blink-platform-control-copy{display:grid;gap:3px;min-width:0}
+.blink-platform-control-copy b{font-size:13px}
+.blink-platform-control-copy small{font-size:11px;color:#929bad;line-height:1.25}
+.blink-platform-control input{appearance:none;width:42px;height:24px;border-radius:999px;background:#3a4050;position:relative;cursor:pointer;outline:0;transition:.18s}
+.blink-platform-control input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#f5f7fb;transition:.18s;box-shadow:0 2px 5px rgba(0,0,0,.35)}
+.blink-platform-control input:checked{background:#5f67ff}
+.blink-platform-control input:checked::after{transform:translateX(18px)}
+.blink-platform-control input:disabled{opacity:.55;cursor:not-allowed}
+.blink-platform-status{grid-column:2/4;font-size:9px;font-weight:900;letter-spacing:.12em;color:#8f96a8}
+@media (max-width:900px){.blink-platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.blink-platform-grid{grid-template-columns:1fr}}
