@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/blink/auth/SignOutButton";
 
 type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile" | "admin";
-type Person = { id: string; username: string; online?: boolean };
+type Person = { id: string; username: string; online?: boolean; role?: "owner" | "admin" | null };
 type Message = {
   id: string; conversation_id: string; sender_id: string | null;
   body: string | null; media_path: string | null; message_type: string; created_at: string; expires_at: string;
@@ -21,6 +21,15 @@ function shortId(id: string) {
 
 function Avatar({ id, emoji, large = false }: { id?: string; emoji?: string; large?: boolean }) {
   return <span className={"blink-avatar " + (large ? "large" : "")}>{emoji ?? shortId(id ?? "?").slice(0, 2).toUpperCase()}</span>;
+}
+
+function RoleBadge({ role }: { role?: "owner" | "admin" | null }) {
+  if (!role) return null;
+  return (
+    <span className={"blink-role-badge blink-role-" + role} title={role === "owner" ? "BLINK Owner" : "BLINK Admin"}>
+      {role === "owner" ? "👑 OWNER" : "🛡️ ADMIN"}
+    </span>
+  );
 }
 
 export default function BlinkApp({ email }: { email: string }) {
@@ -129,6 +138,17 @@ export default function BlinkApp({ email }: { email: string }) {
     window.setTimeout(() => setToast(""), 2400);
   }
 
+  async function loadMyAdminRole(userId: string) {
+    const { data } = await supabase.from("blink_admins").select("role, permissions, enabled").eq("user_id", userId).maybeSingle();
+    if (!data?.enabled) {
+      setAdminRole(null);
+      setAdminPermissions({});
+      return;
+    }
+    setAdminRole(data.role === "owner" || data.role === "admin" ? data.role : null);
+    setAdminPermissions((data.permissions ?? {}) as Record<string, boolean>);
+  }
+
   async function loadFriends(userId: string) {
     const [{ data: accepted, error: acceptedError }, { data: incoming, error: incomingError }, { data: sent, error: sentError }] = await Promise.all([
       supabase.from("friendships").select("requester_id,addressee_id").eq("status", "accepted")
@@ -149,6 +169,8 @@ export default function BlinkApp({ email }: { email: string }) {
       ...(sent ?? []).map((r: { addressee_id: string }) => r.addressee_id)
     ])];
     const names = new Map(directory.map((p) => [p.id, p.username]));
+    const roleMap = await loadUserRoles(allIds);
+    const roleFor = (id: string) => roleMap.get(id) ?? null;
     if (allIds.length) {
       const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", allIds);
       (profiles ?? []).forEach((p: { id: string; username: string }) => names.set(p.id, p.username));
@@ -160,9 +182,15 @@ export default function BlinkApp({ email }: { email: string }) {
         });
       }
     }
-    setFriends(ids.map((id: string) => ({ id, username: names.get(id) ?? "" })));
-    setRequests((incoming ?? []).map((r: { requester_id: string }) => ({ id: r.requester_id, username: names.get(r.requester_id) ?? "" })));
-    setOutgoing((sent ?? []).map((r: { addressee_id: string }) => ({ id: r.addressee_id, username: names.get(r.addressee_id) ?? "" })));
+    setFriends(ids.map((id: string) => ({ id, username: names.get(id) ?? "", role: roleFor(id) })));
+    setRequests((incoming ?? []).map((r: { requester_id: string }) => ({ id: r.requester_id, username: names.get(r.requester_id) ?? "", role: roleFor(r.requester_id) })));
+    setOutgoing((sent ?? []).map((r: { addressee_id: string }) => ({ id: r.addressee_id, username: names.get(r.addressee_id) ?? "", role: roleFor(r.addressee_id) })));
+  }
+
+  async function loadUserRoles(ids: string[]) {
+    if (!ids.length) return new Map<string, "owner" | "admin">();
+    const { data } = await supabase.from("blink_admins").select("user_id, role").in("user_id", ids).eq("enabled", true);
+    return new Map((data ?? []).map((row: { user_id: string; role: "owner" | "admin" }) => [row.user_id, row.role]));
   }
 
   async function loadBlocked(userId: string) {
@@ -444,7 +472,7 @@ export default function BlinkApp({ email }: { email: string }) {
         })
         .subscribe();
       publicStoryChannelRef.current = publicStoryChannel;
-      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id)]);
+      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id), loadMyAdminRole(user.id)]);
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
