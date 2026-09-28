@@ -409,7 +409,7 @@ export default function BlinkApp({ email }: { email: string }) {
             <button className="blink-primary" onClick={startCamera}>Enable camera</button>
             <button className="blink-button secondary" onClick={() => snapFileRef.current?.click()}>Choose from gallery</button>
           </div>}
-          <input ref={snapFileRef} type="file" accept="image/*,video/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          <input ref={snapFileRef} type="file" accept="image/*,video/*" capture="user" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => {
             const f = e.target.files?.[0]; if (f) prepareSnap(f);
           }} />
         </div>
@@ -461,7 +461,7 @@ export default function BlinkApp({ email }: { email: string }) {
                 <button onClick={() => chatFileRef.current?.click()}>＋</button>
                 <input value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendText()} placeholder={activeBot ? "Talk to the computer…" : "Send a message…"} />
                 <button onClick={sendText}>➤</button>
-                <input ref={chatFileRef} hidden type="file" accept="image/*,video/*,audio/*" onChange={(e) => {
+                <input ref={chatFileRef} hidden type="file" accept="image/*,video/*,audio/*" capture="environment" onChange={(e) => {
                   const f = e.target.files?.[0]; if (f) sendChatFile(f);
                 }} />
               </div>
@@ -493,7 +493,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
       {tab === "stories" && <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">24 HOURS THEN DELETED</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
-        <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" onChange={(e) => {
+        <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" capture="environment" onChange={(e) => {
           const f = e.target.files?.[0]; if (f) { setStoryFile(f); notify("Story ready."); }
         }} />
         {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b><button className="blink-primary" onClick={publishStory} disabled={busy}>Post 24h Story</button></div>}
