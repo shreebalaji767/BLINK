@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/blink/auth/SignOutButton";
 
 type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile" | "admin";
-type Person = { id: string; username: string; avatar_emoji?: string | null; online?: boolean; role?: "owner" | "admin" | null };
+type Person = { id: string; username: string; avatar_emoji?: string | null; online?: boolean; role?: "owner" | "admin" | null };\ntype AdminUser = { id: string; email: string; username: string; avatar_emoji?: string | null; created_at: string; last_sign_in_at?: string | null; banned_until?: string | null; role?: "owner" | "admin" | null; admin_enabled: boolean; permissions: Record<string, boolean> };
 type Message = {
   id: string; conversation_id: string; sender_id: string | null;
   body: string | null; media_path: string | null; message_type: string; created_at: string; expires_at: string;
@@ -70,6 +70,13 @@ export default function BlinkApp({ email }: { email: string }) {
     enabledAdmins: 0
   });
   const [ownerDashboardBusy, setOwnerDashboardBusy] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [adminUsersBusy, setAdminUsersBusy] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserUsername, setNewUserUsername] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [adminUserSearch, setAdminUserSearch] = useState("");
   const [settingsEmail, setSettingsEmail] = useState(email);
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
@@ -530,7 +537,12 @@ export default function BlinkApp({ email }: { email: string }) {
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
-        if (adminRecord?.enabled && adminRecord.role === "owner") await loadOwnerMetrics(user.id, "owner");
+        if (adminRecord?.enabled && (adminRecord.role === "owner" || adminRecord.role === "admin")) {
+          if (adminRecord.role === "owner" || (adminRecord.permissions ?? {}).manage_users === true) {
+            await loadAdminUsers();
+          }
+          if (adminRecord.role === "owner") await loadOwnerMetrics(user.id, "owner");
+        }
       }
     }
     initialize();
@@ -548,6 +560,83 @@ export default function BlinkApp({ email }: { email: string }) {
       }
     };
   }, []);
+
+  async function loadAdminUsers() {
+    if (!me || !adminRole) return;
+    const canManage = adminRole === "owner" || adminPermissions.manage_users === true;
+    if (!canManage) return;
+    setAdminUsersBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("blink-admin-users", { body: { action: "list" } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setAdminUsers((data?.users ?? []) as AdminUser[]);
+    } catch (error) {
+      console.error("BLINK admin user list failed:", error);
+      notify(error instanceof Error ? error.message : "Could not load users.");
+    } finally {
+      setAdminUsersBusy(false);
+    }
+  }
+
+  async function adminUserAction(action: "ban" | "unban" | "delete" | "promote" | "demote", user: AdminUser) {
+    if (user.id === me && ["ban", "delete", "demote"].includes(action)) {
+      notify("You cannot perform this action on your own owner account.");
+      return;
+    }
+    const labels: Record<string, string> = {
+      ban: "ban", unban: "unban", delete: "permanently remove", promote: "promote to Admin", demote: "demote from Admin"
+    };
+    if (!window.confirm("Are you sure you want to " + labels[action] + " @" + (user.username || user.email) + "?")) return;
+    setAdminUsersBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("blink-admin-users", {
+        body: { action, user_id: user.id }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      notify("User " + labels[action] + "d successfully.");
+      await Promise.all([loadAdminUsers(), adminRole === "owner" ? loadOwnerMetrics() : Promise.resolve()]);
+    } catch (error) {
+      console.error("BLINK admin user action failed:", error);
+      notify(error instanceof Error ? error.message : "Admin action failed.");
+    } finally {
+      setAdminUsersBusy(false);
+    }
+  }
+
+  async function createAdminUser() {
+    if (adminRole !== "owner") return notify("Only an Owner can add users.");
+    setAdminUsersBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("blink-admin-users", {
+        body: {
+          action: "create",
+          email: newUserEmail.trim().toLowerCase(),
+          username: newUserUsername.trim().toLowerCase(),
+          password: newUserPassword,
+          name: newUserName.trim()
+        }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setNewUserEmail("");
+      setNewUserUsername("");
+      setNewUserPassword("");
+      setNewUserName("");
+      notify("BLINK user created.");
+      await Promise.all([loadAdminUsers(), loadOwnerMetrics()]);
+    } catch (error) {
+      console.error("BLINK admin user creation failed:", error);
+      notify(error instanceof Error ? error.message : "Could not create user.");
+    } finally {
+      setAdminUsersBusy(false);
+    }
+  }
+
+  function adminUserIsBanned(user: AdminUser) {
+    return !!user.banned_until && new Date(user.banned_until).getTime() > Date.now();
+  }
 
   async function loadOwnerMetrics(userId = me, role = adminRole) {
     if (!userId || role !== "owner") return;
@@ -1562,6 +1651,61 @@ export default function BlinkApp({ email }: { email: string }) {
             <small>Owner/Admin privileges are for platform administration and non-content metadata. They do not create a backdoor into private chats, private Stories, friends-only Stories or recipient-only Snaps. A public Story is intentionally viewable by authenticated BLINK users.</small>
           </div>
 
+          <div className="blink-settings-section blink-admin-management">
+            <div className="blink-admin-management-head">
+              <div>
+                <span className="blink-eyebrow">USER MANAGEMENT</span>
+                <h2>Users</h2>
+                <small>Manage BLINK accounts without accessing private chats, Snaps or Stories.</small>
+              </div>
+              <button className="blink-button secondary" onClick={() => loadAdminUsers()} disabled={adminUsersBusy}>{adminUsersBusy ? "Working…" : "Refresh users"}</button>
+            </div>
+
+            {adminRole === "owner" && <div className="blink-admin-add-user">
+              <span className="blink-eyebrow">ADD USER</span>
+              <div className="blink-admin-form-grid">
+                <input className="blink-search" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} placeholder="Name" />
+                <input className="blink-search" type="email" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} placeholder="Email" />
+                <input className="blink-search" value={newUserUsername} onChange={(e) => setNewUserUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="Username" />
+                <input className="blink-search" type="password" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} placeholder="Temporary password (8+ chars)" />
+              </div>
+              <button className="blink-primary" onClick={createAdminUser} disabled={adminUsersBusy}>＋ Add user</button>
+              <small>The account is created with a confirmed email. Give the user the temporary password securely.</small>
+            </div>}
+
+            <input className="blink-search" value={adminUserSearch} onChange={(e) => setAdminUserSearch(e.target.value)} placeholder="Search users by username or email…" />
+            <div className="blink-admin-user-list">
+              {adminUsers
+                .filter((u) => {
+                  const q = adminUserSearch.trim().toLowerCase();
+                  return !q || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+                })
+                .map((u) => {
+                  const banned = adminUserIsBanned(u);
+                  const isSelf = u.id === me;
+                  return <div className="blink-admin-user-row" key={u.id}>
+                    <div className="blink-user-inline">
+                      <Avatar id={u.id} emoji={u.avatar_emoji} />
+                      <div className="blink-admin-user-copy">
+                        <b>{u.username ? "@" + u.username : u.email} <RoleBadge role={u.role ?? null} /></b>
+                        <small>{u.email || "No email"} · joined {new Date(u.created_at).toLocaleDateString()}</small>
+                        <small>{banned ? "🚫 BANNED" : "● Active"}{u.last_sign_in_at ? " · last sign-in " + new Date(u.last_sign_in_at).toLocaleDateString() : ""}</small>
+                      </div>
+                    </div>
+                    <div className="blink-admin-user-actions">
+                      {banned
+                        ? <button onClick={() => adminUserAction("unban", u)} disabled={adminUsersBusy || isSelf}>Unban</button>
+                        : <button onClick={() => adminUserAction("ban", u)} disabled={adminUsersBusy || isSelf}>Ban</button>}
+                      {adminRole === "owner" && !u.role && <button onClick={() => adminUserAction("promote", u)} disabled={adminUsersBusy}>Promote</button>}
+                      {adminRole === "owner" && u.role === "admin" && <button onClick={() => adminUserAction("demote", u)} disabled={adminUsersBusy}>Demote</button>}
+                      <button className="danger" onClick={() => adminUserAction("delete", u)} disabled={adminUsersBusy || isSelf}>Remove</button>
+                    </div>
+                  </div>;
+                })}
+              {!adminUsers.length && <div className="blink-empty">{adminUsersBusy ? "Loading users…" : "No users found."}</div>}
+            </div>
+          </div>
+
           <div className="blink-settings-section">
             <span className="blink-eyebrow">OWNER PRIVILEGES</span>
             <div className="blink-setting-readonly"><span>Admin management</span><b>Full</b></div>
@@ -1570,6 +1714,31 @@ export default function BlinkApp({ email }: { email: string }) {
           </div>
         </> : <>
           <p className="blink-feature-note">Your Admin access is limited to permissions explicitly granted by an Owner.</p>
+          {adminPermissions.manage_users && <div className="blink-settings-section blink-admin-management">
+            <div className="blink-admin-management-head">
+              <div><span className="blink-eyebrow">USER MANAGEMENT</span><h2>Users</h2><small>You can moderate accounts, but only the Owner can promote or demote administrators.</small></div>
+              <button className="blink-button secondary" onClick={() => loadAdminUsers()} disabled={adminUsersBusy}>{adminUsersBusy ? "Working…" : "Refresh users"}</button>
+            </div>
+            <input className="blink-search" value={adminUserSearch} onChange={(e) => setAdminUserSearch(e.target.value)} placeholder="Search users…" />
+            <div className="blink-admin-user-list">
+              {adminUsers.filter((u) => {
+                const q = adminUserSearch.trim().toLowerCase();
+                return !q || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+              }).map((u) => {
+                const banned = adminUserIsBanned(u);
+                return <div className="blink-admin-user-row" key={u.id}>
+                  <div className="blink-user-inline"><Avatar id={u.id} emoji={u.avatar_emoji} /><div className="blink-admin-user-copy"><b>{u.username ? "@" + u.username : u.email} <RoleBadge role={u.role ?? null} /></b><small>{u.email}</small><small>{banned ? "🚫 BANNED" : "● Active"}</small></div></div>
+                  <div className="blink-admin-user-actions">
+                    {banned ? <button onClick={() => adminUserAction("unban", u)} disabled={adminUsersBusy}>Unban</button> : <button onClick={() => adminUserAction("ban", u)} disabled={adminUsersBusy}>Ban</button>}
+                    {!u.role && <button onClick={() => adminUserAction("promote", u)} disabled>Promote</button>}
+                    {u.role === "admin" && <button onClick={() => adminUserAction("demote", u)} disabled>Demote</button>}
+                    <button className="danger" onClick={() => adminUserAction("delete", u)} disabled={adminUsersBusy}>Remove</button>
+                  </div>
+                </div>;
+              })}
+            </div>
+          </div>}
+
           <div className="blink-settings-section">
             <span className="blink-eyebrow">GRANTED PERMISSIONS</span>
             {Object.keys(adminPermissions).filter((key) => adminPermissions[key]).length
@@ -1694,3 +1863,18 @@ export default function BlinkApp({ email }: { email: string }) {
     {toast && <div className="blink-toast" role="status">{toast}</div>}
   </main>;
 }
+.blink-admin-management{display:grid;gap:14px}
+.blink-admin-management h2{margin:3px 0;font-size:28px;letter-spacing:-.04em}
+.blink-admin-management-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.blink-admin-add-user{display:grid;gap:10px;padding:14px;border:1px solid #303542;border-radius:16px;background:rgba(255,255,255,.025)}
+.blink-admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.blink-admin-form-grid .blink-search{margin:0}
+.blink-admin-user-list{display:grid;gap:8px}
+.blink-admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #2b303d;border-radius:16px;background:#101219}
+.blink-admin-user-copy{display:grid;gap:3px;min-width:0}
+.blink-admin-user-copy small{color:#858c9c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blink-admin-user-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.blink-admin-user-actions button{border:1px solid #303542;background:#181b23;color:#fff;border-radius:10px;padding:8px 10px}
+.blink-admin-user-actions button.danger{border-color:#63333b}
+.blink-admin-user-actions button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:700px){.blink-admin-form-grid{grid-template-columns:1fr}.blink-admin-management-head{align-items:flex-start;flex-direction:column}.blink-admin-user-row{align-items:flex-start;flex-direction:column}.blink-admin-user-actions{width:100%;justify-content:flex-start}.blink-admin-user-actions button{flex:1}}
