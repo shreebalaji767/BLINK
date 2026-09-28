@@ -78,6 +78,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
   const [adminUserSearch, setAdminUserSearch] = useState("");
+  const [adminUserMenu, setAdminUserMenu] = useState<string | null>(null);
   const [settingsEmail, setSettingsEmail] = useState(email);
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
@@ -1692,12 +1693,15 @@ export default function BlinkApp({ email }: { email: string }) {
                       </div>
                     </div>
                     <div className="blink-admin-user-actions">
-                      {banned
-                        ? <button onClick={() => adminUserAction("unban", u)} disabled={adminUsersBusy || isSelf}>Unban</button>
-                        : <button onClick={() => adminUserAction("ban", u)} disabled={adminUsersBusy || isSelf}>Ban</button>}
-                      {adminRole === "owner" && !u.role && <button onClick={() => adminUserAction("promote", u)} disabled={adminUsersBusy}>Promote</button>}
-                      {adminRole === "owner" && u.role === "admin" && <button onClick={() => adminUserAction("demote", u)} disabled={adminUsersBusy}>Demote</button>}
-                      <button className="danger" onClick={() => adminUserAction("delete", u)} disabled={adminUsersBusy || isSelf}>Remove</button>
+                      <button className="blink-options-button" onClick={() => setAdminUserMenu(adminUserMenu === u.id ? null : u.id)} disabled={adminUsersBusy}>OPTIONS ▾</button>
+                      {adminUserMenu === u.id && <div className="blink-admin-user-menu">
+                        {banned
+                          ? <button onClick={() => { setAdminUserMenu(null); adminUserAction("unban", u); }} disabled={isSelf}>✅ Unban user</button>
+                          : <button onClick={() => { setAdminUserMenu(null); adminUserAction("ban", u); }} disabled={isSelf}>🚫 Ban user</button>}
+                        {adminRole === "owner" && !u.role && <button onClick={() => { setAdminUserMenu(null); adminUserAction("promote", u); }}>🛡️ Promote to Admin</button>}
+                        {adminRole === "owner" && u.role === "admin" && <button onClick={() => { setAdminUserMenu(null); adminUserAction("demote", u); }}>⬇️ Demote Admin</button>}
+                        <button className="danger" onClick={() => { setAdminUserMenu(null); adminUserAction("delete", u); }} disabled={isSelf}>🗑️ Remove user</button>
+                      </div>}
                     </div>
                   </div>;
                 })}
