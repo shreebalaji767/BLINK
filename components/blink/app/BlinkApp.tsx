@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/blink/auth/SignOutButton";
 
-type Tab = "camera" | "chat" | "friends" | "stories" | "map" | "profile";
+type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile";
 type Person = { id: string; username: string; online?: boolean };
 type Bot = { id: string; bot_key: string; display_name: string; avatar_emoji: string };
 type Message = {
@@ -40,6 +40,22 @@ export default function BlinkApp({ email }: { email: string }) {
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
   const [ghostMode, setGhostMode] = useState(true);
+  const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("user");
+  const [cameraFilter, setCameraFilter] = useState<"normal" | "mono" | "sepia" | "vivid" | "cool">("normal");
+  const [cameraLens, setCameraLens] = useState<"none" | "hearts" | "dog" | "crown" | "alien">("none");
+  const [cameraZoom, setCameraZoom] = useState(1);
+  const [snapTimer, setSnapTimer] = useState(0);
+  const [flashOn, setFlashOn] = useState(false);
+  const [spotlight, setSpotlight] = useState<any[]>([]);
+  const [memoryItems, setMemoryItems] = useState<any[]>([]);
+  const [memoryPrivate, setMemoryPrivate] = useState(false);
+  const [memoryPasscode, setMemoryPasscode] = useState("");
+  const [memoryUnlocked, setMemoryUnlocked] = useState(false);
+  const [groupTitle, setGroupTitle] = useState("");
+  const [groupMembers, setGroupMembers] = useState<string[]>([]);
+  const [recordingVoice, setRecordingVoice] = useState(false);
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [directory, setDirectory] = useState<Person[]>([]);
   const [outgoing, setOutgoing] = useState<Person[]>([]);
@@ -114,6 +130,123 @@ export default function BlinkApp({ email }: { email: string }) {
     setSnaps(s ?? []);
   }
 
+  async function loadSpotlight() {
+    const { data } = await supabase.from("spotlight_posts").select("*").order("created_at", { ascending: false }).limit(60);
+    setSpotlight(data ?? []);
+  }
+
+  function loadMemories() {
+    try {
+      const raw = window.localStorage.getItem("blink_memories");
+      setMemoryItems(raw ? JSON.parse(raw) : []);
+    } catch { setMemoryItems([]); }
+  }
+
+  function saveMemoryLocal(dataUrl: string, type: string, privateOnly = false) {
+    const item = { id: crypto.randomUUID(), dataUrl, type, createdAt: new Date().toISOString(), privateOnly };
+    const next = [item, ...memoryItems].slice(0, 100);
+    try {
+      window.localStorage.setItem("blink_memories", JSON.stringify(next));
+      setMemoryItems(next);
+      notify(privateOnly ? "Saved to My Eyes Only on this device." : "Saved to Memories on this device.");
+    } catch {
+      notify("Memory storage is full. Delete an old Memory first.");
+    }
+  }
+
+  async function fileToDataUrl(file: File) {
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function saveCurrentSnapToMemory(privateOnly = false) {
+    const file = (window as any).__blinkSnapFile as File | undefined;
+    if (!file) return notify("Take or choose a Snap first.");
+    if (file.size > 4 * 1024 * 1024) return notify("For browser Memories, choose a file under 4 MB.");
+    const dataUrl = await fileToDataUrl(file);
+    saveMemoryLocal(dataUrl, file.type, privateOnly);
+  }
+
+  async function publishSpotlight() {
+    const file = (window as any).__blinkSnapFile as File | undefined;
+    if (!file || !me) return notify("Take a Snap first.");
+    setBusy(true);
+    const id = crypto.randomUUID();
+    const path = me + "/spotlight/" + id;
+    const { error: uploadError } = await supabase.storage.from("blink-ephemeral").upload(path, file, { contentType: file.type });
+    if (uploadError) { setBusy(false); return notify(uploadError.message); }
+    const { error } = await supabase.from("spotlight_posts").insert({
+      id, user_id: me, media_path: path, media_type: file.type.startsWith("video/") ? "video" : "image", caption: snapCaption
+    });
+    setBusy(false);
+    if (error) notify(error.message);
+    else { await loadSpotlight(); notify("Posted to Spotlight."); }
+  }
+
+  async function toggleSpotlightLike(postId: string) {
+    const { data: existing } = await supabase.from("spotlight_likes").select("post_id").eq("post_id", postId).eq("user_id", me).maybeSingle();
+    if (existing) await supabase.from("spotlight_likes").delete().eq("post_id", postId).eq("user_id", me);
+    else await supabase.from("spotlight_likes").insert({ post_id: postId, user_id: me });
+    await loadSpotlight();
+  }
+
+  async function createGroup() {
+    const members = [...new Set([me, ...groupMembers])];
+    if (members.length < 3) return notify("Select at least two friends for a group.");
+    if (!groupTitle.trim()) return notify("Enter a group name.");
+    const { data: group, error } = await supabase.from("conversations").insert({ kind: "group", created_by: me, title: groupTitle.trim() }).select("id").single();
+    if (error || !group) return notify(error?.message ?? "Could not create group.");
+    const { error: memberError } = await supabase.from("conversation_members").insert(members.map(user_id => ({ conversation_id: group.id, user_id })));
+    if (memberError) return notify(memberError.message);
+    setGroupTitle(""); setGroupMembers([]);
+    setConversationId(group.id); setActivePerson(null); setActiveBot(null); setTab("chat");
+    notify("Group chat created.");
+  }
+
+  async function startVoiceRecording() {
+    if (!conversationId || recordingVoice) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") return notify("Voice recording is not supported by this browser.");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size) voiceChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        const file = new File([blob], "voice.webm", { type: blob.type });
+        await sendChatFile(file);
+      };
+      voiceRecorderRef.current = recorder;
+      recorder.start();
+      setRecordingVoice(true);
+    } catch { notify("Microphone permission was not granted."); }
+  }
+
+  function stopVoiceRecording() {
+    voiceRecorderRef.current?.stop();
+    voiceRecorderRef.current = null;
+    setRecordingVoice(false);
+  }
+
+  async function reactToMessage(messageId: string, emoji: string) {
+    const { data: existing } = await supabase.from("message_reactions").select("emoji").eq("message_id", messageId).eq("user_id", me).maybeSingle();
+    if (existing) await supabase.from("message_reactions").delete().eq("message_id", messageId).eq("user_id", me);
+    else await supabase.from("message_reactions").insert({ message_id: messageId, user_id: me, emoji });
+    notify(existing ? "Reaction removed." : emoji + " reaction added.");
+  }
+
+  async function toggleSavedMessage(messageId: string) {
+    const { data: existing } = await supabase.from("saved_messages").select("message_id").eq("message_id", messageId).eq("user_id", me).maybeSingle();
+    if (existing) await supabase.from("saved_messages").delete().eq("message_id", messageId).eq("user_id", me);
+    else await supabase.from("saved_messages").insert({ message_id: messageId, user_id: me });
+    notify(existing ? "Message unsaved." : "Message saved.");
+  }
+
   async function loadBots() {
     const { data } = await supabase.from("bot_profiles").select("id,bot_key,display_name,avatar_emoji").eq("enabled", true).order("display_name");
     setBots((data ?? []) as Bot[]);
@@ -144,7 +277,8 @@ export default function BlinkApp({ email }: { email: string }) {
       }
       const { data: myProfile } = await supabase.from("profiles").select("username").eq("id", data.user.id).single();
       setMeUsername(myProfile?.username ?? "");
-      await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id), loadBots()]);
+      await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id), loadBots(), loadSpotlight()]);
+      loadMemories();
       const { data: allProfiles, error: profileError } = await supabase.from("profiles").select("id,username").order("username").limit(5000);
       if (profileError) notify(profileError.message);
       const loadedDirectory = (allProfiles ?? []).map((x: any) => ({ id: x.id, username: x.username })).filter((x: Person) => x.id !== data.user!.id);
@@ -391,7 +525,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
   async function startCamera() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cameraFacing }, audio: false });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraOn(true);
@@ -417,10 +551,15 @@ export default function BlinkApp({ email }: { email: string }) {
   async function captureSnap() {
     const video = videoRef.current;
     if (!video || !me) return;
+    if (snapTimer > 0) await new Promise(resolve => window.setTimeout(resolve, snapTimer * 1000));
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth || 1080;
     canvas.height = video.videoHeight || 1920;
-    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.filter = cameraFilter === "mono" ? "grayscale(1)" : cameraFilter === "sepia" ? "sepia(1)" : cameraFilter === "vivid" ? "saturate(1.7) contrast(1.08)" : cameraFilter === "cool" ? "hue-rotate(25deg) saturate(1.2)" : "none";
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
     if (blob) await prepareSnap(new File([blob], "camera.jpg", { type: "image/jpeg" }));
   }
@@ -472,7 +611,7 @@ export default function BlinkApp({ email }: { email: string }) {
     }
     const { error } = await supabase.from("stories").insert({
       id, user_id: me, media_path: path, media_type: storyFile.type.startsWith("video/") ? "video" : "image",
-      privacy: "friends", expires_at: new Date(Date.now() + 86400000).toISOString()
+      privacy: ((window as any).__blinkStoryPrivacy || "friends"), expires_at: new Date(Date.now() + 86400000).toISOString()
     });
     setBusy(false);
     if (error) notify(error.message);
@@ -503,14 +642,14 @@ export default function BlinkApp({ email }: { email: string }) {
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const nav: [Tab, string, string][] = [
     ["camera", "◉", "Camera"], ["chat", "◌", "Chat"], ["friends", "♙", "Friends"],
-    ["stories", "◫", "Stories"], ["map", "⌖", "Map"], ["profile", "●", "Account"]
+    ["stories", "◫", "Stories"], ["spotlight", "▷", "Spotlight"], ["map", "⌖", "Map"], ["memories", "▣", "Memories"], ["profile", "●", "Account"]
   ];
 
   return <main className="blink-app">
     <header className="blink-topbar">
       <button className="blink-brand" onClick={() => setTab("camera")}>BLINK</button>
       <div className="blink-top-actions">
-        <button className="blink-round" onClick={() => setTab("friends")}>⌕</button>
+        <button className="blink-round" onClick={() => setTab("friends")}>⌕</button><button className="blink-round" onClick={() => setTab("spotlight")}>▷</button><button className="blink-round" onClick={() => setTab("memories")}>▣</button>
         <button className="blink-round" onClick={() => notify(snaps.length ? snaps.length + " new Snap(s)" : "No new Snaps")}>♡</button>
         <SignOutButton />
       </div>
@@ -523,16 +662,32 @@ export default function BlinkApp({ email }: { email: string }) {
             <img src={snapPreview} alt="Snap preview" />
             <div className="blink-preview-actions">
               <button onClick={() => { setSnapPreview(""); (window as any).__blinkSnapFile = undefined; }}>Retake</button>
+              <button onClick={() => saveCurrentSnapToMemory(false)}>Save</button>
+              <button onClick={() => saveCurrentSnapToMemory(true)}>🔒 My Eyes Only</button>
+              <button onClick={publishSpotlight}>▷ Spotlight</button>
               <button className="blink-primary" onClick={sendSnap} disabled={busy}>Send Snap</button>
             </div>
           </div> : cameraOn ? <>
-            <video ref={videoRef} autoPlay playsInline muted className="blink-video" />
+            <video ref={videoRef} autoPlay playsInline muted className="blink-video" style={{ filter: cameraFilter === "mono" ? "grayscale(1)" : cameraFilter === "sepia" ? "sepia(1)" : cameraFilter === "vivid" ? "saturate(1.7) contrast(1.08)" : cameraFilter === "cool" ? "hue-rotate(25deg) saturate(1.2)" : "none", transform: `scale(${cameraZoom})` }} />
             <div className="blink-camera-gradient" />
+            {cameraLens !== "none" && <div className="blink-camera-lens" aria-hidden="true">{cameraLens === "hearts" ? "💗  💗" : cameraLens === "dog" ? "🐶" : cameraLens === "crown" ? "👑" : "👽"}</div>}
             <div className="blink-camera-toolbar">
-              <button onClick={() => notify("Flash is controlled by the device.")}>⚡</button>
-              <button onClick={() => notify("Effects are computer-safe and local.")}>✦</button>
+              <button className={flashOn ? "active" : ""} onClick={async () => {
+                const track = streamRef.current?.getVideoTracks()[0];
+                const capabilities = track?.getCapabilities?.() as any;
+                if (capabilities?.torch) { await track?.applyConstraints({ advanced: [{ torch: !flashOn }] } as any); setFlashOn(!flashOn); }
+                else notify("Flash/torch is not available on this device.");
+              }}>⚡</button>
+              <button onClick={() => setCameraFacing(cameraFacing === "user" ? "environment" : "user").then?.(() => undefined)}>↔</button>
+              <button onClick={() => setCameraFilter(cameraFilter === "normal" ? "mono" : cameraFilter === "mono" ? "sepia" : cameraFilter === "sepia" ? "vivid" : cameraFilter === "vivid" ? "cool" : "normal")}>✦</button>
+              <button onClick={() => setCameraLens(cameraLens === "none" ? "hearts" : cameraLens === "hearts" ? "dog" : cameraLens === "dog" ? "crown" : cameraLens === "crown" ? "alien" : "none")}>◎</button>
               <button onClick={() => snapFileRef.current?.click()}>▣</button>
               <button onClick={stopCamera}>×</button>
+            </div>
+            <div className="blink-camera-controls">
+              <button onClick={() => setCameraZoom(Math.max(1, Math.min(2, Number((cameraZoom + .25).toFixed(2)))))}>＋</button>
+              <button onClick={() => setCameraZoom(Math.max(1, Number((cameraZoom - .25).toFixed(2))))}>−</button>
+              <button onClick={() => setSnapTimer(snapTimer === 0 ? 3 : snapTimer === 3 ? 10 : 0)}>⏱ {snapTimer || "0"}s</button>
             </div>
             <button className="blink-shutter" onClick={captureSnap}><span /></button>
           </> : <div className="blink-camera-off">
@@ -558,7 +713,12 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
       {tab === "chat" && <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">EPHEMERAL CHAT</span><h1>Chat</h1></div><button className="blink-primary small" onClick={() => setTab("friends")}>＋ New chat</button></div>
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">EPHEMERAL CHAT</span><h1>Chat</h1></div><button className="blink-primary small" onClick={() => setTab("friends")}>＋ New chat</button><button className="blink-button secondary small" onClick={() => notify("Select friends below to create a group.")}>👥 Group</button></div>
+        <div className="blink-group-create">
+          <input className="blink-search" value={groupTitle} onChange={e => setGroupTitle(e.target.value)} placeholder="Group name" />
+          <div className="blink-group-members">{friends.map(f => <button key={f.id} className={groupMembers.includes(f.id) ? "selected" : ""} onClick={() => setGroupMembers(s => s.includes(f.id) ? s.filter(x => x !== f.id) : [...s, f.id])}>@{f.username}</button>)}</div>
+          <button className="blink-primary small" onClick={createGroup}>Create group</button>
+        </div>
         <div className="blink-chat-layout">
           <aside className="blink-chat-list">
             <div className="blink-bot-list"><b>COMPUTERS — NOT AI</b>{bots.map((b) =>
@@ -586,6 +746,7 @@ export default function BlinkApp({ email }: { email: string }) {
                     <div className={"blink-bubble " + (mine ? "mine" : "other")}>
                       {m.media_path ? "[" + m.message_type + " · disappearing]" : m.body}
                       {botProfile && <small className="blink-bot-tag">{botProfile.avatar_emoji} computer</small>}
+                      {!botProfile && <div className="blink-message-tools"><button onClick={() => reactToMessage(m.id, "❤️")}>❤️</button><button onClick={() => reactToMessage(m.id, "😂")}>😂</button><button onClick={() => toggleSavedMessage(m.id)}>🔖</button></div>}
                     </div>
                   </div>;
                 })}
@@ -593,6 +754,7 @@ export default function BlinkApp({ email }: { email: string }) {
               <div className="blink-composer">
                 <button onClick={() => chatFileRef.current?.click()}>＋</button>
                 <input value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendText()} placeholder={activeBot ? "Talk to the computer…" : "Send a message…"} />
+                <button onClick={recordingVoice ? stopVoiceRecording : startVoiceRecording}>{recordingVoice ? "■" : "🎙"}</button>
                 <button onClick={sendText}>➤</button>
                 <input ref={chatFileRef} hidden type="file" accept="image/*,video/*,audio/*" capture="environment" onChange={(e) => {
                   const f = e.target.files?.[0]; if (f) sendChatFile(f);
@@ -629,7 +791,7 @@ export default function BlinkApp({ email }: { email: string }) {
         <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" capture="environment" onChange={(e) => {
           const f = e.target.files?.[0]; if (f) { setStoryFile(f); notify("Story ready."); }
         }} />
-        {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b><button className="blink-primary" onClick={publishStory} disabled={busy}>Post 24h Story</button></div>}
+        {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b><select className="blink-search" defaultValue="friends" onChange={(e) => (window as any).__blinkStoryPrivacy = e.target.value}><option value="friends">My Story · Friends</option><option value="public">My Story · Public</option><option value="private">Private Story</option></select><button className="blink-primary" onClick={publishStory} disabled={busy}>Post Story</button></div>}
         <div className="blink-story-grid">{stories.map((s) =>
           <button key={s.id} className="blink-story-card" onClick={async () => { const u = await mediaUrl(s.media_path); if (u) window.open(u, "_blank", "noopener,noreferrer"); }}>
             <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div><b>{s.user_id === me ? "Your Story" : shortId(s.user_id)}</b><small>expires in 24h</small>
@@ -637,6 +799,30 @@ export default function BlinkApp({ email }: { email: string }) {
         )}</div>
       </div>}
 
+
+      {tab === "spotlight" && <div className="blink-panel">
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => setTab("camera")}>＋ Create</button></div>
+        <p className="blink-feature-note">A public short-video/photo feed for discovery. Posts can be liked and remain separate from private chats.</p>
+        <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
+          <div className="blink-spotlight-media">{p.media_path ? <button onClick={async()=>{const u=await mediaUrl(p.media_path); if(u) window.open(u,"_blank","noopener,noreferrer")}}>▶ Open Snap</button> : null}</div>
+          <div className="blink-spotlight-copy"><b>@{directory.find(x=>x.id===p.user_id)?.username || (p.user_id===me ? meUsername : "blink_user")}</b><span>{p.caption || "Spotlight post"}</span><button onClick={()=>toggleSpotlightLike(p.id)}>♡ Like</button></div>
+        </article>)}</div>
+        {!spotlight.length && <div className="blink-empty">No Spotlight posts yet. Create the first one from Camera.</div>}
+      </div>
+      {tab === "memories" && <div className="blink-panel">
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">PRIVATE ARCHIVE</span><h1>Memories</h1></div><button className="blink-primary small" onClick={() => (memoryPrivate ? setMemoryUnlocked(false) : setMemoryPrivate(false))}>{memoryUnlocked ? "Lock" : "My Eyes Only"}</button></div>
+        <div className="blink-memory-toolbar">
+          <input className="blink-search" type="password" value={memoryPasscode} onChange={e=>setMemoryPasscode(e.target.value)} placeholder="Device-only passcode for My Eyes Only" />
+          <button onClick={()=>{ if(memoryPasscode.length>=4){ setMemoryUnlocked(true); notify("Private Memories unlocked on this device."); } else notify("Use at least 4 characters."); }}>Unlock</button>
+          <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" onChange={async e=>{const f=e.target.files?.[0]; if(f && f.size<=4*1024*1024) saveMemoryLocal(await fileToDataUrl(f),f.type,false); else if(f) notify("Choose a file under 4 MB.");}} />
+          <button onClick={()=>storyFileRef.current?.click()}>＋ Import</button>
+        </div>
+        <small className="blink-feature-note">Memories are stored locally in this browser in this version. My Eyes Only is a local privacy feature; it is not a substitute for device encryption.</small>
+        <div className="blink-memory-grid">{memoryItems.filter(m=>!m.privateOnly || memoryUnlocked).map(m=><article key={m.id} className="blink-memory-card">
+          <img src={m.dataUrl} alt="Memory" /><div><small>{new Date(m.createdAt).toLocaleString()}</small><button onClick={()=>{const next=memoryItems.filter(x=>x.id!==m.id);setMemoryItems(next);window.localStorage.setItem("blink_memories",JSON.stringify(next));}}>Delete</button></div>
+        </article>)}</div>
+        {!memoryItems.length && <div className="blink-empty">Save a Snap to Memories to build your private archive.</div>}
+      </div>
       {tab === "map" && <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">NO LOCATION HISTORY</span><h1>Map</h1></div>
           <button className="blink-primary small" onClick={() => setGhostMode(!ghostMode)}>{ghostMode ? "Ghost Mode ON" : "Share temporarily"}</button>
