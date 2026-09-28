@@ -413,6 +413,14 @@ export default function BlinkApp({ email }: { email: string }) {
     const options = replies[bot.bot_key] || replies.warm;
     return options[Math.floor(Math.random() * options.length)];
   }
+  function openFriendChat(friend: { id: string; username?: string | null }) {
+    setActivePerson(friend);
+    setActiveBot(null);
+    setConversationId("friend:" + friend.id);
+    setTab("chat");
+    loadLocalChat("friend:" + friend.id);
+  }
+
   async function openBotChat(bot: Bot) {
     const localConversationId = "bot:" + bot.id;
     setActiveBot(bot);
