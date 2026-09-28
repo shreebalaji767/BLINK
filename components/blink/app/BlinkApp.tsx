@@ -91,6 +91,225 @@ export default function BlinkApp({ email }: { email: string }) {
     window.setTimeout(() => setToast(""), 2400);
   }
 
+  async function loadFriends(userId: string) {
+    const [{ data: accepted, error: acceptedError }, { data: incoming, error: incomingError }, { data: sent, error: sentError }] = await Promise.all([
+      supabase.from("friendships").select("requester_id,addressee_id").eq("status", "accepted")
+        .or("requester_id.eq." + userId + ",addressee_id.eq." + userId),
+      supabase.from("friendships").select("requester_id").eq("addressee_id", userId).eq("status", "pending"),
+      supabase.from("friendships").select("addressee_id").eq("requester_id", userId).eq("status", "pending")
+    ]);
+    if (acceptedError || incomingError || sentError) {
+      notify("Could not load your friend list.");
+      return;
+    }
+    const ids = (accepted ?? []).map((r: { requester_id: string; addressee_id: string }) =>
+      r.requester_id === userId ? r.addressee_id : r.requester_id
+    );
+    const allIds = [...new Set([
+      ...ids,
+      ...(incoming ?? []).map((r: { requester_id: string }) => r.requester_id),
+      ...(sent ?? []).map((r: { addressee_id: string }) => r.addressee_id)
+    ])];
+    const names = new Map(directory.map((p) => [p.id, p.username]));
+    if (allIds.length) {
+      const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", allIds);
+      (profiles ?? []).forEach((p: { id: string; username: string }) => names.set(p.id, p.username));
+      if (profiles?.length) {
+        setDirectory((current) => {
+          const merged = new Map(current.map((p) => [p.id, p]));
+          profiles.forEach((p: { id: string; username: string }) => merged.set(p.id, p));
+          return Array.from(merged.values());
+        });
+      }
+    }
+    setFriends(ids.map((id: string) => ({ id, username: names.get(id) ?? "" })));
+    setRequests((incoming ?? []).map((r: { requester_id: string }) => ({ id: r.requester_id, username: names.get(r.requester_id) ?? "" })));
+    setOutgoing((sent ?? []).map((r: { addressee_id: string }) => ({ id: r.addressee_id, username: names.get(r.addressee_id) ?? "" })));
+  }
+
+  async function loadBlocked(userId: string) {
+    const { data, error } = await supabase.from("blocks").select("blocked_id").eq("blocker_id", userId);
+    if (error) {
+      notify("Could not load your blocked list.");
+      return;
+    }
+    const ids = (data ?? []).map((x: { blocked_id: string }) => x.blocked_id);
+    if (!ids.length) return setBlocked([]);
+    const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", ids);
+    setBlocked(ids.map((id: string) => ({
+      id,
+      username: (profiles ?? []).find((p: { id: string }) => p.id === id)?.username ?? ""
+    })));
+  }
+
+  async function sendFriendRequest(person: Person) {
+    if (!me || person.id === me) return;
+    if (blocked.some((p) => p.id === person.id)) return notify("Unblock this person first.");
+    const { error } = await supabase.from("friendships").insert({ requester_id: me, addressee_id: person.id, status: "pending" });
+    if (error) {
+      notify(error.code === "23505" ? "A friend relationship already exists." : "Could not send the friend request.");
+      return;
+    }
+    await loadFriends(me);
+    notify("Friend request sent.");
+  }
+
+  async function respondToRequest(person: Person, status: "accepted") {
+    const { error } = await supabase.from("friendships").update({ status, updated_at: new Date().toISOString() })
+      .eq("requester_id", person.id).eq("addressee_id", me).eq("status", "pending");
+    if (error) return notify("Could not accept the friend request.");
+    await loadFriends(me);
+    notify("Friend request accepted.");
+  }
+
+  async function declineRequest(person: Person) {
+    const { error } = await supabase.from("friendships").delete()
+      .eq("requester_id", person.id).eq("addressee_id", me).eq("status", "pending");
+    if (error) return notify("Could not decline the friend request.");
+    await loadFriends(me);
+    notify("Friend request declined.");
+  }
+
+  async function cancelRequest(person: Person) {
+    const { error } = await supabase.from("friendships").delete()
+      .eq("requester_id", me).eq("addressee_id", person.id).eq("status", "pending");
+    if (error) return notify("Could not cancel the friend request.");
+    await loadFriends(me);
+    notify("Friend request cancelled.");
+  }
+
+  async function blockUser(person: Person) {
+    if (!me || person.id === me) return;
+    const { error } = await supabase.from("blocks").upsert({ blocker_id: me, blocked_id: person.id });
+    if (error) return notify("Could not block this person.");
+    await supabase.from("friendships").delete().or(
+      "and(requester_id.eq." + me + ",addressee_id.eq." + person.id + "),and(requester_id.eq." + person.id + ",addressee_id.eq." + me + ")"
+    );
+    await Promise.all([loadBlocked(me), loadFriends(me)]);
+    if (activePerson?.id === person.id) {
+      setActivePerson(null);
+      setConversationId("");
+      setMessages([]);
+    }
+    notify("Person blocked.");
+  }
+
+  async function unblockUser(person: Person) {
+    const { error } = await supabase.from("blocks").delete().eq("blocker_id", me).eq("blocked_id", person.id);
+    if (error) return notify("Could not unblock this person.");
+    await loadBlocked(me);
+    notify("Person unblocked.");
+  }
+
+  function saveAvatar(value: string) {
+    setAvatarEmoji(value);
+    window.localStorage.setItem("blink_avatar_" + me, value);
+  }
+
+  function saveGhostMode(value: boolean) {
+    setGhostMode(value);
+    window.localStorage.setItem("blink_ghost_mode_" + me, String(value));
+  }
+
+  function saveAppearance(value: "dark" | "light") {
+    setAppearance(value);
+    window.localStorage.setItem("blink_appearance_" + me, value);
+  }
+
+  async function saveProfileSettings() {
+    if (!me) return;
+    const username = settingsUsername.trim().toLowerCase();
+    const name = settingsName.trim();
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) return notify("Username must be 3–24 characters: lowercase letters, numbers, or underscore.");
+    if (name.length > 80) return notify("Name is too long.");
+    setSettingsBusy(true);
+    try {
+      const { error: profileError } = await supabase.from("profiles").update({ username }).eq("id", me);
+      if (profileError) return notify(profileError.code === "23505" ? "That username is already taken." : "Could not save username.");
+      const { error: authError } = await supabase.auth.updateUser({ data: { name, full_name: name } });
+      if (authError) return notify("Username saved, but display name could not be updated.");
+      setMeUsername(username);
+      setDisplayName(name);
+      setDirectory((current) => current.map((p) => p.id === me ? { ...p, username } : p));
+      notify("Profile saved.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function changeEmail() {
+    const nextEmail = settingsEmail.trim().toLowerCase();
+    if (!nextEmail || nextEmail === email.toLowerCase()) return notify("Enter a different email address.");
+    setSettingsBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: nextEmail });
+      notify(error ? "Could not start the email change." : "Check your email to confirm the change.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function changePassword() {
+    if (!currentPassword) return notify("Enter your current password.");
+    if (newPassword.length < 8) return notify("New password must be at least 8 characters.");
+    if (newPassword !== confirmPassword) return notify("New passwords do not match.");
+    setSettingsBusy(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentEmail = userData.user?.email;
+      if (!currentEmail) return notify("No email/password account was found.");
+      const { error: verifyError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: currentPassword });
+      if (verifyError) return notify("Current password is incorrect.");
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return notify("Could not change the password.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      notify("Password changed.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function initialize() {
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData.user;
+      if (!user || cancelled) return;
+      setMe(user.id);
+      setSettingsEmail(user.email ?? email);
+      const { data: profile } = await supabase.from("profiles").select("id, username").eq("id", user.id).maybeSingle();
+      if (cancelled) return;
+      const username = profile?.username ?? "";
+      const metadata = user.user_metadata ?? {};
+      const name = String(metadata.full_name ?? metadata.name ?? "");
+      setMeUsername(username);
+      setSettingsUsername(username);
+      setDisplayName(name);
+      setSettingsName(name);
+      const storedAppearance = window.localStorage.getItem("blink_appearance_" + user.id);
+      const storedGhost = window.localStorage.getItem("blink_ghost_mode_" + user.id);
+      setAvatarEmoji(window.localStorage.getItem("blink_avatar_" + user.id) || "3F");
+      setGhostMode(storedGhost === null ? true : storedGhost === "true");
+      setAppearance(storedAppearance === "light" ? "light" : "dark");
+      setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
+      setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "seen");
+      loadBots();
+      await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadSnaps(user.id)]);
+      if (!cancelled) {
+        loadSpotlight();
+        loadMemories(user.id);
+      }
+    }
+    initialize();
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      voiceRecorderRef.current?.stop();
+    };
+  }, []);
+
   async function loadDirectory() {
     const { data, error } = await supabase.from("profiles").select("id, username").order("username").limit(5000);
     if (error) {
