@@ -346,272 +346,73 @@ export default function BlinkApp({ email }: { email: string }) {
     ]);
   }
 
+  function casualGreeting(text: string): boolean {
+    const value = text.trim().toLowerCase();
+    if (!value) return false;
+    if (/^(hi+|hello+|hey+|hiya|hola|namaste|yo+|sup+|wassup|wazzup|ayo|howdy|morning|good morning|good evening)[!?., ]*$/i.test(value)) return true;
+    const target = "howdy";
+    if (value.length >= 4 && value.length <= 8) {
+      let previous = Array.from({ length: target.length + 1 }, (_, i) => i);
+      for (let i = 0; i < value.length; i += 1) {
+        const current = [i + 1];
+        for (let j = 0; j < target.length; j += 1) current.push(Math.min(current[j] + 1, previous[j + 1] + 1, previous[j] + (value[i] === target[j] ? 0 : 1)));
+        previous = current;
+      }
+      if (previous[target.length] <= 2) return true;
+    }
+    return false;
+  }
+
   function computerReply(bot: Bot, body: string): string {
     const text = body.trim();
     const lower = text.toLowerCase();
     const name = bot.display_name;
     if (!text) return "...";
-    if (/^(hi|hello|hey|hola|namaste)\\b/.test(lower)) {
-      const greetings: Record<string,string> = {
-        warm: "Hey. I'm glad you came by. How are you doing?",
-        chill: "Hey 😎 what's up?",
-        shy: "Oh... hey. I wasn't expecting anyone.",
-        energetic: "HEY! You made it! What's happening?",
-        polite: "Hello! It's nice to hear from you.",
-        blunt: "Hey. What's up?"
+    if (casualGreeting(text)) {
+      const greetings: Record<string,string[]> = {
+        warm: ["Hey 😊", "Heyyy. Good to see you.", "Howdy! How are you?"],
+        curious: ["Hey! What is going on?", "Howdy 👀 what is the story?", "Yo, what is up?"],
+        chill: ["Hey 😎 what is up?", "Howdy. Just vibing.", "Yo 😎"],
+        bright: ["Heyyy! ✨", "Howdy! I am listening 😄", "Yooo! What is good?"],
+        dry: ["Howdy.", "Well, hello there.", "Ah. A greeting."],
+        chaotic: ["HOWDYYYY 😂", "YOOOOO 😭", "AYOOO, what is happening?!"],
+        shy: ["Oh... hey.", "Um, hi.", "Oh. Howdy... I guess 😅"],
+        confident: ["Hey. What is up?", "Howdy. What have you got?", "Yo."],
+        serious: ["Hello. What is going on?", "Howdy. How can I help?", "Hey. I am listening."],
+        sarcastic: ["Well, well, well. Howdy.", "Ah yes, a greeting. Revolutionary.", "Howdy, partner 🤠"],
+        kind: ["Hey 😊 I am here.", "Howdy. How are you doing?", "Heyyy, good to hear from you."],
+        energetic: ["HEY! 😂 What is happening?!", "HOWDYYYY! 🔥", "YOOOO!"],
+        philosopher: ["Howdy. Funny how a simple greeting can start a whole conversation.", "Hello. What is on your mind?", "Hey. Where are we going with this?"],
+        competitive: ["Howdy. Let us hear it.", "Yo. What is the challenge?", "Hey. What are we tackling today?"],
+        grouchy: ["Howdy. Coffee first.", "Hey. I am awake, unfortunately.", "Yeah, hi. What is up?"],
+        dramatic: ["HOWDY?! The entrance has been made.", "Well HELLO there.", "Ah. The protagonist has arrived."],
+        practical: ["Hey. What is up?", "Howdy. What is the situation?", "Hi. What do you need?"],
+        romantic: ["Hey you 💌", "Howdy. Nice to hear from you.", "Heyyy. I was wondering when you would show up."],
+        storyteller: ["Howdy! Now that is an entrance.", "Well hello there. This feels like the start of a story.", "Hey. Come on, tell me what is happening."],
+        rebel: ["Howdy. Why should greetings be boring anyway?", "Yo. What is really going on?", "Hey. Skip the small talk if you want."],
+        mischief: ["Howdy 🤠 I have a suspicious feeling about this.", "Yooo 😈 what is the plan?", "Ayo. This could get interesting."],
+        polite: ["Hello! It is nice to hear from you.", "Howdy, and hello to you.", "Good to hear from you."],
+        blunt: ["Hey. What is up?", "Howdy.", "Yo."],
+        motivator: ["Hey! Let us make today count.", "Howdy! What is the next move?", "Yo! What are we working on?"],
+        debater: ["Howdy. What are we arguing about today?", "Hey. Give me your take.", "Yo. What is your position?"]
       };
-      return greetings[bot.bot_key] || `Hey. It's ${name}. What's going on?`;
+      const options = greetings[bot.bot_key] || ["Hey. It is " + name + ". What is going on?"];
+      return options[Math.floor(Math.random() * options.length)];
     }
-    if (/\b(name|who are you)\b/.test(lower)) return `I'm ${name}. That's what people here call me.`;
-    if (/\b(how are you|how're you)\b/.test(lower)) {
-      const moods: Record<string,string> = {
-        warm: "Pretty good. Quiet day, honestly.",
-        curious: "Curious. Mostly wondering what you'll say next.",
-        chill: "I'm good. Taking it easy.",
-        grouchy: "I've been better. Coffee would help.",
-        energetic: "Fantastic. I have way too much energy today.",
-        shy: "I'm okay... thanks for asking."
-      };
-      return moods[bot.bot_key] || "I'm doing alright.";
+    if (/\b(name|who are you)\b/.test(lower)) return "I am " + name + ". That is what people here call me.";
+    if (/\b(how are you|howre you)\b/.test(lower)) return bot.bot_key === "energetic" ? "Fantastic. Way too much energy today." : bot.bot_key === "grouchy" ? "I have been better. Coffee would help." : "I am doing alright.";
+    if (/\b(bye|goodnight|good night)\b/.test(lower)) return "See you around.";
+    const slangKey = /\b(fr|frfr|no cap)\b/.test(lower) ? "fr" : /\b(lol+|lmao+|lmfao+)\b|[😂🤣💀😭]/.test(lower) ? "lol" : /\b(bro+|bruh+|dude)\b/.test(lower) ? "bro" : /\b(nah+|nope)\b/.test(lower) ? "nah" : /\b(bet)\b/.test(lower) ? "bet" : /\b(ngl|tbh)\b/.test(lower) ? "ngl" : /\b(idk|dunno)\b/.test(lower) ? "idk" : /\b(cooked)\b/.test(lower) ? "cooked" : /\b(mid)\b/.test(lower) ? "mid" : /\b(sus)\b/.test(lower) ? "sus" : null;
+    const slangReplies: Record<string,string[]> = { fr: ["fr 😭", "Yeah, honestly.", "No cap."], lol: ["lmao 😂", "😭 okay, that got me.", "lol yeah."], bro: ["bro 😭", "BRO, what happened?", "Yeahhh bro, I am listening."], nah: ["nahhh 😂", "Yeah, I am not buying that.", "Fair. Nah."], bet: ["Bet.", "Alright, deal.", "Say less."], ngl: ["Honestly? Same.", "Ngl, I get it.", "Yeah, fair."], idk: ["Fair. Sometimes you just do not know.", "Yeah, that is okay.", "Honestly, same."], cooked: ["💀 How cooked are we talking?", "Oh no 😭", "Yeahhh, that is not ideal."], mid: ["Mid? 😭", "Okay, harsh.", "Honestly... maybe."], sus: ["💀 that is a little sus.", "Okay, now I am suspicious.", "Hmm. Very sus."] };
+    if (slangKey) {
+      if (bot.bot_key === "serious" || bot.bot_key === "polite") return slangKey === "bro" ? "I get you. What is going on?" : "I understand. Tell me more.";
+      const options = slangReplies[slangKey];
+      if (options) return options[Math.floor(Math.random() * options.length)];
     }
-    if (/\b(bye|goodnight|good night)\b/.test(lower)) return bot.bot_key === "warm" ? "Take care. Come back when you feel like talking." : bot.bot_key === "blunt" ? "Later." : "See you around.";
-    const replies: Record<string,string[]> = {
-      warm: ["That sounds important to you. Tell me more.", "I'm listening. No rush.", "Yeah, I get why you'd feel that way."],
-      curious: ["Wait, why? I need the backstory.", "Interesting. What happened next?", "Okay, now I'm curious."],
-      chill: ["Fair enough 😎", "Yeah, that's a vibe.", "I can live with that."],
-      bright: ["That actually sounds exciting ✨", "Okay, I like where this is going.", "That made me smile."],
-      dry: ["Noted.", "Remarkable. Truly.", "I have questions. Mostly why."],
-      chaotic: ["WAIT. What?! 😂", "Okay this just got interesting.", "I support the chaos.",],
-      shy: ["Maybe... yeah.", "I don't know what to say, but I'm here.", "That's kind of nice."],
-      confident: ["Obviously. I knew you'd say that.", "We've got this.", "Say less. I'm in."],
-      serious: ["Let's separate the facts from the assumptions.", "That's worth thinking about carefully.", "I would not jump to a conclusion yet."],
-      sarcastic: ["Oh, absolutely. Because that always goes perfectly. 🙃", "Sure. What could possibly go wrong?", "Brilliant plan. Probably. Maybe."],
-      kind: ["You've got this.", "I'm rooting for you.", "Be a little easier on yourself."],
-      energetic: ["YES! Let's go! ⚡", "Okay, now we're moving!", "I am 100% awake for this."],
-      philosopher: ["Maybe the interesting part is why it matters to you.", "Sometimes the question is more useful than the answer.", "That's one of those things I'd sit with for a while."],
-      competitive: ["Alright, prove it. 😏", "Challenge accepted.", "I won't let you win that easily."],
-      grouchy: ["Can we solve it after coffee?", "Honestly? That's annoying.", "Fine. But I'm complaining about it."],
-      dramatic: ["THIS is how the story begins. 🎭", "I need the full story. With details.", "You cannot just say that and leave me here."],
-      practical: ["Okay. What's the actual problem?", "Let's break it into small steps.", "What can we do about it right now?"],
-      romantic: ["That sounds like a little story waiting to happen. 💌", "Some moments deserve to be remembered.", "Okay... that was unexpectedly sweet."],
-      storyteller: ["Now that's a story. Start from the beginning.", "I can already see the scene.", "Give me the version with all the details."],
-      rebel: ["Why follow the usual way?", "I'd question that rule.", "Let's do something different."],
-      mischief: ["I have a terrible idea. 😈", "You should absolutely not give me ideas.", "Heh. This could get interesting."],
-      polite: ["I see. Thank you for telling me.", "That makes sense. Please continue.", "I understand."],
-      blunt: ["Okay. Get to the point.", "Fair.", "That's the situation, then."],
-      motivator: ["One step. Then another. You've got this.", "Don't wait for perfect. Start.", "Keep going. Momentum matters."],
-      debater: ["I'd challenge that. What's your evidence?", "Maybe. But there's another side to it.", "Let's argue both sides before deciding."]
-    };
-    const pool = replies[bot.bot_key] || replies.kind;
-    return pool[Math.floor(Math.random() * pool.length)];
+    const replies: Record<string,string[]> = { warm: ["That sounds important to you. Tell me more.", "I am listening. No rush.", "Yeah, I get why you would feel that way."], curious: ["Wait, why? I need the backstory.", "Interesting. What happened next?", "Okay, now I am curious."], chill: ["Fair enough 😎", "Yeah, that is a vibe.", "I can live with that."], bright: ["Okayyy, I like where this is going!", "That actually sounds fun.", "Wait, that is kind of great."], dry: ["Well. That certainly happened.", "Ah yes, the classic situation.", "Beautiful. A tiny disaster with excellent timing."], chaotic: ["OH. We are doing this now.", "Okay, this escalated beautifully.", "I have questions. Probably bad ones."], shy: ["Oh... yeah, I get that.", "Um. Okay. I was thinking about that too.", "I do not know if this helps, but..."], confident: ["I see the situation.", "Yeah. I know what I would do.", "That is manageable."], serious: ["Let us look at this carefully.", "There are a couple of things here.", "Okay. Let us separate the facts from the noise."], sarcastic: ["Oh, excellent. Because apparently life needed another subplot.", "Naturally. Why would anything be simple?", "Love that for you. Truly."], kind: ["That sounds hard.", "I get why that would matter to you.", "Hey, that is okay."], energetic: ["YES! Okay, I am listening!", "Ohhh, now we are talking!", "Okay! Give me the whole story!"], philosopher: ["That is interesting, because it says something bigger too.", "Hmm. There is a deeper question underneath that.", "Maybe the strange part is why we care about it at all."], competitive: ["Okay. I see the challenge.", "Interesting. Now I want to beat that problem.", "Fine. Let us make a plan."], grouchy: ["Yeah, because apparently peace was too much to ask.", "Great. Another thing to deal with.", "I have opinions, and most of them involve coffee."], dramatic: ["Oh, this is a MOMENT.", "I can already hear the soundtrack.", "No. No, this deserves a full story."], practical: ["Okay. Let us make this useful.", "Simple version: here is what matters.", "Got it. We can work with that."], romantic: ["That has a little more feeling in it than you are admitting.", "Hmm. That sounds like one of those moments.", "Some things are easier to feel than explain."], storyteller: ["Oh, I can see the scene already.", "Now that sounds like the beginning of a story.", "And suddenly, the ordinary day was not ordinary anymore."], rebel: ["Why are we assuming the usual way is the right way?", "I would question that rule.", "Maybe the problem is the rule itself."], mischief: ["I have a terrible idea.", "This is dangerously entertaining.", "Okay, do not panic, but I have a plan."], polite: ["I understand.", "That makes sense.", "Thank you for explaining that."], blunt: ["Okay. Straight answer.", "Here is the thing.", "I am going to be direct."], motivator: ["Good. Keep going.", "That is a start.", "You are not stuck; you are just at the next step."], debater: ["I can see the argument, but I am not convinced yet.", "Okay, let us test that idea.", "There is another side to this."] };
+    const options = replies[bot.bot_key] || replies.warm;
+    return options[Math.floor(Math.random() * options.length)];
   }
-
-  async function loadMessages(cid: string) {
-    if (!me) return;
-    loadLocalChat(cid);
-  }
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!alive || !data.user) return;
-      setMe(data.user.id);
-      setSettingsEmail(data.user.email ?? email);
-      if (typeof window !== "undefined") {
-        const savedAvatar = window.localStorage.getItem("blink_avatar_emoji");
-        const savedAppearance = window.localStorage.getItem("blink_appearance");
-        const savedGhost = window.localStorage.getItem("blink_ghost_mode");
-        const savedChatRetention = window.localStorage.getItem("blink_chat_retention");
-        const savedSnapRetention = window.localStorage.getItem("blink_snap_retention");
-        if (savedAvatar) setAvatarEmoji(savedAvatar);
-        if (savedAppearance === "light" || savedAppearance === "dark") setAppearance(savedAppearance);
-        if (savedGhost !== null) setGhostMode(savedGhost !== "false");
-        if (savedChatRetention) setChatRetention(savedChatRetention);
-        if (savedSnapRetention) setSnapRetention(savedSnapRetention);
-      }
-      const { data: myProfile } = await supabase.from("profiles").select("username").eq("id", data.user.id).single();
-      setMeUsername(myProfile?.username ?? "");
-      await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id)]);
-      loadBots();
-      loadSpotlight();
-      loadMemories(data.user.id);
-      const { data: allProfiles, error: profileError } = await supabase.from("profiles").select("id,username").order("username").limit(5000);
-      if (profileError) notify(profileError.message);
-      const loadedDirectory = (allProfiles ?? []).map((x: any) => ({ id: x.id, username: x.username })).filter((x: Person) => x.id !== data.user!.id);
-      setDirectory(loadedDirectory);
-      const names = new Map(loadedDirectory.map((p) => [p.id, p.username]));
-      setFriends((items) => items.map((p) => ({ ...p, username: names.get(p.id) ?? p.username })));
-      setRequests((items) => items.map((p) => ({ ...p, username: names.get(p.id) ?? p.username })));
-      setOutgoing((items) => items.map((p) => ({ ...p, username: names.get(p.id) ?? p.username })));
-      setBlocked((items) => items.map((p) => ({ ...p, username: names.get(p.id) ?? p.username })));
-    })();
-    return () => {
-      alive = false;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!conversationId || !me) return;
-    loadMessages(conversationId);
-  }, [conversationId, me]);
-
-  async function saveProfileSettings() {
-    const username = settingsUsername.trim().toLowerCase();
-    const name = settingsName.trim();
-
-    if (!/^[a-z0-9_]{3,24}$/.test(username)) {
-      notify("Username must be 3–24 characters: a-z, 0-9, _");
-      return;
-    }
-    if (name.length > 80) {
-      notify("Name must be 80 characters or less.");
-      return;
-    }
-
-    setSettingsBusy(true);
-    const [{ error: usernameError }, { error: nameError }] = await Promise.all([
-      supabase.from("profiles").update({ username }).eq("id", me),
-      supabase.auth.updateUser({ data: { full_name: name, name } })
-    ]);
-    setSettingsBusy(false);
-
-    if (usernameError) {
-      notify(usernameError.code === "23505" ? "That username is already taken." : usernameError.message);
-      return;
-    }
-    if (nameError) {
-      notify(nameError.message);
-      return;
-    }
-
-    setMeUsername(username);
-    setDisplayName(name);
-    setDirectory((items) => items);
-    notify("Profile updated.");
-  }
-
-  async function changeEmail() {
-    const nextEmail = settingsEmail.trim().toLowerCase();
-    if (!nextEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail)) {
-      notify("Enter a valid email address.");
-      return;
-    }
-    if (nextEmail === email.toLowerCase()) {
-      notify("Email is already unchanged.");
-      return;
-    }
-    setSettingsBusy(true);
-    const { error } = await supabase.auth.updateUser({ email: nextEmail });
-    setSettingsBusy(false);
-    if (error) {
-      notify(error.message);
-      return;
-    }
-    notify("Email change requested. Check your email to confirm it.");
-  }
-
-  function saveAppearance(value: "dark" | "light") {
-    setAppearance(value);
-    window.localStorage.setItem("blink_appearance", value);
-    document.documentElement.dataset.theme = value;
-    notify(value === "light" ? "Light appearance enabled." : "Dark appearance enabled.");
-  }
-
-  function saveAvatar(value: string) {
-    setAvatarEmoji(value);
-    window.localStorage.setItem("blink_avatar_emoji", value);
-    notify("Profile avatar updated.");
-  }
-
-  function saveGhostMode(value: boolean) {
-    setGhostMode(value);
-    window.localStorage.setItem("blink_ghost_mode", String(value));
-    notify(value ? "Ghost Mode ON." : "Temporary location sharing enabled.");
-  }
-
-  async function changePassword() {
-    if (newPassword.length < 8) {
-      notify("New password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      notify("New passwords do not match.");
-      return;
-    }
-
-    setSettingsBusy(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setSettingsBusy(false);
-
-    if (error) {
-      notify(error.message);
-      return;
-    }
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    notify("Password changed successfully.");
-  }
-
-  async function findUser(value: string) {
-    setQuery(value);
-    const trimmed = value.trim().toLowerCase();
-    if (!trimmed) { setPeople([]); return; }
-    setPeople(directory.filter((p) => p.username.toLowerCase().includes(trimmed)).slice(0, 60));
-  }
-
-  async function sendFriendRequest(person: Person) {
-    const { error } = await supabase.from("friendships").insert({ requester_id: me, addressee_id: person.id });
-    if (!error) { setOutgoing((items) => [...items, person]); setPeople((items) => items.filter((p) => p.id !== person.id)); }
-    notify(error ? "Friend request could not be sent." : "Friend request sent.");
-  }
-
-  async function respondToRequest(person: Person, status: "accepted" | "rejected") {
-    const { error } = await supabase.from("friendships").update({ status })
-      .eq("requester_id", person.id).eq("addressee_id", me).eq("status", "pending");
-    if (!error) { await loadFriends(me); notify(status === "accepted" ? "Friend request accepted." : "Request declined."); }
-    else notify("Could not update request.");
-  }
-  async function declineRequest(person: Person) {
-    const { error } = await supabase.from("friendships").delete()
-      .eq("requester_id", person.id).eq("addressee_id", me).eq("status", "pending");
-    if (!error) { await loadFriends(me); notify("Request declined."); }
-    else notify("Could not decline request.");
-  }
-  async function cancelRequest(person: Person) {
-    const { error } = await supabase.from("friendships").delete()
-      .eq("requester_id", me).eq("addressee_id", person.id).eq("status", "pending");
-    if (!error) { setOutgoing((items) => items.filter((p) => p.id !== person.id)); notify("Friend request cancelled."); }
-    else notify("Could not cancel request.");
-  }
-
-  async function blockUser(person: Person) {
-    await supabase.from("friendships").delete()
-      .or("and(requester_id.eq." + me + ",addressee_id.eq." + person.id + "),and(requester_id.eq." + person.id + ",addressee_id.eq." + me + ")");
-    const { error } = await supabase.from("blocks").upsert({ blocker_id: me, blocked_id: person.id });
-    await loadFriends(me);
-    await loadBlocked(me);
-    notify(error ? "Block failed." : "User blocked.");
-  }
-
-  async function unblockUser(person: Person) {
-    const { error } = await supabase.from("blocks").delete().eq("blocker_id", me).eq("blocked_id", person.id);
-    await loadBlocked(me);
-    notify(error ? "Unblock failed." : "User unblocked.");
-  }
-
-  async function openFriendChat(person: Person) {
-    const ids = [me, person.id].sort();
-    const localConversationId = "dm:" + ids.join(":");
-    setActivePerson(person);
-    setActiveBot(null);
-    setConversationId(localConversationId);
-    setTab("chat");
-  }
-
   async function openBotChat(bot: Bot) {
     const localConversationId = "bot:" + bot.id;
     setActiveBot(bot);
@@ -625,37 +426,39 @@ export default function BlinkApp({ email }: { email: string }) {
     const body = message.trim();
     setMessage("");
     const item: Message = {
-      id: crypto.randomUUID(),
-      conversation_id: conversationId,
-      sender_id: me,
-      sender_bot_id: null,
-      body,
-      media_path: null,
-      message_type: "text",
-      created_at: new Date().toISOString(),
+      id: crypto.randomUUID(), conversation_id: conversationId, sender_id: me, sender_bot_id: null,
+      body, media_path: null, message_type: "text", created_at: new Date().toISOString(),
       expires_at: chatRetention === "seen" ? "after_seen" : new Date(Date.now() + retentionMs(chatRetention)).toISOString()
     };
     const raw = window.localStorage.getItem(localChatKey(conversationId));
     const current: Message[] = raw ? JSON.parse(raw) : [];
     const next = [...current, item];
     saveLocalChat(conversationId, next);
-
     if (activeBot) {
+      let replyBody = "";
+      const base = (process.env.NEXT_PUBLIC_BLINK_COMPUTER_URL || "").replace(/\/$/, "");
+      if (base) {
+        try {
+          const response = await fetch(base + "/reply", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ conversation_id: conversationId, bot_key: activeBot.bot_key, bot_name: activeBot.display_name, message: body, history: next.slice(-12) })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (typeof data.reply === "string" && data.reply.trim()) replyBody = data.reply.trim();
+          }
+        } catch {}
+      }
+      if (!replyBody) replyBody = computerReply(activeBot, body);
       const reply: Message = {
-        id: crypto.randomUUID(),
-        conversation_id: conversationId,
-        sender_id: null,
-        sender_bot_id: activeBot.id,
-        body: computerReply(activeBot, body),
-        media_path: null,
-        message_type: "text",
+        id: crypto.randomUUID(), conversation_id: conversationId, sender_id: null, sender_bot_id: activeBot.id,
+        body: replyBody, media_path: null, message_type: "text",
         created_at: new Date(Date.now() + 50).toISOString(),
         expires_at: chatRetention === "seen" ? "after_seen" : new Date(Date.now() + retentionMs(chatRetention)).toISOString()
       };
       saveLocalChat(conversationId, [...next, reply]);
     }
   }
-
   async function sendChatFile(file: File) {
     if (!conversationId || !me) return;
     if (file.size > 4 * 1024 * 1024) {
