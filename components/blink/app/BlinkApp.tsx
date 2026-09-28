@@ -795,13 +795,49 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   async function startCamera() {
+    if (typeof window === "undefined") return;
+    if (!window.isSecureContext) {
+      notify("Camera needs HTTPS. Open the deployed BLINK address, not an insecure HTTP page.");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      notify("This browser does not expose camera access here. Use HTTPS in Chrome or Edge.");
+      return;
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cameraFacing }, audio: false });
+      if (streamRef.current) stopCamera();
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: cameraFacing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraOn(true);
-    } catch {
-      notify("Camera permission was not granted.");
+      requestAnimationFrame(async () => {
+        const video = videoRef.current;
+        if (!video) return;
+        video.srcObject = stream;
+        video.muted = true;
+        video.playsInline = true;
+        try { await video.play(); } catch {}
+      });
+    } catch (error) {
+      const err = error as DOMException;
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        notify("Camera permission is blocked. Allow Camera for BLINK in your browser site settings, then try again.");
+      } else if (err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError") {
+        notify("No camera was found on this device.");
+      } else if (err?.name === "NotReadableError" || err?.name === "TrackStartError") {
+        notify("The camera is already being used by another app. Close it and try again.");
+      } else if (err?.name === "SecurityError") {
+        notify("The browser blocked camera access. Use the HTTPS BLINK site and allow Camera.");
+      } else {
+        notify("Could not open the camera. Check browser camera permission and try again.");
+      }
     }
   }
 
@@ -993,7 +1029,7 @@ export default function BlinkApp({ email }: { email: string }) {
               <button className="blink-primary" onClick={sendSnap} disabled={busy}>Send Snap</button>
             </div>
           </div> : cameraOn ? <>
-            <video ref={videoRef} autoPlay playsInline muted className="blink-video" style={{ filter: cameraFilter === "mono" ? "grayscale(1)" : cameraFilter === "sepia" ? "sepia(1)" : cameraFilter === "vivid" ? "saturate(1.7) contrast(1.08)" : cameraFilter === "cool" ? "hue-rotate(25deg) saturate(1.2)" : "none", transform: `scale(${cameraZoom})` }} />
+            <video ref={videoRef} autoPlay playsInline muted className="blink-video" onLoadedMetadata={(e) => { e.currentTarget.play().catch(() => {}); }} style={{ filter: cameraFilter === "mono" ? "grayscale(1)" : cameraFilter === "sepia" ? "sepia(1)" : cameraFilter === "vivid" ? "saturate(1.7) contrast(1.08)" : cameraFilter === "cool" ? "hue-rotate(25deg) saturate(1.2)" : "none", transform: `scale(${cameraZoom})` }} />
             <div className="blink-camera-gradient" />
             {cameraLens !== "none" && <div className="blink-camera-lens" aria-hidden="true">{cameraLens === "hearts" ? "💗  💗" : cameraLens === "dog" ? "🐶" : cameraLens === "crown" ? "👑" : "👽"}</div>}
             <div className="blink-camera-toolbar">
