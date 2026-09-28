@@ -563,7 +563,7 @@ export default function BlinkApp({ email }: { email: string }) {
       media_path: dataUrl,
       message_type: type,
       created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 86400000).toISOString()
+      expires_at: chatRetention === "seen" ? "after_seen" : new Date(Date.now() + retentionMs(chatRetention)).toISOString()
     };
     const raw = window.localStorage.getItem(localChatKey(conversationId));
     const current: Message[] = raw ? JSON.parse(raw) : [];
