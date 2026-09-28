@@ -1332,7 +1332,7 @@ export default function BlinkApp({ email }: { email: string }) {
           <aside className="blink-chat-list">
             {friends.length ? friends.map((f) =>
               <button key={f.id} className={activePerson?.id === f.id ? "blink-chat-row selected" : "blink-chat-row"} onClick={() => openFriendChat(f)}>
-                <Avatar id={f.id} /><span className="blink-chat-copy"><b>{f.username || shortId(f.id)}</b><small>Browser-only · {retentionLabel(chatRetention)}</small></span>
+                <Avatar id={f.id} emoji={f.avatar_emoji} /><span className="blink-chat-copy"><b>{f.username || shortId(f.id)}</b><small>Browser-only · {retentionLabel(chatRetention)}</small></span>
               </button>
             ) : <div className="blink-empty">Add a friend to start messaging.</div>}
           </aside>
@@ -1397,9 +1397,9 @@ export default function BlinkApp({ email }: { email: string }) {
             </div>
           </article>)}
         </div>
-        {outgoing.length > 0 && <div className="blink-request-box"><b>Sent requests</b>{outgoing.map((p) => <div key={p.id}><Avatar id={p.id} /><span>@{p.username || "blink_user"}</span><button onClick={() => cancelRequest(p)}>Cancel request</button></div>)}</div>}
+        {outgoing.length > 0 && <div className="blink-request-box"><b>Sent requests</b>{outgoing.map((p) => <div key={p.id}><Avatar id={p.id} emoji={p.avatar_emoji} /><span>@{p.username || "blink_user"}</span><button onClick={() => cancelRequest(p)}>Cancel request</button></div>)}</div>}
         {blocked.length > 0 && <div className="blink-request-box"><b>Blocked by you</b>{blocked.map((p) =>
-          <div key={p.id}><Avatar id={p.id} /><span>@{p.username || "blink_user"}</span><button onClick={() => unblockUser(p)}>Unblock</button></div>
+          <div key={p.id}><Avatar id={p.id} emoji={p.avatar_emoji} /><span>@{p.username || "blink_user"}</span><button onClick={() => unblockUser(p)}>Unblock</button></div>
         )}</div>}
       </div>}
 
