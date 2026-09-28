@@ -1695,12 +1695,15 @@ export default function BlinkApp({ email }: { email: string }) {
                     <div className="blink-admin-user-actions">
                       <button className="blink-options-button" onClick={() => setAdminUserMenu(adminUserMenu === u.id ? null : u.id)} disabled={adminUsersBusy}>OPTIONS ▾</button>
                       {adminUserMenu === u.id && <div className="blink-admin-user-menu">
-                        {banned
-                          ? <button onClick={() => { setAdminUserMenu(null); adminUserAction("unban", u); }} disabled={isSelf}>✅ Unban user</button>
-                          : <button onClick={() => { setAdminUserMenu(null); adminUserAction("ban", u); }} disabled={isSelf}>🚫 Ban user</button>}
-                        {adminRole === "owner" && !u.role && <button onClick={() => { setAdminUserMenu(null); adminUserAction("promote", u); }}>🛡️ Promote to Admin</button>}
-                        {adminRole === "owner" && u.role === "admin" && <button onClick={() => { setAdminUserMenu(null); adminUserAction("demote", u); }}>⬇️ Demote Admin</button>}
-                        <button className="danger" onClick={() => { setAdminUserMenu(null); adminUserAction("delete", u); }} disabled={isSelf}>🗑️ Remove user</button>
+                        {u.role === "owner"
+                          ? <div className="blink-admin-user-protected">🔒 Owner account — protected</div>
+                          : <>
+                              {banned
+                                ? <button onClick={() => { setAdminUserMenu(null); adminUserAction("unban", u); }} disabled={isSelf}>✅ Unban user</button>
+                                : <button onClick={() => { setAdminUserMenu(null); adminUserAction("ban", u); }} disabled={isSelf}>🚫 Ban user</button>}
+                              {adminRole === "owner" && <>{!u.role && <button onClick={() => { setAdminUserMenu(null); adminUserAction("promote", u); }}>🛡️ Promote to Admin</button>}{u.role === "admin" && <button onClick={() => { setAdminUserMenu(null); adminUserAction("demote", u); }}>⬇️ Demote Admin</button>}</>}
+                              <button className="danger" onClick={() => { setAdminUserMenu(null); adminUserAction("delete", u); }} disabled={isSelf}>🗑️ Remove user</button>
+                            </>}
                       </div>}
                     </div>
                   </div>;
