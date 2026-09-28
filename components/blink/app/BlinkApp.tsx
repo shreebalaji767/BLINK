@@ -517,7 +517,7 @@ export default function BlinkApp({ email }: { email: string }) {
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
-        if (adminRecord?.enabled) await loadOwnerMetrics();
+        if (adminRecord?.enabled && adminRecord.role === "owner") await loadOwnerMetrics(user.id, "owner");
       }
     }
     initialize();
@@ -536,8 +536,8 @@ export default function BlinkApp({ email }: { email: string }) {
     };
   }, []);
 
-  async function loadOwnerMetrics() {
-    if (!me || adminRole !== "owner") return;
+  async function loadOwnerMetrics(userId = me, role = adminRole) {
+    if (!userId || role !== "owner") return;
     setOwnerDashboardBusy(true);
     try {
       const [{ count: totalUsers }, { count: activeAdmins }, { count: owners }, { count: admins }, { count: acceptedFriendships }, { count: pendingFriendships }, { count: blocks }, { count: enabledAdmins }] = await Promise.all([
@@ -1502,7 +1502,7 @@ export default function BlinkApp({ email }: { email: string }) {
       {tab === "admin" && adminRole && <div className="blink-panel">
         <div className="blink-panel-head">
           <div><span className="blink-eyebrow">{adminRole === "owner" ? "OWNER CONTROL CENTER" : "ADMIN CONTROL CENTER"}</span><h1>{adminRole === "owner" ? "Owner Dashboard" : "Admin Center"}</h1></div>
-          {adminRole === "owner" && <button className="blink-primary small" onClick={loadOwnerMetrics} disabled={ownerDashboardBusy}>{ownerDashboardBusy ? "Refreshing…" : "Refresh"}</button>}
+          {adminRole === "owner" && <button className="blink-primary small" onClick={() => loadOwnerMetrics()} disabled={ownerDashboardBusy}>{ownerDashboardBusy ? "Refreshing…" : "Refresh"}</button>}
         </div>
 
         {adminRole === "owner" ? <>
