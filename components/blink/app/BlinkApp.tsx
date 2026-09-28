@@ -155,6 +155,12 @@ export default function BlinkApp({ email }: { email: string }) {
     if (!error) { await loadFriends(me); notify(status === "accepted" ? "Friend request accepted." : "Request declined."); }
     else notify("Could not update request.");
   }
+  async function declineRequest(person: Person) {
+    const { error } = await supabase.from("friendships").delete()
+      .eq("requester_id", person.id).eq("addressee_id", me).eq("status", "pending");
+    if (!error) { await loadFriends(me); notify("Request declined."); }
+    else notify("Could not decline request.");
+  }
   async function cancelRequest(person: Person) {
     const { error } = await supabase.from("friendships").delete()
       .eq("requester_id", me).eq("addressee_id", person.id).eq("status", "pending");
@@ -468,7 +474,7 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-panel-head"><div><span className="blink-eyebrow">USER IDS ONLY</span><h1>Friends</h1></div></div>
         <input className="blink-search" value={query} onChange={(e) => findUserId(e.target.value)} placeholder="Search people by any part of their User ID…" />
         {requests.length > 0 && <div className="blink-request-box"><b>Friend requests</b>{requests.map((p) =>
-          <div key={p.id}><Avatar id={p.id} /><span>{shortId(p.id)}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => respondToRequest(p, "rejected")}>Decline</button></div>
+          <div key={p.id}><Avatar id={p.id} /><span>{shortId(p.id)}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => declineRequest(p)}>Decline</button></div>
         )}</div>}
         <div className="blink-friend-grid">
           {(query ? people : friends).map((p) => <article className="blink-friend-card" key={p.id}>
