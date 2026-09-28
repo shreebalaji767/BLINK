@@ -1230,7 +1230,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const nav: [Tab, string, string][] = [
     ["camera", "◉", "Camera"], ["chat", "◌", "Chat"], ["friends", "♙", "Friends"],
     ["stories", "◫", "Stories"], ["spotlight", "▷", "Spotlight"], ["map", "⌖", "Map"], ["memories", "▣", "Memories"], ["profile", "●", "Account"],
-    ...(adminRole ? [["admin", "◆", "Admin"] as [Tab, string, string]] : [])
+    ...(adminAccessChecked && adminRole ? [["admin", "◆", "Admin"] as [Tab, string, string]] : [])
   ];
 
   return <main className="blink-app">
