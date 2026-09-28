@@ -153,3 +153,14 @@ html[data-theme="light"] video {
   .blink-composer button{min-width:40px;width:40px}
   .blink-panel-head-actions{width:100%;justify-content:flex-end}
 }
+
+.blink-avatar-picker{display:grid;gap:10px;margin:4px 0 18px}
+.blink-avatar-picker-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.blink-avatar-picker-head>span{font-weight:800}
+.blink-avatar-picker-head small,.blink-avatar-picker-note{color:#858c9c;font-size:11px}
+.blink-avatar-gender-label{font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#7f8798;margin-top:4px}
+.blink-avatar-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.blink-avatar-option{min-width:0;aspect-ratio:1;border:1px solid #2c303d;border-radius:15px;background:#11131a;color:#fff;font-size:30px;display:grid;place-items:center;transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.blink-avatar-option:hover{transform:translateY(-2px);background:#191c24;border-color:#555d78}
+.blink-avatar-option.selected{border-color:#fff;background:#252936;box-shadow:0 0 0 2px rgba(255,255,255,.12)}
+@media (max-width:520px){.blink-avatar-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.blink-avatar-option{font-size:25px}}
