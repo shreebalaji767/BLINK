@@ -413,19 +413,17 @@ export default function BlinkApp({ email }: { email: string }) {
       const { data: adminRpc, error: adminRpcError } = await supabase
         .rpc("blink_get_my_admin");
 
+      const adminRecord = Array.isArray(adminRpc) ? adminRpc[0] : adminRpc;
       if (adminRpcError) {
         console.error("BLINK admin role RPC failed:", adminRpcError);
         setAdminRole(null);
         setAdminPermissions({});
+      } else if (adminRecord?.enabled && (adminRecord.role === "owner" || adminRecord.role === "admin")) {
+        setAdminRole(adminRecord.role);
+        setAdminPermissions((adminRecord.permissions ?? {}) as Record<string, boolean>);
       } else {
-        const adminRecord = Array.isArray(adminRpc) ? adminRpc[0] : adminRpc;
-        if (adminRecord?.enabled && (adminRecord.role === "owner" || adminRecord.role === "admin")) {
-          setAdminRole(adminRecord.role);
-          setAdminPermissions((adminRecord.permissions ?? {}) as Record<string, boolean>);
-        } else {
-          setAdminRole(null);
-          setAdminPermissions({});
-        }
+        setAdminRole(null);
+        setAdminPermissions({});
       }
       setAdminAccessChecked(true);
 
