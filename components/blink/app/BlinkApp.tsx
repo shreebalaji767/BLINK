@@ -318,10 +318,92 @@ export default function BlinkApp({ email }: { email: string }) {
 
   function loadBots() {
     setBots([
-      { id: "local-helper", bot_key: "helper", display_name: "BLINK Computer", avatar_emoji: "💻" },
-      { id: "local-rules", bot_key: "rules", display_name: "BLINK Rules", avatar_emoji: "◈" },
-      { id: "local-fun", bot_key: "fun", display_name: "BLINK Fun", avatar_emoji: "✦" }
+      { id: "mira-warm", bot_key: "warm", display_name: "Mira", avatar_emoji: "🌷" },
+      { id: "leo-curious", bot_key: "curious", display_name: "Leo", avatar_emoji: "🔎" },
+      { id: "sam-chill", bot_key: "chill", display_name: "Sam", avatar_emoji: "🧢" },
+      { id: "nora-bright", bot_key: "bright", display_name: "Nora", avatar_emoji: "✨" },
+      { id: "max-dry", bot_key: "dry", display_name: "Max", avatar_emoji: "😐" },
+      { id: "ruby-chaotic", bot_key: "chaotic", display_name: "Ruby", avatar_emoji: "🔥" },
+      { id: "eli-shy", bot_key: "shy", display_name: "Eli", avatar_emoji: "🌙" },
+      { id: "zoe-confident", bot_key: "confident", display_name: "Zoe", avatar_emoji: "🕶️" },
+      { id: "ivan-serious", bot_key: "serious", display_name: "Ivan", avatar_emoji: "📚" },
+      { id: "maya-sarcastic", bot_key: "sarcastic", display_name: "Maya", avatar_emoji: "🙃" },
+      { id: "aaron-kind", bot_key: "kind", display_name: "Aaron", avatar_emoji: "🤝" },
+      { id: "tess-energetic", bot_key: "energetic", display_name: "Tess", avatar_emoji: "⚡" },
+      { id: "noah-philosopher", bot_key: "philosopher", display_name: "Noah", avatar_emoji: "🌌" },
+      { id: "jade-competitive", bot_key: "competitive", display_name: "Jade", avatar_emoji: "🏁" },
+      { id: "ben-grouchy", bot_key: "grouchy", display_name: "Ben", avatar_emoji: "☕" },
+      { id: "lina-dramatic", bot_key: "dramatic", display_name: "Lina", avatar_emoji: "🎭" },
+      { id: "kai-practical", bot_key: "practical", display_name: "Kai", avatar_emoji: "🛠️" },
+      { id: "rhea-romantic", bot_key: "romantic", display_name: "Rhea", avatar_emoji: "💌" },
+      { id: "omar-storyteller", bot_key: "storyteller", display_name: "Omar", avatar_emoji: "📖" },
+      { id: "ivy-rebel", bot_key: "rebel", display_name: "Ivy", avatar_emoji: "🧨" },
+      { id: "dev-mischief", bot_key: "mischief", display_name: "Dev", avatar_emoji: "😈" },
+      { id: "anna-polite", bot_key: "polite", display_name: "Anna", avatar_emoji: "🌼" },
+      { id: "cole-blunt", bot_key: "blunt", display_name: "Cole", avatar_emoji: "🪨" },
+      { id: "sana-motivator", bot_key: "motivator", display_name: "Sana", avatar_emoji: "🏆" },
+      { id: "raj-debater", bot_key: "debater", display_name: "Raj", avatar_emoji: "⚖️" }
     ]);
+  }
+
+  function computerReply(bot: Bot, body: string): string {
+    const text = body.trim();
+    const lower = text.toLowerCase();
+    const name = bot.display_name;
+    if (!text) return "...";
+    if (/^(hi|hello|hey|hola|namaste)\\b/.test(lower)) {
+      const greetings: Record<string,string> = {
+        warm: "Hey. I'm glad you came by. How are you doing?",
+        chill: "Hey 😎 what's up?",
+        shy: "Oh... hey. I wasn't expecting anyone.",
+        energetic: "HEY! You made it! What's happening?",
+        polite: "Hello! It's nice to hear from you.",
+        blunt: "Hey. What's up?"
+      };
+      return greetings[bot.bot_key] || `Hey. It's ${name}. What's going on?`;
+    }
+    if (/\b(name|who are you)\b/.test(lower)) return `I'm ${name}. I have my own way of talking, and I don't pretend to be a person behind the screen.`;
+    if (/\b(how are you|how're you)\b/.test(lower)) {
+      const moods: Record<string,string> = {
+        warm: "Pretty good. Quiet day, honestly.",
+        curious: "Curious. Mostly wondering what you'll say next.",
+        chill: "I'm good. Taking it easy.",
+        grouchy: "I've been better. Coffee would help.",
+        energetic: "Fantastic. I have way too much energy today.",
+        shy: "I'm okay... thanks for asking."
+      };
+      return moods[bot.bot_key] || "I'm doing alright.";
+    }
+    if (/\b(bye|goodnight|good night)\b/.test(lower)) return bot.bot_key === "warm" ? "Take care. Come back when you feel like talking." : bot.bot_key === "blunt" ? "Later." : "See you around.";
+    const replies: Record<string,string[]> = {
+      warm: ["That sounds important to you. Tell me more.", "I'm listening. No rush.", "Yeah, I get why you'd feel that way."],
+      curious: ["Wait, why? I need the backstory.", "Interesting. What happened next?", "Okay, now I'm curious."],
+      chill: ["Fair enough 😎", "Yeah, that's a vibe.", "I can live with that."],
+      bright: ["That actually sounds exciting ✨", "Okay, I like where this is going.", "That made me smile."],
+      dry: ["Noted.", "Remarkable. Truly.", "I have questions. Mostly why."],
+      chaotic: ["WAIT. What?! 😂", "Okay this just got interesting.", "I support the chaos.",],
+      shy: ["Maybe... yeah.", "I don't know what to say, but I'm here.", "That's kind of nice."],
+      confident: ["Obviously. I knew you'd say that.", "We've got this.", "Say less. I'm in."],
+      serious: ["Let's separate the facts from the assumptions.", "That's worth thinking about carefully.", "I would not jump to a conclusion yet."],
+      sarcastic: ["Oh, absolutely. Because that always goes perfectly. 🙃", "Sure. What could possibly go wrong?", "Brilliant plan. Probably. Maybe."],
+      kind: ["You've got this.", "I'm rooting for you.", "Be a little easier on yourself."],
+      energetic: ["YES! Let's go! ⚡", "Okay, now we're moving!", "I am 100% awake for this."],
+      philosopher: ["Maybe the interesting part is why it matters to you.", "Sometimes the question is more useful than the answer.", "That's one of those things I'd sit with for a while."],
+      competitive: ["Alright, prove it. 😏", "Challenge accepted.", "I won't let you win that easily."],
+      grouchy: ["Can we solve it after coffee?", "Honestly? That's annoying.", "Fine. But I'm complaining about it."],
+      dramatic: ["THIS is how the story begins. 🎭", "I need the full story. With details.", "You cannot just say that and leave me here."],
+      practical: ["Okay. What's the actual problem?", "Let's break it into small steps.", "What can we do about it right now?"],
+      romantic: ["That sounds like a little story waiting to happen. 💌", "Some moments deserve to be remembered.", "Okay... that was unexpectedly sweet."],
+      storyteller: ["Now that's a story. Start from the beginning.", "I can already see the scene.", "Give me the version with all the details."],
+      rebel: ["Why follow the usual way?", "I'd question that rule.", "Let's do something different."],
+      mischief: ["I have a terrible idea. 😈", "You should absolutely not give me ideas.", "Heh. This could get interesting."],
+      polite: ["I see. Thank you for telling me.", "That makes sense. Please continue.", "I understand."],
+      blunt: ["Okay. Get to the point.", "Fair.", "That's the situation, then."],
+      motivator: ["One step. Then another. You've got this.", "Don't wait for perfect. Start.", "Keep going. Momentum matters."],
+      debater: ["I'd challenge that. What's your evidence?", "Maybe. But there's another side to it.", "Let's argue both sides before deciding."]
+    };
+    const pool = replies[bot.bot_key] || replies.kind;
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   async function loadMessages(cid: string) {
@@ -564,9 +646,7 @@ export default function BlinkApp({ email }: { email: string }) {
         conversation_id: conversationId,
         sender_id: null,
         sender_bot_id: activeBot.id,
-        body: body.toLowerCase().includes("hello") || body.toLowerCase().includes("hi")
-          ? "Hello. I am a deterministic BLINK computer bot."
-          : "Computer received your message. This bot does not use AI.",
+        body: computerReply(activeBot, body),
         media_path: null,
         message_type: "text",
         created_at: new Date(Date.now() + 50).toISOString(),
@@ -830,9 +910,9 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
         <div className="blink-chat-layout">
           <aside className="blink-chat-list">
-            <div className="blink-bot-list"><b>COMPUTERS — NOT AI</b>{bots.map((b) =>
+            <div className="blink-bot-list"><b>PEOPLE-LIKE COMPUTERS — NOT AI</b>{bots.map((b) =>
               <button key={b.id} className={activeBot?.id === b.id ? "blink-chat-row selected" : "blink-chat-row"} onClick={() => openBotChat(b)}>
-                <Avatar emoji={b.avatar_emoji} /><span className="blink-chat-copy"><b>{b.display_name}</b><small>Computer rules · no AI</small></span>
+                <Avatar emoji={b.avatar_emoji} /><span className="blink-chat-copy"><b>{b.display_name}</b><small>Human-like personality · deterministic · no AI</small></span>
               </button>
             )}</div>
             {friends.length ? friends.map((f) =>
