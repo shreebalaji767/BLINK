@@ -46,6 +46,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [flashOn, setFlashOn] = useState(false);
   const [chatRetention, setChatRetention] = useState("24h");
   const [snapRetention, setSnapRetention] = useState("seen");
+  const [storyRetention, setStoryRetention] = useState("24h");
   const [spotlight, setSpotlight] = useState<any[]>([]);
   const [memoryItems, setMemoryItems] = useState<any[]>([]);
   const [memoryPrivate, setMemoryPrivate] = useState(false);
@@ -316,6 +317,7 @@ export default function BlinkApp({ email }: { email: string }) {
       setAppearance(storedAppearance === "light" ? "light" : "dark");
       setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
       setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "seen");
+      setStoryRetention(window.localStorage.getItem("blink_story_retention") || "24h");
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.access_token) {
         await supabase.realtime.setAuth(sessionData.session.access_token);
@@ -423,6 +425,8 @@ export default function BlinkApp({ email }: { email: string }) {
     if (value === "5m") return 5 * 60 * 1000;
     if (value === "1h") return 60 * 60 * 1000;
     if (value === "24h") return 24 * 60 * 60 * 1000;
+    if (value === "6h") return 6 * 60 * 60 * 1000;
+    if (value === "12h") return 12 * 60 * 60 * 1000;
     if (value === "7d") return 7 * 24 * 60 * 60 * 1000;
     return 0;
   }
@@ -868,7 +872,7 @@ export default function BlinkApp({ email }: { email: string }) {
         media_type: storyFile.type.startsWith("video/") ? "video" : "image",
         caption: null,
         created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 86400000).toISOString()
+        expires_at: new Date(Date.now() + retentionMs(storyRetention)).toISOString()
       };
       const current = JSON.parse(window.localStorage.getItem(localStoriesKey(me)) || "[]");
       const next = [story, ...current].slice(0, 100);
@@ -1110,14 +1114,29 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
       {tab === "stories" && <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">BROWSER ONLY · 24 HOURS</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">BROWSER ONLY · {storyRetention === "24h" ? "24 HOURS" : storyRetention.toUpperCase()}</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
+        <div className="blink-ephemeral-settings">
+          <label>Keep Story for
+            <select className="blink-search" value={storyRetention} onChange={(e) => { setStoryRetention(e.target.value); window.localStorage.setItem("blink_story_retention", e.target.value); }}>
+              <option value="10s">10 seconds</option>
+              <option value="1m">1 minute</option>
+              <option value="5m">5 minutes</option>
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
+              <option value="12h">12 hours</option>
+              <option value="24h">24 hours</option>
+              <option value="7d">7 days</option>
+            </select>
+          </label>
+          <small>New Stories automatically disappear when this period ends.</small>
+        </div>
         <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" capture="environment" onChange={(e) => {
           const f = e.target.files?.[0]; if (f) { setStoryFile(f); notify("Story ready."); }
         }} />
         {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b><select className="blink-search" defaultValue="friends" onChange={(e) => (window as any).__blinkStoryPrivacy = e.target.value}><option value="friends">My Story · Friends</option><option value="public">My Story · Public</option><option value="private">Private Story</option></select><button className="blink-primary" onClick={publishStory} disabled={busy}>Post Story</button></div>}
         <div className="blink-story-grid">{stories.map((s) =>
           <button key={s.id} className="blink-story-card" onClick={() => { if (s.media_path) window.open(s.media_path, "_blank", "noopener,noreferrer"); }}>
-            <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div><b>{s.user_id === me ? "Your Story" : shortId(s.user_id)}</b><small>browser-local · expires in 24h</small>
+            <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div><b>{s.user_id === me ? "Your Story" : shortId(s.user_id)}</b><small>browser-local · expires {Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 3600000))}h</small>
           </button>
         )}</div>
       </div>}
@@ -1229,7 +1248,7 @@ export default function BlinkApp({ email }: { email: string }) {
             <div className="blink-settings-section">
               <span className="blink-eyebrow">BLINK RULES</span>
               <div className="blink-setting-readonly"><span>Data retention</span><b>Browser-local</b></div>
-              <div className="blink-setting-readonly"><span>Local content expiry</span><b>{chatRetention === "seen" ? "chat after seen" : chatRetention} / {snapRetention === "seen" ? "Snap after seen" : snapRetention}</b></div>
+              <div className="blink-setting-readonly"><span>Local content expiry</span><b>Chat: {chatRetention === "seen" ? "after seen" : chatRetention} / Snap: {snapRetention === "seen" ? "after seen" : snapRetention} / Story: {storyRetention}</b></div>
               <small>Chats, Snaps and Memories are browser-local only. BLINK does not write their contents to the database.</small>
             </div>
           </div>
