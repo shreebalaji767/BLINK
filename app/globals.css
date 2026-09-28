@@ -211,7 +211,7 @@ html[data-theme="light"] video {
 @media (max-width:620px){.blink-platform-grid{grid-template-columns:1fr}}
 
 
-.blink-real-map{position:relative;overflow:hidden;min-height:460px;padding:0}.blink-map-iframe{display:block;width:100%;height:460px;border:0;background:#111}.blink-real-map .blink-map-label{z-index:2}.blink-map-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.blink-map-controls button{min-height:42px}
+.blink-real-map{position:relative;overflow:hidden;min-height:460px;padding:0}.blink-leaflet-map{width:100%;height:460px;background:#dfe6ec}.blink-real-map .blink-map-label{z-index:1000}.blink-map-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.blink-map-controls button{min-height:42px}.blink-leaflet-map .leaflet-control-attribution{font-size:10px}.blink-leaflet-map .leaflet-control-attribution a{color:inherit}
 
 
 
