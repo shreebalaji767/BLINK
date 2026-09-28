@@ -184,7 +184,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
   function loadSpotlight() {
     try {
-      const raw = window.localStorage.getItem("blink_spotlight");
+      const raw = window.localStorage.getItem("blink_spotlight_" + me);
       const items = raw ? JSON.parse(raw) : [];
       setSpotlight(Array.isArray(items) ? items : []);
     } catch {
@@ -192,9 +192,9 @@ export default function BlinkApp({ email }: { email: string }) {
     }
   }
 
-  function loadMemories() {
+  function loadMemories(userId: string) {
     try {
-      const raw = window.localStorage.getItem("blink_memories");
+      const raw = window.localStorage.getItem("blink_memories_" + userId);
       setMemoryItems(raw ? JSON.parse(raw) : []);
     } catch { setMemoryItems([]); }
   }
@@ -203,7 +203,7 @@ export default function BlinkApp({ email }: { email: string }) {
     const item = { id: crypto.randomUUID(), dataUrl, type, createdAt: new Date().toISOString(), privateOnly };
     const next = [item, ...memoryItems].slice(0, 100);
     try {
-      window.localStorage.setItem("blink_memories", JSON.stringify(next));
+      window.localStorage.setItem("blink_memories_" + me, JSON.stringify(next));
       setMemoryItems(next);
       notify(privateOnly ? "Saved to My Eyes Only on this device." : "Saved to Memories on this device.");
     } catch {
@@ -244,7 +244,7 @@ export default function BlinkApp({ email }: { email: string }) {
       };
       const current = JSON.parse(window.localStorage.getItem("blink_spotlight") || "[]");
       const next = [post, ...current].slice(0, 60);
-      window.localStorage.setItem("blink_spotlight", JSON.stringify(next));
+      window.localStorage.setItem("blink_spotlight_" + me, JSON.stringify(next));
       setSpotlight(next);
       notify("Spotlight saved only in this browser.");
     } catch {
@@ -353,7 +353,7 @@ export default function BlinkApp({ email }: { email: string }) {
       await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id)]);
       loadBots();
       loadSpotlight();
-      loadMemories();
+      loadMemories(data.user.id);
       const { data: allProfiles, error: profileError } = await supabase.from("profiles").select("id,username").order("username").limit(5000);
       if (profileError) notify(profileError.message);
       const loadedDirectory = (allProfiles ?? []).map((x: any) => ({ id: x.id, username: x.username })).filter((x: Person) => x.id !== data.user!.id);
@@ -932,7 +932,7 @@ export default function BlinkApp({ email }: { email: string }) {
           </div>
           <small className="blink-feature-note">Memories are stored only in this browser for this user. They are never written to the chat database. My Eyes Only is a local privacy feature; it is not a substitute for device encryption.</small>
           <div className="blink-memory-grid">{memoryItems.filter(m=>!m.privateOnly || memoryUnlocked).map(m=><article key={m.id} className="blink-memory-card">
-            <img src={m.dataUrl} alt="Memory" /><div><small>{new Date(m.createdAt).toLocaleString()}</small><button onClick={()=>{const next=memoryItems.filter(x=>x.id!==m.id);setMemoryItems(next);window.localStorage.setItem("blink_memories",JSON.stringify(next));}}>Delete</button></div>
+            <img src={m.dataUrl} alt="Memory" /><div><small>{new Date(m.createdAt).toLocaleString()}</small><button onClick={()=>{const next=memoryItems.filter(x=>x.id!==m.id);setMemoryItems(next);window.localStorage.setItem("blink_memories_" + me,JSON.stringify(next));}}>Delete</button></div>
           </article>)}</div>
           {!memoryItems.length && <div className="blink-empty">Save a Snap to Memories to build your private archive.</div>}
         </div>
