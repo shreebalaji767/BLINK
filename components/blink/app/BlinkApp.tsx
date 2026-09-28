@@ -115,10 +115,21 @@ export default function BlinkApp({ email }: { email: string }) {
     setBlocked((data ?? []).map((x: any) => ({ id: x.blocked_id, username: "" })));
   }
 
+  function localStoriesKey(userId: string) {
+    return "blink_stories_" + userId;
+  }
+
   async function loadStories(userId: string) {
-    const { data } = await supabase.from("stories").select("id,user_id,media_path,media_type,caption,created_at,expires_at")
-      .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
-    setStories((data ?? []).filter((s: any) => s.user_id === userId));
+    try {
+      const raw = window.localStorage.getItem(localStoriesKey(userId));
+      const now = Date.now();
+      const items = raw ? JSON.parse(raw) : [];
+      const active = Array.isArray(items) ? items.filter((s: Story) => new Date(s.expires_at).getTime() > now) : [];
+      setStories(active);
+      window.localStorage.setItem(localStoriesKey(userId), JSON.stringify(active));
+    } catch {
+      setStories([]);
+    }
   }
 
   function localChatKey(cid: string) {
@@ -171,9 +182,14 @@ export default function BlinkApp({ email }: { email: string }) {
     }
   }
 
-  async function loadSpotlight() {
-    const { data } = await supabase.from("spotlight_posts").select("*").order("created_at", { ascending: false }).limit(60);
-    setSpotlight(data ?? []);
+  function loadSpotlight() {
+    try {
+      const raw = window.localStorage.getItem("blink_spotlight");
+      const items = raw ? JSON.parse(raw) : [];
+      setSpotlight(Array.isArray(items) ? items : []);
+    } catch {
+      setSpotlight([]);
+    }
   }
 
   function loadMemories() {
@@ -215,24 +231,33 @@ export default function BlinkApp({ email }: { email: string }) {
   async function publishSpotlight() {
     const file = (window as any).__blinkSnapFile as File | undefined;
     if (!file || !me) return notify("Take a Snap first.");
-    setBusy(true);
-    const id = crypto.randomUUID();
-    const path = me + "/spotlight/" + id;
-    const { error: uploadError } = await supabase.storage.from("blink-ephemeral").upload(path, file, { contentType: file.type });
-    if (uploadError) { setBusy(false); return notify(uploadError.message); }
-    const { error } = await supabase.from("spotlight_posts").insert({
-      id, user_id: me, media_path: path, media_type: file.type.startsWith("video/") ? "video" : "image", caption: snapCaption
-    });
-    setBusy(false);
-    if (error) notify(error.message);
-    else { await loadSpotlight(); notify("Posted to Spotlight."); }
+    if (file.size > 4 * 1024 * 1024) return notify("For browser-only Spotlight, choose a file under 4 MB.");
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const post = {
+        id: crypto.randomUUID(),
+        user_id: me,
+        media_path: dataUrl,
+        media_type: file.type.startsWith("video/") ? "video" : "image",
+        caption: snapCaption,
+        created_at: new Date().toISOString()
+      };
+      const current = JSON.parse(window.localStorage.getItem("blink_spotlight") || "[]");
+      const next = [post, ...current].slice(0, 60);
+      window.localStorage.setItem("blink_spotlight", JSON.stringify(next));
+      setSpotlight(next);
+      notify("Spotlight saved only in this browser.");
+    } catch {
+      notify("Browser storage is full. Delete older local content first.");
+    }
   }
 
-  async function toggleSpotlightLike(postId: string) {
-    const { data: existing } = await supabase.from("spotlight_likes").select("post_id").eq("post_id", postId).eq("user_id", me).maybeSingle();
-    if (existing) await supabase.from("spotlight_likes").delete().eq("post_id", postId).eq("user_id", me);
-    else await supabase.from("spotlight_likes").insert({ post_id: postId, user_id: me });
-    await loadSpotlight();
+  function toggleSpotlightLike(postId: string) {
+    const key = "blink_spotlight_likes_" + me;
+    const current = JSON.parse(window.localStorage.getItem(key) || "{}");
+    current[postId] = !current[postId];
+    window.localStorage.setItem(key, JSON.stringify(current));
+    notify(current[postId] ? "Like added." : "Like removed.");
   }
 
   async function createGroup() {
@@ -291,9 +316,12 @@ export default function BlinkApp({ email }: { email: string }) {
     notify(current.includes(messageId) ? "Message unsaved." : "Message saved.");
   }
 
-  async function loadBots() {
-    const { data } = await supabase.from("bot_profiles").select("id,bot_key,display_name,avatar_emoji").eq("enabled", true).order("display_name");
-    setBots((data ?? []) as Bot[]);
+  function loadBots() {
+    setBots([
+      { id: "local-helper", bot_key: "helper", display_name: "BLINK Computer", avatar_emoji: "💻" },
+      { id: "local-rules", bot_key: "rules", display_name: "BLINK Rules", avatar_emoji: "◈" },
+      { id: "local-fun", bot_key: "fun", display_name: "BLINK Fun", avatar_emoji: "✦" }
+    ]);
   }
 
   async function loadMessages(cid: string) {
@@ -322,7 +350,9 @@ export default function BlinkApp({ email }: { email: string }) {
       }
       const { data: myProfile } = await supabase.from("profiles").select("username").eq("id", data.user.id).single();
       setMeUsername(myProfile?.username ?? "");
-      await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id), loadBots(), loadSpotlight()]);
+      await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id)]);
+      loadBots();
+      loadSpotlight();
       loadMemories();
       const { data: allProfiles, error: profileError } = await supabase.from("profiles").select("id,username").order("username").limit(5000);
       if (profileError) notify(profileError.message);
@@ -646,7 +676,7 @@ export default function BlinkApp({ email }: { email: string }) {
       setSelectedRecipients([]);
       (window as any).__blinkSnapFile = undefined;
       await loadSnaps(me);
-      notify("Snap saved in this browser. It is not stored in the database.");
+      notify("Snap saved only in this browser. It is not stored in the database or server storage.");
     } catch {
       notify("Browser storage is full. Delete older local Snaps or Memories.");
     }
@@ -654,31 +684,31 @@ export default function BlinkApp({ email }: { email: string }) {
 
   async function publishStory() {
     if (!storyFile || !me) return;
-    setBusy(true);
-    const id = crypto.randomUUID();
-    const path = me + "/stories/" + id;
-    const { error: uploadError } = await supabase.storage.from("blink-ephemeral").upload(path, storyFile, { contentType: storyFile.type });
-    if (uploadError) {
-      setBusy(false);
-      notify(uploadError.message);
-      return;
-    }
-    const { error } = await supabase.from("stories").insert({
-      id, user_id: me, media_path: path, media_type: storyFile.type.startsWith("video/") ? "video" : "image",
-      privacy: ((window as any).__blinkStoryPrivacy || "friends"), expires_at: new Date(Date.now() + 86400000).toISOString()
-    });
-    setBusy(false);
-    if (error) notify(error.message);
-    else {
+    if (storyFile.size > 4 * 1024 * 1024) return notify("For browser-only Stories, choose a file under 4 MB.");
+    try {
+      const dataUrl = await fileToDataUrl(storyFile);
+      const story: Story = {
+        id: crypto.randomUUID(),
+        user_id: me,
+        media_path: dataUrl,
+        media_type: storyFile.type.startsWith("video/") ? "video" : "image",
+        caption: null,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 86400000).toISOString()
+      };
+      const current = JSON.parse(window.localStorage.getItem(localStoriesKey(me)) || "[]");
+      const next = [story, ...current].slice(0, 100);
+      window.localStorage.setItem(localStoriesKey(me), JSON.stringify(next));
+      setStories(next);
       setStoryFile(null);
-      await loadStories(me);
-      notify("Story posted for 24 hours.");
+      notify("Story saved only in this browser for 24 hours.");
+    } catch {
+      notify("Browser storage is full. Delete older local content first.");
     }
   }
 
   async function mediaUrl(path: string) {
-    const { data } = await supabase.storage.from("blink-ephemeral").createSignedUrl(path, 60);
-    return data?.signedUrl ?? "";
+    return path;
   }
 
   async function openSnap(snap: Snap) {
@@ -866,14 +896,14 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
       {tab === "stories" && <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">24 HOURS THEN DELETED</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
+        <div className="blink-panel-head"><div><span className="blink-eyebrow">BROWSER ONLY · 24 HOURS</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
         <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" capture="environment" onChange={(e) => {
           const f = e.target.files?.[0]; if (f) { setStoryFile(f); notify("Story ready."); }
         }} />
         {storyFile && <div className="blink-story-compose"><b>{storyFile.name}</b><select className="blink-search" defaultValue="friends" onChange={(e) => (window as any).__blinkStoryPrivacy = e.target.value}><option value="friends">My Story · Friends</option><option value="public">My Story · Public</option><option value="private">Private Story</option></select><button className="blink-primary" onClick={publishStory} disabled={busy}>Post Story</button></div>}
         <div className="blink-story-grid">{stories.map((s) =>
-          <button key={s.id} className="blink-story-card" onClick={async () => { const u = await mediaUrl(s.media_path); if (u) window.open(u, "_blank", "noopener,noreferrer"); }}>
-            <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div><b>{s.user_id === me ? "Your Story" : shortId(s.user_id)}</b><small>expires in 24h</small>
+          <button key={s.id} className="blink-story-card" onClick={() => { if (s.media_path) window.open(s.media_path, "_blank", "noopener,noreferrer"); }}>
+            <div className="blink-story-ring"><span>{shortId(s.user_id)}</span></div><b>{s.user_id === me ? "Your Story" : shortId(s.user_id)}</b><small>browser-local · expires in 24h</small>
           </button>
         )}</div>
       </div>}
@@ -882,9 +912,9 @@ export default function BlinkApp({ email }: { email: string }) {
       {tab === "spotlight" && (
         <div className="blink-panel">
           <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => setTab("camera")}>＋ Create</button></div>
-          <p className="blink-feature-note">A public short-video/photo feed for discovery. Posts can be liked and remain separate from private chats.</p>
+          <p className="blink-feature-note">Spotlight is browser-local in BLINK. Posts, likes and media stay on this device and are not written to the database.</p>
           <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
-            <div className="blink-spotlight-media">{p.media_path ? <button onClick={async()=>{const u=await mediaUrl(p.media_path); if(u) window.open(u,"_blank","noopener,noreferrer")}}>▶ Open Snap</button> : null}</div>
+            <div className="blink-spotlight-media">{p.media_path ? <button onClick={()=>{ if(p.media_path) window.open(p.media_path,"_blank","noopener,noreferrer") }}>▶ Open Snap</button> : null}</div>
             <div className="blink-spotlight-copy"><b>@{directory.find(x=>x.id===p.user_id)?.username || (p.user_id===me ? meUsername : "blink_user")}</b><span>{p.caption || "Spotlight post"}</span><button onClick={()=>toggleSpotlightLike(p.id)}>♡ Like</button></div>
           </article>)}</div>
           {!spotlight.length && <div className="blink-empty">No Spotlight posts yet. Create the first one from Camera.</div>}
