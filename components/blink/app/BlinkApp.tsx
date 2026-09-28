@@ -234,7 +234,9 @@ export default function BlinkApp({ email }: { email: string }) {
     const { data: profiles } = await supabase.from("profiles").select("id, username, avatar_emoji").in("id", ids);
     setBlocked(ids.map((id: string) => ({
       id,
-      username: (profiles ?? []).find((p: { id: string }) => p.id === id)?.username ?? "",\n      avatar_emoji: (profiles ?? []).find((p: { id: string; avatar_emoji?: string | null }) => p.id === id)?.avatar_emoji ?? null,\n      role: null
+      username: (profiles ?? []).find((p: { id: string }) => p.id === id)?.username ?? "",
+      avatar_emoji: (profiles ?? []).find((p: { id: string; avatar_emoji?: string | null }) => p.id === id)?.avatar_emoji ?? null,
+      role: null
     })));
   }
 
@@ -569,7 +571,9 @@ export default function BlinkApp({ email }: { email: string }) {
       notify("Could not load the username directory.");
       return;
     }
-    const rows = (data ?? []) as { id: string; username: string; avatar_emoji?: string | null }[];\n    const roleMap = await loadUserRoles(rows.map((p) => p.id));\n    setDirectory(rows.map((p) => ({ id: p.id, username: p.username, avatar_emoji: p.avatar_emoji ?? null, role: roleMap.get(p.id) ?? null })));
+    const rows = (data ?? []) as { id: string; username: string; avatar_emoji?: string | null }[];
+    const roleMap = await loadUserRoles(rows.map((p) => p.id));
+    setDirectory(rows.map((p) => ({ id: p.id, username: p.username, avatar_emoji: p.avatar_emoji ?? null, role: roleMap.get(p.id) ?? null })));
   }
 
   useEffect(() => {
