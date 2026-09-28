@@ -242,7 +242,7 @@ export default function BlinkApp({ email }: { email: string }) {
         caption: snapCaption,
         created_at: new Date().toISOString()
       };
-      const current = JSON.parse(window.localStorage.getItem("blink_spotlight") || "[]");
+      const current = JSON.parse(window.localStorage.getItem("blink_spotlight_" + me) || "[]");
       const next = [post, ...current].slice(0, 60);
       window.localStorage.setItem("blink_spotlight_" + me, JSON.stringify(next));
       setSpotlight(next);
