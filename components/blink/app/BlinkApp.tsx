@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/blink/auth/SignOutButton";
 
-type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile";
+type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile" | "admin";
 type Person = { id: string; username: string; online?: boolean };
 type Message = {
   id: string; conversation_id: string; sender_id: string | null;
@@ -34,6 +34,19 @@ export default function BlinkApp({ email }: { email: string }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [settingsBusy, setSettingsBusy] = useState(false);
+  const [adminRole, setAdminRole] = useState<"owner" | "admin" | null>(null);
+  const [adminPermissions, setAdminPermissions] = useState<Record<string, boolean>>({});
+  const [ownerMetrics, setOwnerMetrics] = useState({
+    totalUsers: 0,
+    activeAdmins: 0,
+    owners: 0,
+    admins: 0,
+    acceptedFriendships: 0,
+    pendingFriendships: 0,
+    blocks: 0,
+    enabledAdmins: 0
+  });
+  const [ownerDashboardBusy, setOwnerDashboardBusy] = useState(false);
   const [settingsEmail, setSettingsEmail] = useState(email);
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
@@ -86,7 +99,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const conversationIdRef = useRef("");
   conversationIdRef.current = conversationId;
 
-  const validTabs: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile"];
+  const validTabs: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile", "admin"];
 
   function navigateTab(next: Tab) {
     setTab(next);
@@ -310,6 +323,20 @@ export default function BlinkApp({ email }: { email: string }) {
       setSettingsUsername(username);
       setDisplayName(name);
       setSettingsName(name);
+
+      const { data: adminRecord } = await supabase
+        .from("blink_admins")
+        .select("role, permissions, enabled")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (adminRecord?.enabled) {
+        setAdminRole(adminRecord.role === "owner" ? "owner" : "admin");
+        setAdminPermissions((adminRecord.permissions ?? {}) as Record<string, boolean>);
+      } else {
+        setAdminRole(null);
+        setAdminPermissions({});
+      }
+
       const storedAppearance = window.localStorage.getItem("blink_appearance_" + user.id);
       const storedGhost = window.localStorage.getItem("blink_ghost_mode_" + user.id);
       setAvatarEmoji(window.localStorage.getItem("blink_avatar_" + user.id) || "3F");
@@ -371,6 +398,7 @@ export default function BlinkApp({ email }: { email: string }) {
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
+        if (adminRecord?.enabled) await loadOwnerMetrics();
       }
     }
     initialize();
@@ -384,6 +412,35 @@ export default function BlinkApp({ email }: { email: string }) {
       }
     };
   }, []);
+
+  async function loadOwnerMetrics() {
+    if (!me || adminRole !== "owner") return;
+    setOwnerDashboardBusy(true);
+    try {
+      const [{ count: totalUsers }, { count: activeAdmins }, { count: owners }, { count: admins }, { count: acceptedFriendships }, { count: pendingFriendships }, { count: blocks }, { count: enabledAdmins }] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("blink_admins").select("user_id", { count: "exact", head: true }).eq("enabled", true),
+        supabase.from("blink_admins").select("user_id", { count: "exact", head: true }).eq("role", "owner").eq("enabled", true),
+        supabase.from("blink_admins").select("user_id", { count: "exact", head: true }).eq("role", "admin").eq("enabled", true),
+        supabase.from("friendships").select("id", { count: "exact", head: true }).eq("status", "accepted"),
+        supabase.from("friendships").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("blocks").select("blocker_id", { count: "exact", head: true }),
+        supabase.from("blink_admins").select("user_id", { count: "exact", head: true }).eq("enabled", true)
+      ]);
+      setOwnerMetrics({
+        totalUsers: totalUsers ?? 0,
+        activeAdmins: activeAdmins ?? 0,
+        owners: owners ?? 0,
+        admins: admins ?? 0,
+        acceptedFriendships: acceptedFriendships ?? 0,
+        pendingFriendships: pendingFriendships ?? 0,
+        blocks: blocks ?? 0,
+        enabledAdmins: enabledAdmins ?? 0
+      });
+    } finally {
+      setOwnerDashboardBusy(false);
+    }
+  }
 
   async function loadDirectory() {
     const { data, error } = await supabase.from("profiles").select("id, username").order("username").limit(5000);
@@ -978,7 +1035,8 @@ export default function BlinkApp({ email }: { email: string }) {
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const nav: [Tab, string, string][] = [
     ["camera", "◉", "Camera"], ["chat", "◌", "Chat"], ["friends", "♙", "Friends"],
-    ["stories", "◫", "Stories"], ["spotlight", "▷", "Spotlight"], ["map", "⌖", "Map"], ["memories", "▣", "Memories"], ["profile", "●", "Account"]
+    ["stories", "◫", "Stories"], ["spotlight", "▷", "Spotlight"], ["map", "⌖", "Map"], ["memories", "▣", "Memories"], ["profile", "●", "Account"],
+    ...(adminRole ? [["admin", "◆", "Admin"] as [Tab, string, string]] : [])
   ];
 
   return <main className="blink-app">
@@ -1055,6 +1113,7 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-ephemeral-settings">
           <label>Delete chat messages
             <select className="blink-search" value={chatRetention} onChange={(e) => { setChatRetention(e.target.value); window.localStorage.setItem("blink_chat_retention", e.target.value); }}>
+              <option value="seen">After seen</option>
               <option value="10s">10 seconds</option>
               <option value="30s">30 seconds</option>
               <option value="1m">1 minute</option>
@@ -1233,6 +1292,69 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
         <div className="blink-map"><div className="blink-map-grid" /><div className="blink-map-label">{ghostMode ? "Ghost Mode — no location is stored" : "Location sharing is temporary and not stored as history"}</div></div>
         <div className="blink-map-controls"><button onClick={() => setGhostMode(true)}>👻 Ghost Mode</button><button onClick={() => notify("Temporary location expires automatically.")}>⌖ Expiry</button><button onClick={() => notify("No location history is stored.")}>✦ Privacy</button></div>
+      </div>}
+
+      {tab === "admin" && adminRole && <div className="blink-panel">
+        <div className="blink-panel-head">
+          <div><span className="blink-eyebrow">{adminRole === "owner" ? "OWNER CONTROL CENTER" : "ADMIN CONTROL CENTER"}</span><h1>{adminRole === "owner" ? "Owner Dashboard" : "Admin Center"}</h1></div>
+          {adminRole === "owner" && <button className="blink-primary small" onClick={loadOwnerMetrics} disabled={ownerDashboardBusy}>{ownerDashboardBusy ? "Refreshing…" : "Refresh"}</button>}
+        </div>
+
+        {adminRole === "owner" ? <>
+          <p className="blink-feature-note">Owner access includes every Admin privilege plus owner-only visibility for platform totals, usage signals, misuse indicators, performance checks and security status. No disappearing chat, Snap, Story or Memory content is stored in Supabase.</p>
+
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">TOTAL USERS</span>
+            <div className="blink-setting-readonly"><span>Registered BLINK users</span><b>{ownerMetrics.totalUsers}</b></div>
+            <div className="blink-setting-readonly"><span>Active owners</span><b>{ownerMetrics.owners}</b></div>
+            <div className="blink-setting-readonly"><span>Active admins</span><b>{ownerMetrics.admins}</b></div>
+          </div>
+
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">USAGE</span>
+            <div className="blink-setting-readonly"><span>Accepted friendships</span><b>{ownerMetrics.acceptedFriendships}</b></div>
+            <div className="blink-setting-readonly"><span>Pending friend requests</span><b>{ownerMetrics.pendingFriendships}</b></div>
+            <small>Current usage analytics are intentionally limited to non-content social metadata. Browser-local chats, Snaps, Stories and Memories are not uploaded for monitoring.</small>
+          </div>
+
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">MISUSE / MODERATION SIGNALS</span>
+            <div className="blink-setting-readonly"><span>Active blocks</span><b>{ownerMetrics.blocks}</b></div>
+            <div className="blink-setting-readonly"><span>Enabled administrators</span><b>{ownerMetrics.enabledAdmins}</b></div>
+            <small>Block totals are a signal for moderation review; they do not by themselves prove misuse.</small>
+          </div>
+
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">PERFORMANCE</span>
+            <div className="blink-setting-readonly"><span>Client content model</span><b>Browser-local</b></div>
+            <div className="blink-setting-readonly"><span>Realtime delivery</span><b>Ephemeral Broadcast</b></div>
+            <div className="blink-setting-readonly"><span>Server message database</span><b>Not used</b></div>
+            <small>Detailed infrastructure latency and service-resource metrics belong in the Render/Supabase monitoring consoles rather than being fabricated in the client dashboard.</small>
+          </div>
+
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">SECURITY</span>
+            <div className="blink-setting-readonly"><span>Admin authorization</span><b>RLS protected</b></div>
+            <div className="blink-setting-readonly"><span>Private Realtime channels</span><b>Friend + block checks</b></div>
+            <div className="blink-setting-readonly"><span>Ephemeral content storage</span><b>Browser only</b></div>
+            <small>Owner privileges are granted from the protected blink_admins table. Admins cannot promote themselves or change owner accounts.</small>
+          </div>
+
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">OWNER PRIVILEGES</span>
+            <div className="blink-setting-readonly"><span>Admin management</span><b>Full</b></div>
+            <div className="blink-setting-readonly"><span>Admin permissions</span><b>Full</b></div>
+            <div className="blink-setting-readonly"><span>Owner controls</span><b>Full</b></div>
+          </div>
+        </> : <>
+          <p className="blink-feature-note">Your Admin access is limited to permissions explicitly granted by an Owner.</p>
+          <div className="blink-settings-section">
+            <span className="blink-eyebrow">GRANTED PERMISSIONS</span>
+            {Object.keys(adminPermissions).filter((key) => adminPermissions[key]).length
+              ? Object.keys(adminPermissions).filter((key) => adminPermissions[key]).map((key) => <div className="blink-setting-readonly" key={key}><span>{key.replace(/_/g, " ")}</span><b>Allowed</b></div>)
+              : <div className="blink-empty">No additional Admin permissions have been granted.</div>}
+          </div>
+        </>}
       </div>}
 
       {tab === "profile" && <div className="blink-profile-page">
