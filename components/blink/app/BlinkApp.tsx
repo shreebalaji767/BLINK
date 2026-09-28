@@ -119,15 +119,44 @@ export default function BlinkApp({ email }: { email: string }) {
     setStories((data ?? []).filter((s: any) => s.user_id === userId));
   }
 
-  async function loadSnaps(userId: string) {
-    const { data } = await supabase.from("snap_recipients").select("snap_id,opened_at").eq("recipient_id", userId);
-    const ids = (data ?? []).filter((x: any) => !x.opened_at).map((x: any) => x.snap_id);
-    if (!ids.length) {
-      setSnaps([]);
-      return;
+  function localChatKey(cid: string) {
+    return "blink_chat_" + me + "_" + cid;
+  }
+
+  function localSnapKey() {
+    return "blink_snaps_" + me;
+  }
+
+  function loadLocalChat(cid: string) {
+    try {
+      const raw = window.localStorage.getItem(localChatKey(cid));
+      const now = Date.now();
+      const items = raw ? JSON.parse(raw) : [];
+      const active = Array.isArray(items) ? items.filter((m: Message) => new Date(m.expires_at).getTime() > now) : [];
+      setMessages(active);
+      window.localStorage.setItem(localChatKey(cid), JSON.stringify(active));
+    } catch {
+      setMessages([]);
     }
-    const { data: s } = await supabase.from("snaps").select("*").in("id", ids).gt("expires_at", new Date().toISOString());
-    setSnaps(s ?? []);
+  }
+
+  function saveLocalChat(cid: string, items: Message[]) {
+    const active = items.filter((m) => new Date(m.expires_at).getTime() > Date.now());
+    setMessages(active);
+    window.localStorage.setItem(localChatKey(cid), JSON.stringify(active));
+  }
+
+  async function loadSnaps(userId: string) {
+    try {
+      const raw = window.localStorage.getItem("blink_snaps_" + userId);
+      const now = Date.now();
+      const items = raw ? JSON.parse(raw) : [];
+      const active = Array.isArray(items) ? items.filter((s: Snap) => new Date(s.expires_at).getTime() > now && !((s as any).opened_at)) : [];
+      setSnaps(active);
+      window.localStorage.setItem("blink_snaps_" + userId, JSON.stringify(active));
+    } catch {
+      setSnaps([]);
+    }
   }
 
   async function loadSpotlight() {
@@ -198,13 +227,14 @@ export default function BlinkApp({ email }: { email: string }) {
     const members = [...new Set([me, ...groupMembers])];
     if (members.length < 3) return notify("Select at least two friends for a group.");
     if (!groupTitle.trim()) return notify("Enter a group name.");
-    const { data: group, error } = await supabase.from("conversations").insert({ kind: "group", created_by: me, title: groupTitle.trim() }).select("id").single();
-    if (error || !group) return notify(error?.message ?? "Could not create group.");
-    const { error: memberError } = await supabase.from("conversation_members").insert(members.map(user_id => ({ conversation_id: group.id, user_id })));
-    if (memberError) return notify(memberError.message);
+    const localConversationId = "group:" + crypto.randomUUID();
+    const groupsRaw = window.localStorage.getItem("blink_groups_" + me);
+    const groups = groupsRaw ? JSON.parse(groupsRaw) : [];
+    groups.unshift({ id: localConversationId, title: groupTitle.trim(), members });
+    window.localStorage.setItem("blink_groups_" + me, JSON.stringify(groups));
     setGroupTitle(""); setGroupMembers([]);
-    setConversationId(group.id); setActivePerson(null); setActiveBot(null); setTab("chat");
-    notify("Group chat created.");
+    setConversationId(localConversationId); setActivePerson(null); setActiveBot(null); setTab("chat");
+    notify("Local group chat created. Chat data stays in this browser.");
   }
 
   async function startVoiceRecording() {
@@ -233,18 +263,20 @@ export default function BlinkApp({ email }: { email: string }) {
     setRecordingVoice(false);
   }
 
-  async function reactToMessage(messageId: string, emoji: string) {
-    const { data: existing } = await supabase.from("message_reactions").select("emoji").eq("message_id", messageId).eq("user_id", me).maybeSingle();
-    if (existing) await supabase.from("message_reactions").delete().eq("message_id", messageId).eq("user_id", me);
-    else await supabase.from("message_reactions").insert({ message_id: messageId, user_id: me, emoji });
-    notify(existing ? "Reaction removed." : emoji + " reaction added.");
+  function reactToMessage(messageId: string, emoji: string) {
+    const key = "blink_reactions_" + me;
+    const current = JSON.parse(window.localStorage.getItem(key) || "{}");
+    current[messageId] = current[messageId] === emoji ? null : emoji;
+    window.localStorage.setItem(key, JSON.stringify(current));
+    notify(current[messageId] ? emoji + " reaction added." : "Reaction removed.");
   }
 
-  async function toggleSavedMessage(messageId: string) {
-    const { data: existing } = await supabase.from("saved_messages").select("message_id").eq("message_id", messageId).eq("user_id", me).maybeSingle();
-    if (existing) await supabase.from("saved_messages").delete().eq("message_id", messageId).eq("user_id", me);
-    else await supabase.from("saved_messages").insert({ message_id: messageId, user_id: me });
-    notify(existing ? "Message unsaved." : "Message saved.");
+  function toggleSavedMessage(messageId: string) {
+    const key = "blink_saved_messages_" + me;
+    const current = JSON.parse(window.localStorage.getItem(key) || "[]") as string[];
+    const next = current.includes(messageId) ? current.filter((id) => id !== messageId) : [...current, messageId];
+    window.localStorage.setItem(key, JSON.stringify(next));
+    notify(current.includes(messageId) ? "Message unsaved." : "Message saved.");
   }
 
   async function loadBots() {
@@ -253,11 +285,8 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   async function loadMessages(cid: string) {
-    const { data } = await supabase.from("messages")
-      .select("*,bot_profiles:sender_bot_id(bot_key,display_name,avatar_emoji)")
-      .eq("conversation_id", cid).is("deleted_at", null).gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: true });
-    setMessages((data ?? []) as Message[]);
+    if (!me) return;
+    loadLocalChat(cid);
   }
 
   useEffect(() => {
@@ -296,13 +325,9 @@ export default function BlinkApp({ email }: { email: string }) {
   }, []);
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !me) return;
     loadMessages(conversationId);
-    const channel = supabase.channel("blink-chat-" + conversationId)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "conversation_id=eq." + conversationId }, () => loadMessages(conversationId))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId]);
+  }, [conversationId, me]);
 
   async function saveProfileSettings() {
     const username = settingsUsername.trim().toLowerCase();
@@ -451,33 +476,19 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   async function openFriendChat(person: Person) {
-    const { data, error } = await supabase.rpc("get_or_create_direct_conversation", { other_user: person.id });
-    if (error) {
-      notify(error.message);
-      return;
-    }
+    const ids = [me, person.id].sort();
+    const localConversationId = "dm:" + ids.join(":");
     setActivePerson(person);
     setActiveBot(null);
-    setConversationId(data);
+    setConversationId(localConversationId);
     setTab("chat");
   }
 
   async function openBotChat(bot: Bot) {
-    const { data: conversation, error } = await supabase.from("conversations")
-      .insert({ kind: "direct", created_by: me, title: bot.display_name }).select("id").single();
-    if (error || !conversation) {
-      notify(error?.message ?? "Could not create bot chat.");
-      return;
-    }
-    await supabase.from("conversation_members").insert({ conversation_id: conversation.id, user_id: me });
-    const { error: botError } = await supabase.from("conversation_bots").insert({ conversation_id: conversation.id, bot_id: bot.id });
-    if (botError) {
-      notify(botError.message);
-      return;
-    }
+    const localConversationId = "bot:" + bot.id;
     setActiveBot(bot);
     setActivePerson(null);
-    setConversationId(conversation.id);
+    setConversationId(localConversationId);
     setTab("chat");
   }
 
@@ -485,42 +496,67 @@ export default function BlinkApp({ email }: { email: string }) {
     if (!message.trim() || !conversationId || !me) return;
     const body = message.trim();
     setMessage("");
-    const { data, error } = await supabase.from("messages")
-      .insert({ conversation_id: conversationId, sender_id: me, body, message_type: "text", expires_at: new Date(Date.now() + 86400000).toISOString() })
-      .select("id").single();
-    if (error || !data) {
-      setMessage(body);
-      notify(error?.message ?? "Message failed.");
-      return;
-    }
+    const item: Message = {
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      sender_id: me,
+      sender_bot_id: null,
+      body,
+      media_path: null,
+      message_type: "text",
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 86400000).toISOString()
+    };
+    const raw = window.localStorage.getItem(localChatKey(conversationId));
+    const current: Message[] = raw ? JSON.parse(raw) : [];
+    const next = [...current, item];
+    saveLocalChat(conversationId, next);
+
     if (activeBot) {
-      const { error: botError } = await supabase.functions.invoke("blink-bot-reply", { body: { conversationId, messageId: data.id } });
-      if (botError) notify("Computer bot is unavailable.");
+      const reply: Message = {
+        id: crypto.randomUUID(),
+        conversation_id: conversationId,
+        sender_id: null,
+        sender_bot_id: activeBot.id,
+        body: body.toLowerCase().includes("hello") || body.toLowerCase().includes("hi")
+          ? "Hello. I am a deterministic BLINK computer bot."
+          : "Computer received your message. This bot does not use AI.",
+        media_path: null,
+        message_type: "text",
+        created_at: new Date(Date.now() + 50).toISOString(),
+        expires_at: new Date(Date.now() + 86400000).toISOString()
+      };
+      saveLocalChat(conversationId, [...next, reply]);
     }
   }
 
   async function sendChatFile(file: File) {
     if (!conversationId || !me) return;
-    if (file.size > 50 * 1024 * 1024) {
-      notify("File is too large.");
+    if (file.size > 4 * 1024 * 1024) {
+      notify("For browser-only Chat, choose a file under 4 MB.");
       return;
     }
-    const path = me + "/chat/" + crypto.randomUUID();
-    setBusy(true);
-    const { error: uploadError } = await supabase.storage.from("blink-ephemeral").upload(path, file, { contentType: file.type });
-    if (uploadError) {
-      setBusy(false);
-      notify(uploadError.message);
-      return;
-    }
+    const dataUrl = await fileToDataUrl(file);
     const type = file.type.startsWith("video/") ? "video" : file.type.startsWith("audio/") ? "voice" : "image";
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId, sender_id: me, media_path: path, message_type: type,
+    const item: Message = {
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      sender_id: me,
+      sender_bot_id: null,
+      body: null,
+      media_path: dataUrl,
+      message_type: type,
+      created_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 86400000).toISOString()
-    });
-    setBusy(false);
-    if (error) notify(error.message);
-    else if (activeBot) notify("Media sent. Computer bots reply to text commands.");
+    };
+    const raw = window.localStorage.getItem(localChatKey(conversationId));
+    const current: Message[] = raw ? JSON.parse(raw) : [];
+    try {
+      saveLocalChat(conversationId, [...current, item]);
+      if (activeBot) notify("Media saved in this browser. Computer bots reply to text commands.");
+    } catch {
+      notify("Browser storage is full. Delete older local chats or media.");
+    }
   }
 
   async function startCamera() {
@@ -570,32 +606,34 @@ export default function BlinkApp({ email }: { email: string }) {
       notify("Choose at least one friend.");
       return;
     }
-    setBusy(true);
-    const id = crypto.randomUUID();
-    const path = me + "/snaps/" + id;
-    const { error: uploadError } = await supabase.storage.from("blink-ephemeral").upload(path, file, { contentType: file.type });
-    if (uploadError) {
-      setBusy(false);
-      notify(uploadError.message);
+    if (file.size > 4 * 1024 * 1024) {
+      notify("For browser-only Snaps, choose a file under 4 MB.");
       return;
     }
-    const { error } = await supabase.from("snaps").insert({
-      id, sender_id: me, media_path: path, media_type: file.type.startsWith("video/") ? "video" : "image",
-      caption: snapCaption, duration_seconds: 10, expires_at: new Date(Date.now() + 7 * 86400000).toISOString()
-    });
-    if (!error) {
-      const { error: recipientError } = await supabase.from("snap_recipients")
-        .insert(selectedRecipients.map((recipient_id) => ({ snap_id: id, recipient_id })));
-      if (recipientError) notify(recipientError.message);
-    }
-    setBusy(false);
-    if (!error) {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const snap: Snap = {
+        id: crypto.randomUUID(),
+        sender_id: me,
+        media_path: dataUrl,
+        media_type: file.type.startsWith("video/") ? "video" : "image",
+        caption: snapCaption,
+        duration_seconds: 10,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 7 * 86400000).toISOString()
+      };
+      const raw = window.localStorage.getItem(localSnapKey());
+      const current: Snap[] = raw ? JSON.parse(raw) : [];
+      window.localStorage.setItem(localSnapKey(), JSON.stringify([...current, snap]));
       setSnapPreview("");
       setSnapCaption("");
       setSelectedRecipients([]);
       (window as any).__blinkSnapFile = undefined;
-      notify("Snap sent.");
-    } else notify(error.message);
+      await loadSnaps(me);
+      notify("Snap saved in this browser. It is not stored in the database.");
+    } catch {
+      notify("Browser storage is full. Delete older local Snaps or Memories.");
+    }
   }
 
   async function publishStory() {
@@ -628,15 +666,16 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   async function openSnap(snap: Snap) {
-    const url = await mediaUrl(snap.media_path);
-    if (!url) {
+    if (!snap.media_path) {
       notify("Snap expired.");
       return;
     }
-    window.open(url, "_blank", "noopener,noreferrer");
-    await supabase.from("snap_recipients").update({ opened_at: new Date().toISOString() })
-      .eq("snap_id", snap.id).eq("recipient_id", me);
-    setSnaps((s) => s.filter((x) => x.id !== snap.id));
+    window.open(snap.media_path, "_blank", "noopener,noreferrer");
+    const raw = window.localStorage.getItem(localSnapKey());
+    const current: Snap[] = raw ? JSON.parse(raw) : [];
+    const next = current.filter((x) => x.id !== snap.id);
+    window.localStorage.setItem(localSnapKey(), JSON.stringify(next));
+    setSnaps(next);
   }
 
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
@@ -728,7 +767,7 @@ export default function BlinkApp({ email }: { email: string }) {
             )}</div>
             {friends.length ? friends.map((f) =>
               <button key={f.id} className={activePerson?.id === f.id ? "blink-chat-row selected" : "blink-chat-row"} onClick={() => openFriendChat(f)}>
-                <Avatar id={f.id} /><span className="blink-chat-copy"><b>{f.username || shortId(f.id)}</b><small>Disappears after 24h</small></span>
+                <Avatar id={f.id} /><span className="blink-chat-copy"><b>{f.username || shortId(f.id)}</b><small>Browser-only · 24h</small></span>
               </button>
             ) : <div className="blink-empty">Add a friend to start messaging.</div>}
           </aside>
@@ -736,7 +775,7 @@ export default function BlinkApp({ email }: { email: string }) {
             {(activePerson || activeBot) ? <>
               <div className="blink-conversation-head">
                 <Avatar id={activePerson?.id} emoji={activeBot?.avatar_emoji} />
-                <div><b>{activeBot?.display_name ?? activePerson?.username ?? shortId(activePerson?.id ?? "")}</b><small>Disappearing chat · 24 hours</small></div>
+                <div><b>{activeBot?.display_name ?? activePerson?.username ?? shortId(activePerson?.id ?? "")}</b><small>Browser-only chat · 24 hours</small></div>
               </div>
               <div className="blink-messages">
                 {messages.map((m) => {
@@ -905,16 +944,16 @@ export default function BlinkApp({ email }: { email: string }) {
 
             <div className="blink-settings-section">
               <span className="blink-eyebrow">BLINK RULES</span>
-              <div className="blink-setting-readonly"><span>Data retention</span><b>Ephemeral</b></div>
-              <div className="blink-setting-readonly"><span>Disappearing content</span><b>24h / Snap expiry</b></div>
+              <div className="blink-setting-readonly"><span>Data retention</span><b>Browser-local</b></div>
+              <div className="blink-setting-readonly"><span>Local content expiry</span><b>24h chat / 7d Snap</b></div>
               <div className="blink-setting-readonly"><span>Computer bots</span><b>NO AI</b></div>
-              <small>These are app-wide BLINK rules, so they are shown here but cannot be changed per account.</small>
+              <small>Chats, Snaps and Memories are stored in this browser only. They are not saved in the database.</small>
             </div>
           </div>
 
           <div className="blink-settings-list">
             <button onClick={() => notify("Your username is used for finding and connecting with other BLINK users.")}>◆ <span>Username search</span><b>@{meUsername || "—"}</b></button>
-            <button onClick={() => notify("Messages, Snaps and Stories are deleted after expiry.")}>◌ <span>Disappearing content</span><b>24h / Snap expiry</b></button>
+            <button onClick={() => notify("Chats, Snaps and Memories stay in this browser only; expiring items are removed locally.")}>◌ <span>Disappearing content</span><b>24h / Snap expiry</b></button>
             <button onClick={() => saveGhostMode(!ghostMode)}>👻 <span>Ghost Mode</span><b>{ghostMode ? "ON" : "OFF"}</b></button>
             <button onClick={() => notify("Bots are deterministic computer programs, not AI.")}>💻 <span>Computer bots</span><b>NO AI</b></button>
           </div>
