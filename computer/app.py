@@ -71,7 +71,7 @@ SLANG_PATTERNS = {
     "disagreement": r"\b(nah|nahh|nope|cap|that's cap|thats cap)\b",
     "uncertainty": r"\b(idk|dunno|not sure|ngl idk)\b",
     "honesty": r"\b(ngl|tbh|honestly|lowkey|highkey)\b",
-    "laughter": r"\b(lol+|lmao+|lmfao+|rofl)\\b|[😂🤣💀😭]",
+    "laughter": r"\b(lol+|lmao+|lmfao+|rofl)\b|[😂🤣💀😭]",
     "surprise": r"\b(omg|omfg|wtf|wth|bro+|bruh+|dude)\b",
     "positive": r"\b(goated|goat|based|fire|lit|slaps|sick|dope|awesome|valid)\b",
     "negative": r"\b(mid|cooked|trash|sus|cringe|wild)\b",
