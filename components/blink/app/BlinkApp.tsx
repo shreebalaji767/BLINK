@@ -625,7 +625,7 @@ export default function BlinkApp({ email }: { email: string }) {
           </div>
           <p className="blink-account">{email}</p>
         </div>
-      </div>
+      </div>}
     </section>
 
     <nav className="blink-bottom-nav" aria-label="Main navigation">{nav.map(([id, icon, label]) =>
