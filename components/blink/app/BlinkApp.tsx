@@ -1033,6 +1033,8 @@ export default function BlinkApp({ email }: { email: string }) {
             <div className="blink-camera-gradient" />
             {cameraLens !== "none" && <div className="blink-camera-lens" aria-hidden="true">{cameraLens === "hearts" ? "💗  💗" : cameraLens === "dog" ? "🐶" : cameraLens === "crown" ? "👑" : "👽"}</div>}
             <div className="blink-camera-toolbar">
+              <button className={cameraFacing === "user" ? "active" : ""} onClick={() => { if (cameraFacing !== "user") { stopCamera(); setCameraFacing("user"); window.setTimeout(startCamera, 120); } }} aria-label="Use front camera" title="Front camera">🤳 Front</button>
+              <button className={cameraFacing === "environment" ? "active" : ""} onClick={() => { if (cameraFacing !== "environment") { stopCamera(); setCameraFacing("environment"); window.setTimeout(startCamera, 120); } }} aria-label="Use back camera" title="Back camera">📷 Back</button>
               <button className={flashOn ? "active" : ""} onClick={async () => {
                 const track = streamRef.current?.getVideoTracks()[0];
                 const capabilities = track?.getCapabilities?.() as any;
