@@ -1028,12 +1028,28 @@ export default function BlinkApp({ email }: { email: string }) {
               </div>
               <div className="blink-messages">
                 {messages.map((m) => {
-                                    const mine = m.sender_id === me;
-                  return <div key={m.id} className={"blink-message-line " + (mine ? "mine" : "")}>
-                    <div className={"blink-bubble " + (mine ? "mine" : "other")} onClick={() => { if (!mine && m.expires_at === "after_seen") { const raw = window.localStorage.getItem(localChatKey(conversationId)); const current: Message[] = raw ? JSON.parse(raw) : []; saveLocalChat(conversationId, current.filter(x => x.id !== m.id)); } }}>
-                      {m.media_path ? "[" + m.message_type + " · disappearing]" : m.body}<div className="blink-message-tools"><button onClick={() => reactToMessage(m.id, "❤️")}>❤️</button><button onClick={() => reactToMessage(m.id, "😂")}>😂</button><button onClick={() => toggleSavedMessage(m.id)}>🔖</button></div>
+                  const mine = m.sender_id === me;
+                  return (
+                    <div key={m.id} className={"blink-message-line " + (mine ? "mine" : "")}>
+                      <div
+                        className={"blink-bubble " + (mine ? "mine" : "other")}
+                        onClick={() => {
+                          if (!mine && m.expires_at === "after_seen") {
+                            const raw = window.localStorage.getItem(localChatKey(conversationId));
+                            const current: Message[] = raw ? JSON.parse(raw) : [];
+                            saveLocalChat(conversationId, current.filter((x) => x.id !== m.id));
+                          }
+                        }}
+                      >
+                        {m.media_path ? "[" + m.message_type + " · disappearing]" : m.body}
+                        <div className="blink-message-tools">
+                          <button onClick={() => reactToMessage(m.id, "❤️")}>❤️</button>
+                          <button onClick={() => reactToMessage(m.id, "😂")}>😂</button>
+                          <button onClick={() => toggleSavedMessage(m.id)}>🔖</button>
+                        </div>
+                      </div>
                     </div>
-                  </div>;
+                  );
                 })}
               </div>
               <div className="blink-composer">
