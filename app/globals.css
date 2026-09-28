@@ -252,3 +252,103 @@ html[data-theme="light"] video {
   font-size: 12px;
   pointer-events: none;
 }
+
+
+/* BLINK universal responsive layer */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+button,input,select,textarea{max-width:100%}
+button{touch-action:manipulation}
+img,video,iframe,canvas{max-width:100%}
+.blink-content{width:100%;max-width:1180px}
+.blink-panel,.blink-panel>*{min-width:0}
+.blink-panel-head{flex-wrap:wrap}
+.blink-panel-head>div{min-width:0}
+.blink-panel-head h1{overflow-wrap:anywhere}
+.blink-story-compose,.blink-request-box>div,.blink-admin-user-row{min-width:0}
+.blink-story-compose>*{min-width:0}
+.blink-story-compose b{max-width:100%}
+.blink-card-actions{flex-wrap:wrap}
+.blink-card-actions button{min-width:0}
+.blink-map{width:100%;max-width:100%}
+.blink-leaflet-map{width:100%;height:100%;min-height:0}
+.blink-real-map{height:min(620px,72svh);min-height:360px}
+.blink-map-label{max-width:calc(100% - 90px);font-size:clamp(10px,2.4vw,13px)}
+.blink-map-controls{width:100%}
+.blink-map-controls button{min-width:0}
+.blink-bottom-nav{padding-left:max(6px,env(safe-area-inset-left));padding-right:max(6px,env(safe-area-inset-right));padding-bottom:max(9px,env(safe-area-inset-bottom))}
+@media(max-width:1100px){
+  .blink-content{padding-left:clamp(12px,2.5vw,24px);padding-right:clamp(12px,2.5vw,24px)}
+  .blink-friend-grid,.blink-story-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .blink-memory-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:800px){
+  .blink-app{padding-bottom:100px}
+  .blink-topbar{padding-left:14px;padding-right:14px}
+  .blink-content{padding-top:16px}
+  .blink-camera-stage{width:100%;max-width:560px}
+  .blink-chat-layout{width:100%}
+  .blink-friend-grid,.blink-story-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .blink-memory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .blink-bottom-nav{width:calc(100% - 16px);bottom:max(8px,env(safe-area-inset-bottom));overflow-x:auto;justify-content:flex-start}
+  .blink-bottom-nav button{flex:1 0 58px}
+}
+@media(max-width:600px){
+  .blink-topbar{height:58px}
+  .blink-content{padding:10px 8px 20px}
+  .blink-panel-head{gap:10px;margin-bottom:15px}
+  .blink-panel-head>div{flex:1 1 180px}
+  .blink-panel-head>.blink-primary,.blink-panel-head>button{flex:0 1 auto}
+  .blink-panel-head h1{font-size:clamp(32px,10vw,44px)}
+  .blink-friend-grid,.blink-story-grid,.blink-memory-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .blink-friend-card{padding:12px;border-radius:16px}
+  .blink-card-actions{display:grid;grid-template-columns:1fr}
+  .blink-card-actions button{width:100%}
+  .blink-map-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .blink-map-controls button{width:100%}
+  .blink-real-map{height:62svh;min-height:330px;border-radius:18px}
+  .blink-map-zoom-controls{top:10px;right:10px}
+  .blink-map-zoom-controls button{width:40px;height:40px}
+  .blink-map-zoom-level{top:10px;left:10px}
+  .blink-story-compose{align-items:stretch;flex-direction:column}
+  .blink-story-compose button,.blink-story-compose select{width:100%}
+  .blink-memory-toolbar{grid-template-columns:1fr 1fr}
+  .blink-memory-toolbar .blink-search{grid-column:1/-1}
+  .blink-spotlight-media{height:min(70svh,430px)}
+  .blink-profile-cover{height:180px}
+  .blink-profile-body{padding-left:18px;padding-right:18px}
+  .blink-profile-stats{gap:20px;flex-wrap:wrap}
+}
+@media(max-width:420px){
+  .blink-brand{font-size:23px}
+  .blink-top-actions .blink-round{width:36px;height:36px}
+  .blink-content{padding-left:6px;padding-right:6px}
+  .blink-friend-grid,.blink-story-grid,.blink-memory-grid{grid-template-columns:1fr}
+  .blink-friend-card{display:grid;justify-items:center;text-align:center}
+  .blink-map-controls{grid-template-columns:1fr}
+  .blink-map-controls button{min-height:44px}
+  .blink-bottom-nav button{flex-basis:54px;padding-left:4px;padding-right:4px}
+  .blink-bottom-nav small{font-size:8px}
+  .blink-icon{font-size:18px}
+  .blink-camera-stage{min-height:430px;height:68svh;border-radius:20px}
+  .blink-camera-toolbar{right:10px;top:10px}
+  .blink-camera-toolbar button,.blink-camera-close{width:40px;height:40px}
+  .blink-shutter{width:68px;height:68px;bottom:18px}
+  .blink-shutter span{width:50px;height:50px}
+  .blink-chat-list{max-height:220px}
+  .blink-conversation{min-height:calc(100svh - 390px)}
+  .blink-composer{gap:5px}
+  .blink-composer button{width:38px;min-width:38px}
+  .blink-composer input{padding-left:11px;padding-right:11px}
+  .blink-memory-toolbar{grid-template-columns:1fr}
+  .blink-memory-toolbar .blink-search{grid-column:auto}
+}
+@media(orientation:landscape) and (max-height:600px){
+  .blink-app{padding-bottom:76px}
+  .blink-camera-stage{height:calc(100svh - 105px);min-height:0;max-height:none}
+  .blink-real-map{height:calc(100svh - 145px);min-height:280px}
+  .blink-bottom-nav{bottom:5px}
+}
+@media(min-width:1400px){
+  .blink-content{max-width:1280px}
+  .blink-camera-stage{max-width:580px}
+}
