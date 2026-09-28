@@ -88,6 +88,9 @@ export default function BlinkApp({ email }: { email: string }) {
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lon: 78.9629 });
   const [mapZoom, setMapZoom] = useState(10);
+  const leafletMapRef = useRef<any>(null);
+  const leafletMarkerRef = useRef<any>(null);
+  const leafletMapContainerRef = useRef<HTMLDivElement | null>(null);
   const [ghostMode, setGhostMode] = useState(true);
   const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("user");
   const [cameraFilter, setCameraFilter] = useState<"normal" | "mono" | "sepia" | "vivid" | "cool">("normal");
@@ -169,6 +172,94 @@ export default function BlinkApp({ email }: { email: string }) {
   useEffect(() => {
     if (adminAccessChecked && tab === "admin" && !adminRole) navigateTab("camera");
   }, [adminAccessChecked, adminRole, tab]);
+
+  useEffect(() => {
+    if (tab !== "map" || !leafletMapContainerRef.current) return;
+
+    let cancelled = false;
+
+    const ensureLeafletCss = () => {
+      if (document.getElementById("blink-leaflet-css")) return;
+      const link = document.createElement("link");
+      link.id = "blink-leaflet-css";
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      link.integrity = "sha256-p4NxAoJBhIINfQ3W3hFJ1L6W8cM6fG0mK8x8G1l5s0=";
+      link.crossOrigin = "";
+      document.head.appendChild(link);
+    };
+
+    const loadLeaflet = () => new Promise<void>((resolve, reject) => {
+      const existing = (window as any).L;
+      if (existing) return resolve();
+
+      const script = document.getElementById("blink-leaflet-js") as HTMLScriptElement | null;
+      if (script) {
+        script.addEventListener("load", () => resolve(), { once: true });
+        script.addEventListener("error", () => reject(new Error("Leaflet failed to load.")), { once: true });
+        return;
+      }
+
+      const tag = document.createElement("script");
+      tag.id = "blink-leaflet-js";
+      tag.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      tag.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+      tag.crossOrigin = "";
+      tag.async = true;
+      tag.onload = () => resolve();
+      tag.onerror = () => reject(new Error("Leaflet failed to load."));
+      document.body.appendChild(tag);
+    });
+
+    ensureLeafletCss();
+    loadLeaflet().then(() => {
+      if (cancelled || !leafletMapContainerRef.current) return;
+      const L = (window as any).L;
+      if (!L) return;
+
+      const map = L.map(leafletMapContainerRef.current, {
+        center: [mapCenter.lat, mapCenter.lon],
+        zoom: mapZoom,
+        minZoom: 3,
+        maxZoom: 19,
+        zoomControl: false,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        touchZoom: true,
+        dragging: true,
+        boxZoom: true,
+        keyboard: true,
+        worldCopyJump: true
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      leafletMarkerRef.current = L.marker([mapCenter.lat, mapCenter.lon]).addTo(map);
+      leafletMapRef.current = map;
+
+      map.on("moveend", () => {
+        const center = map.getCenter();
+        setMapCenter({ lat: center.lat, lon: center.lng });
+        setMapZoom(Math.round(map.getZoom()));
+      });
+
+      window.setTimeout(() => map.invalidateSize(), 0);
+    }).catch(() => {
+      if (!cancelled) notify("Interactive map could not be loaded. Check your internet connection.");
+    });
+
+    return () => {
+      cancelled = true;
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+      leafletMarkerRef.current = null;
+    };
+  }, [tab]);
 
   function notify(text: string) {
     setToast(text);
@@ -1632,38 +1723,35 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
       )}
       {tab === "map" && (() => {
-        const lat = mapCenter.lat;
-        const lon = mapCenter.lon;
-        const zoom = Math.min(18, Math.max(3, mapZoom));
-        const latitudeSpan = 120 / Math.pow(2, zoom - 3);
-        const longitudeSpan = latitudeSpan * 1.333333;
-        const bbox = [
-          lon - longitudeSpan / 2,
-          lat - latitudeSpan / 2,
-          lon + longitudeSpan / 2,
-          lat + latitudeSpan / 2
-        ].map((v) => v.toFixed(6)).join(",");
-        const mapUrl = "https://www.openstreetmap.org/export/embed.html?bbox=" + encodeURIComponent(bbox) + "&layer=mapnik&marker=" + encodeURIComponent(lat.toFixed(6) + "," + lon.toFixed(6));
-        const zoomIn = () => setMapZoom((value) => Math.min(18, value + 1));
-        const zoomOut = () => setMapZoom((value) => Math.max(3, value - 1));
+        const zoom = Math.min(19, Math.max(3, mapZoom));
+        const zoomIn = () => {
+          if (leafletMapRef.current) {
+            leafletMapRef.current.zoomIn();
+          } else {
+            setMapZoom((value) => Math.min(19, value + 1));
+          }
+        };
+        const zoomOut = () => {
+          if (leafletMapRef.current) {
+            leafletMapRef.current.zoomOut();
+          } else {
+            setMapZoom((value) => Math.max(3, value - 1));
+          }
+        };
         const resetMap = () => {
-          setMapCenter({ lat: 20.5937, lon: 78.9629 });
+          const center = [20.5937, 78.9629];
+          setMapCenter({ lat: center[0], lon: center[1] });
           setMapZoom(10);
+          leafletMapRef.current?.setView(center, 10, { animate: true });
         };
         return <div className="blink-panel">
           <div className="blink-panel-head"><div><span className="blink-eyebrow">LIVE MAP · NO LOCATION HISTORY</span><h1>Map</h1></div>
             <button className="blink-primary small" onClick={() => setGhostMode(!ghostMode)}>{ghostMode ? "Ghost Mode ON" : "Share temporarily"}</button>
           </div>
           <div className="blink-map blink-real-map">
-            <iframe
-              title="BLINK real map"
-              src={mapUrl}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="blink-map-iframe"
-            />
+            <div ref={leafletMapContainerRef} className="blink-leaflet-map" aria-label="BLINK interactive OpenStreetMap" />
             <div className="blink-map-zoom-controls" aria-label="Map zoom controls">
-              <button type="button" onClick={zoomIn} disabled={zoom >= 18} aria-label="Zoom in" title="Zoom in">+</button>
+              <button type="button" onClick={zoomIn} disabled={zoom >= 19} aria-label="Zoom in" title="Zoom in">+</button>
               <button type="button" onClick={zoomOut} disabled={zoom <= 3} aria-label="Zoom out" title="Zoom out">−</button>
             </div>
             <div className="blink-map-zoom-level" aria-live="polite">Zoom {zoom}</div>
@@ -1674,7 +1762,11 @@ export default function BlinkApp({ email }: { email: string }) {
               if (!navigator.geolocation) return notify("Location is not supported by this browser.");
               navigator.geolocation.getCurrentPosition(
                 (position) => {
-                  setMapCenter({ lat: position.coords.latitude, lon: position.coords.longitude });
+                  const center = [position.coords.latitude, position.coords.longitude];
+                  setMapCenter({ lat: center[0], lon: center[1] });
+                  setMapZoom((current) => current);
+                  leafletMapRef.current?.setView(center, leafletMapRef.current.getZoom(), { animate: true });
+                  leafletMarkerRef.current?.setLatLng(center);
                   notify("Map centered on your current location.");
                 },
                 () => notify("Location permission was not granted.")
@@ -1684,7 +1776,7 @@ export default function BlinkApp({ email }: { email: string }) {
             <button onClick={() => setGhostMode(true)}>👻 Ghost Mode</button>
             <button onClick={() => notify("No location history is stored.")}>✦ Privacy</button>
           </div>
-          <small className="blink-feature-note">Real map data provided by OpenStreetMap. BLINK does not store your location. Use + / − to zoom; the map only requests the area currently being viewed.</small>
+          <small className="blink-feature-note">Interactive map data is provided by OpenStreetMap. Drag the map, use the mouse wheel, pinch on touchscreens, double-click, or use + / − to zoom. BLINK does not store your location history.</small>
         </div>;
       })()}
 
