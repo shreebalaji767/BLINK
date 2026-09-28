@@ -29,6 +29,13 @@ export default function BlinkApp({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>("camera");
   const [me, setMe] = useState("");
   const [meUsername, setMeUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [settingsName, setSettingsName] = useState("");
+  const [settingsUsername, setSettingsUsername] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [settingsBusy, setSettingsBusy] = useState(false);
   const [people, setPeople] = useState<Person[]>([]);
   const [directory, setDirectory] = useState<Person[]>([]);
   const [outgoing, setOutgoing] = useState<Person[]>([]);
@@ -150,6 +157,66 @@ export default function BlinkApp({ email }: { email: string }) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
+
+  async function saveProfileSettings() {
+    const username = settingsUsername.trim().toLowerCase();
+    const name = settingsName.trim();
+
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) {
+      notify("Username must be 3–24 characters: a-z, 0-9, _");
+      return;
+    }
+    if (name.length > 80) {
+      notify("Name must be 80 characters or less.");
+      return;
+    }
+
+    setSettingsBusy(true);
+    const [{ error: usernameError }, { error: nameError }] = await Promise.all([
+      supabase.from("profiles").update({ username }).eq("id", me),
+      supabase.auth.updateUser({ data: { full_name: name, name } })
+    ]);
+    setSettingsBusy(false);
+
+    if (usernameError) {
+      notify(usernameError.code === "23505" ? "That username is already taken." : usernameError.message);
+      return;
+    }
+    if (nameError) {
+      notify(nameError.message);
+      return;
+    }
+
+    setMeUsername(username);
+    setDisplayName(name);
+    setDirectory((items) => items);
+    notify("Profile updated.");
+  }
+
+  async function changePassword() {
+    if (newPassword.length < 8) {
+      notify("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      notify("New passwords do not match.");
+      return;
+    }
+
+    setSettingsBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSettingsBusy(false);
+
+    if (error) {
+      notify(error.message);
+      return;
+    }
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    notify("Password changed successfully.");
+  }
 
   async function findUser(value: string) {
     setQuery(value);
@@ -529,17 +596,36 @@ export default function BlinkApp({ email }: { email: string }) {
 
       {tab === "profile" && <div className="blink-profile-page">
         <div className="blink-profile-cover"><Avatar id={me} large /></div>
-        <div className="blink-profile-body"><span className="blink-eyebrow">ACCOUNT</span><h1>BLINK User</h1><p>User ID</p>
+        <div className="blink-profile-body"><span className="blink-eyebrow">ACCOUNT</span><h1>{displayName || meUsername || "BLINK User"}</h1>
+          <p>@{meUsername || "username"}</p>
           <div className="blink-id-box"><code>{me}</code><button onClick={() => navigator.clipboard.writeText(me).then(() => notify("User ID copied."))}>Copy</button></div>
+
+          <div className="blink-profile-settings">
+            <div className="blink-settings-section">
+              <span className="blink-eyebrow">PROFILE SETTINGS</span>
+              <label>Name<input className="blink-search" value={settingsName} maxLength={80} onChange={(e) => setSettingsName(e.target.value)} placeholder="Your name" /></label>
+              <label>Username<input className="blink-search" value={settingsUsername} maxLength={24} onChange={(e) => setSettingsUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="username" /></label>
+              <button className="blink-primary" disabled={settingsBusy} onClick={saveProfileSettings}>{settingsBusy ? "Saving…" : "Save name & username"}</button>
+            </div>
+
+            <div className="blink-settings-section">
+              <span className="blink-eyebrow">PASSWORD</span>
+              <input className="blink-search" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password (optional)" autoComplete="current-password" />
+              <input className="blink-search" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" autoComplete="new-password" />
+              <input className="blink-search" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" autoComplete="new-password" />
+              <button className="blink-primary" disabled={settingsBusy} onClick={changePassword}>{settingsBusy ? "Updating…" : "Change password"}</button>
+            </div>
+          </div>
+
           <div className="blink-settings-list">
-            <button onClick={() => notify("Your username is used for finding and connecting with other BLINK users.")}>◆ <span>Data retention</span><b>Ephemeral</b></button>
+            <button onClick={() => notify("Your username is used for finding and connecting with other BLINK users.")}>◆ <span>Username search</span><b>@{meUsername || "—"}</b></button>
             <button onClick={() => notify("Messages, Snaps and Stories are deleted after expiry.")}>◌ <span>Disappearing content</span><b>24h / Snap expiry</b></button>
             <button onClick={() => setGhostMode(true)}>👻 <span>Ghost Mode</span><b>ON</b></button>
             <button onClick={() => notify("Bots are deterministic computer programs, not AI.")}>💻 <span>Computer bots</span><b>NO AI</b></button>
           </div>
           <p className="blink-account">{email}</p>
         </div>
-      </div>}
+      </div>
     </section>
 
     <nav className="blink-bottom-nav" aria-label="Main navigation">{nav.map(([id, icon, label]) =>
