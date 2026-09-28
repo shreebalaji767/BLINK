@@ -804,18 +804,58 @@ export default function BlinkApp({ email }: { email: string }) {
       notify("This browser does not expose camera access here. Use HTTPS in Chrome or Edge.");
       return;
     }
+
     try {
       if (streamRef.current) stopCamera();
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: { ideal: cameraFacing },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
+
+      // Ask for the requested lens explicitly. "ideal" can be ignored by mobile browsers,
+      // which is why the old version sometimes stayed on the front camera.
+      const baseVideo = {
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { ...baseVideo, facingMode: { exact: cameraFacing } },
+          audio: false
+        });
+      } catch (exactError) {
+        // Some desktop browsers do not support an exact facingMode. Fall back to
+        // enumerating physical cameras and selecting a rear/front device by label.
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter((device) => device.kind === "videoinput");
+        const wanted = cameraFacing === "environment"
+          ? /(back|rear|environment|world|main)/i
+          : /(front|user|facetime|selfie)/i;
+        const opposite = cameraFacing === "environment"
+          ? /(front|user|facetime|selfie)/i
+          : /(back|rear|environment|world|main)/i;
+        const labelled = cameras.find((device) => wanted.test(device.label));
+        const fallback = labelled ?? cameras.find((device) => !opposite.test(device.label)) ?? cameras[0];
+
+        if (!fallback?.deviceId) throw exactError;
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { ...baseVideo, deviceId: { exact: fallback.deviceId } },
+          audio: false
+        });
+      }
+
       streamRef.current = stream;
+
+      // Verify the browser actually selected the requested facing direction.
+      const track = stream.getVideoTracks()[0];
+      const settings = track?.getSettings();
+      if (cameraFacing === "environment" && settings?.facingMode === "user") {
+        track.stop();
+        streamRef.current = null;
+        setCameraOn(false);
+        notify("The browser did not switch to the back camera. Please try Back again.");
+        return;
+      }
+
       setCameraOn(true);
       requestAnimationFrame(async () => {
         const video = videoRef.current;
@@ -833,10 +873,12 @@ export default function BlinkApp({ email }: { email: string }) {
         notify("No camera was found on this device.");
       } else if (err?.name === "NotReadableError" || err?.name === "TrackStartError") {
         notify("The camera is already being used by another app. Close it and try again.");
+      } else if (err?.name === "OverconstrainedError") {
+        notify("That camera mode is unavailable on this device.");
       } else if (err?.name === "SecurityError") {
         notify("The browser blocked camera access. Use the HTTPS BLINK site and allow Camera.");
       } else {
-        notify("Could not open the camera. Check browser camera permission and try again.");
+        notify("Could not open the requested camera. Check browser camera permission and try again.");
       }
     }
   }
