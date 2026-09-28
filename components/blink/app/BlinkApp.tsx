@@ -231,10 +231,10 @@ export default function BlinkApp({ email }: { email: string }) {
     }
     const ids = (data ?? []).map((x: { blocked_id: string }) => x.blocked_id);
     if (!ids.length) return setBlocked([]);
-    const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", ids);
+    const { data: profiles } = await supabase.from("profiles").select("id, username, avatar_emoji").in("id", ids);
     setBlocked(ids.map((id: string) => ({
       id,
-      username: (profiles ?? []).find((p: { id: string }) => p.id === id)?.username ?? ""
+      username: (profiles ?? []).find((p: { id: string }) => p.id === id)?.username ?? "",\n      avatar_emoji: (profiles ?? []).find((p: { id: string; avatar_emoji?: string | null }) => p.id === id)?.avatar_emoji ?? null,\n      role: null
     })));
   }
 
@@ -384,7 +384,7 @@ export default function BlinkApp({ email }: { email: string }) {
       if (!user || cancelled) return;
       setMe(user.id);
       setSettingsEmail(user.email ?? email);
-      const { data: profile } = await supabase.from("profiles").select("id, username").eq("id", user.id).maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select("id, username, avatar_emoji").eq("id", user.id).maybeSingle();
       if (cancelled) return;
       const username = profile?.username ?? "";
       const metadata = user.user_metadata ?? {};
@@ -409,7 +409,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
       const storedAppearance = window.localStorage.getItem("blink_appearance_" + user.id);
       const storedGhost = window.localStorage.getItem("blink_ghost_mode_" + user.id);
-      setAvatarEmoji(window.localStorage.getItem("blink_avatar_" + user.id) || "3F");
+      setAvatarEmoji(profile?.avatar_emoji || window.localStorage.getItem("blink_avatar_" + user.id) || "3F");
       setGhostMode(storedGhost === null ? true : storedGhost === "true");
       setAppearance(storedAppearance === "light" ? "light" : "dark");
       setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
@@ -564,12 +564,12 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   async function loadDirectory() {
-    const { data, error } = await supabase.from("profiles").select("id, username").order("username").limit(5000);
+    const { data, error } = await supabase.from("profiles").select("id, username, avatar_emoji").order("username").limit(5000);
     if (error) {
       notify("Could not load the username directory.");
       return;
     }
-    setDirectory((data ?? []).map((p: { id: string; username: string }) => ({ id: p.id, username: p.username })));
+    const rows = (data ?? []) as { id: string; username: string; avatar_emoji?: string | null }[];\n    const roleMap = await loadUserRoles(rows.map((p) => p.id));\n    setDirectory(rows.map((p) => ({ id: p.id, username: p.username, avatar_emoji: p.avatar_emoji ?? null, role: roleMap.get(p.id) ?? null })));
   }
 
   useEffect(() => {
@@ -1465,7 +1465,7 @@ export default function BlinkApp({ email }: { email: string }) {
           <p className="blink-feature-note">Spotlight is browser-local in BLINK. Posts, likes and media stay on this device and are not written to the database.</p>
           <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
             <div className="blink-spotlight-media">{p.media_path ? <button onClick={()=>{ if(p.media_path) window.open(p.media_path,"_blank","noopener,noreferrer") }}>▶ Open Snap</button> : null}</div>
-            <div className="blink-spotlight-copy"><b>@{directory.find(x=>x.id===p.user_id)?.username || (p.user_id===me ? meUsername : "blink_user")}</b><span>{p.caption || "Spotlight post"}</span><button onClick={()=>toggleSpotlightLike(p.id)}>♡ Like</button></div>
+            <div className="blink-spotlight-copy"><div className="blink-user-inline"><Avatar id={p.user_id} emoji={directory.find(x=>x.id===p.user_id)?.avatar_emoji} /><b>@{directory.find(x=>x.id===p.user_id)?.username || (p.user_id===me ? meUsername : "blink_user")} <RoleBadge role={directory.find(x=>x.id===p.user_id)?.role} /></b></div><span>{p.caption || "Spotlight post"}</span><button onClick={()=>toggleSpotlightLike(p.id)}>♡ Like</button></div>
           </article>)}</div>
           {!spotlight.length && <div className="blink-empty">No Spotlight posts yet. Create the first one from Camera.</div>}
         </div>
@@ -1612,7 +1612,7 @@ export default function BlinkApp({ email }: { email: string }) {
                     </button>
                   ))}
                 </div>
-                <small className="blink-avatar-picker-note">Your avatar is saved on this device and shown across BLINK.</small>
+                <small className="blink-avatar-picker-note">Your avatar is saved to your BLINK profile and shown to other users across BLINK.</small>
               </div>
               <button className="blink-primary" disabled={settingsBusy} onClick={saveProfileSettings}>{settingsBusy ? "Saving…" : "Save profile"}</button>
             </div>
