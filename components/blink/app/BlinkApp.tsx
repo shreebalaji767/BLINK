@@ -686,6 +686,7 @@ export default function BlinkApp({ email }: { email: string }) {
     setActivePerson(null);
     setConversationId(localConversationId);
     setTab("chat");
+    loadLocalChat(localConversationId);
   }
 
   async function sendText() {
