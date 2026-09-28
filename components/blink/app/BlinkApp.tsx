@@ -841,7 +841,7 @@ export default function BlinkApp({ email }: { email: string }) {
     }
   }
 
-  async function startCamera() {
+  async function startCamera(requestedFacing: "user" | "environment" = cameraFacing) {
     if (typeof window === "undefined") return;
     if (!window.isSecureContext) {
       notify("Camera needs HTTPS. Open the deployed BLINK address, not an insecure HTTP page.");
@@ -865,7 +865,7 @@ export default function BlinkApp({ email }: { email: string }) {
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { ...baseVideo, facingMode: { exact: cameraFacing } },
+          video: { ...baseVideo, facingMode: { exact: requestedFacing } },
           audio: false
         });
       } catch (exactError) {
@@ -873,10 +873,10 @@ export default function BlinkApp({ email }: { email: string }) {
         // enumerating physical cameras and selecting a rear/front device by label.
         const devices = await navigator.mediaDevices.enumerateDevices();
         const cameras = devices.filter((device) => device.kind === "videoinput");
-        const wanted = cameraFacing === "environment"
+        const wanted = requestedFacing === "environment"
           ? /(back|rear|environment|world|main)/i
           : /(front|user|facetime|selfie)/i;
-        const opposite = cameraFacing === "environment"
+        const opposite = requestedFacing === "environment"
           ? /(front|user|facetime|selfie)/i
           : /(back|rear|environment|world|main)/i;
         const labelled = cameras.find((device) => wanted.test(device.label));
@@ -895,7 +895,7 @@ export default function BlinkApp({ email }: { email: string }) {
       // Verify the browser actually selected the requested facing direction.
       const track = stream.getVideoTracks()[0];
       const settings = track?.getSettings();
-      if (cameraFacing === "environment" && settings?.facingMode === "user") {
+      if (requestedFacing === "environment" && settings?.facingMode === "user") {
         track.stop();
         streamRef.current = null;
         setCameraOn(false);
@@ -1122,15 +1122,15 @@ export default function BlinkApp({ email }: { email: string }) {
             <div className="blink-camera-gradient" />
             {cameraLens !== "none" && <div className="blink-camera-lens" aria-hidden="true">{cameraLens === "hearts" ? "💗  💗" : cameraLens === "dog" ? "🐶" : cameraLens === "crown" ? "👑" : "👽"}</div>}
             <div className="blink-camera-toolbar">
-              <button className={cameraFacing === "user" ? "active" : ""} onClick={() => { if (cameraFacing !== "user") { stopCamera(); setCameraFacing("user"); window.setTimeout(startCamera, 120); } }} aria-label="Use front camera" title="Front camera">🤳 Front</button>
-              <button className={cameraFacing === "environment" ? "active" : ""} onClick={() => { if (cameraFacing !== "environment") { stopCamera(); setCameraFacing("environment"); window.setTimeout(startCamera, 120); } }} aria-label="Use back camera" title="Back camera">📷 Back</button>
+              <button className={cameraFacing === "user" ? "active" : ""} onClick={() => { if (cameraFacing !== "user") { stopCamera(); setCameraFacing("user"); void startCamera("user"); } }} aria-label="Use front camera" title="Front camera">🤳 Front</button>
+              <button className={requestedFacing === "environment" ? "active" : ""} onClick={() => { if (cameraFacing !== "environment") { stopCamera(); setCameraFacing("environment"); void startCamera("environment"); } }} aria-label="Use back camera" title="Back camera">📷 Back</button>
               <button className={flashOn ? "active" : ""} onClick={async () => {
                 const track = streamRef.current?.getVideoTracks()[0];
                 const capabilities = track?.getCapabilities?.() as any;
                 if (capabilities?.torch) { await track?.applyConstraints({ advanced: [{ torch: !flashOn }] } as any); setFlashOn(!flashOn); }
                 else notify("Flash/torch is not available on this device.");
               }}>⚡</button>
-              <button onClick={() => { stopCamera(); setCameraFacing(cameraFacing === "user" ? "environment" : "user"); window.setTimeout(startCamera, 120); }}>↔</button>
+              <button onClick={() => { stopCamera(); setCameraFacing(cameraFacing === "user" ? "environment" : "user"); void startCamera(cameraFacing === "user" ? "environment" : "user"); }}>↔</button>
               <button onClick={() => setCameraFilter(cameraFilter === "normal" ? "mono" : cameraFilter === "mono" ? "sepia" : cameraFilter === "sepia" ? "vivid" : cameraFilter === "vivid" ? "cool" : "normal")}>✦</button>
               <button onClick={() => setCameraLens(cameraLens === "none" ? "hearts" : cameraLens === "hearts" ? "dog" : cameraLens === "dog" ? "crown" : cameraLens === "crown" ? "alien" : "none")}>◎</button>
               <button onClick={() => snapFileRef.current?.click()}>▣</button>
