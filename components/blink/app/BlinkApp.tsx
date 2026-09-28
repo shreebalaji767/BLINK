@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/blink/auth/SignOutButton";
 
 type Tab = "camera" | "chat" | "friends" | "stories" | "spotlight" | "map" | "memories" | "profile" | "admin";
-type Person = { id: string; username: string; avatar_emoji?: string | null; online?: boolean; role?: "owner" | "admin" | null };\ntype AdminUser = { id: string; email: string; username: string; avatar_emoji?: string | null; created_at: string; last_sign_in_at?: string | null; banned_until?: string | null; role?: "owner" | "admin" | null; admin_enabled: boolean; permissions: Record<string, boolean> };
+type Person = { id: string; username: string; avatar_emoji?: string | null; online?: boolean; role?: "owner" | "admin" | null };
+type AdminUser = { id: string; email: string; username: string; avatar_emoji?: string | null; created_at: string; last_sign_in_at?: string | null; banned_until?: string | null; role?: "owner" | "admin" | null; admin_enabled: boolean; permissions: Record<string, boolean> };
 type Message = {
   id: string; conversation_id: string; sender_id: string | null;
   body: string | null; media_path: string | null; message_type: string; created_at: string; expires_at: string;
