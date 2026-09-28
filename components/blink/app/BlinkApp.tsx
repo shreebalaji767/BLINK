@@ -184,8 +184,6 @@ export default function BlinkApp({ email }: { email: string }) {
       link.id = "blink-leaflet-css";
       link.rel = "stylesheet";
       link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-      link.integrity = "sha256-p4NxAoJBhIINfQ3W3hFJ1L6W8cM6fG0mK8x8G1l5s0=";
-      link.crossOrigin = "";
       document.head.appendChild(link);
     };
 
@@ -203,8 +201,6 @@ export default function BlinkApp({ email }: { email: string }) {
       const tag = document.createElement("script");
       tag.id = "blink-leaflet-js";
       tag.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-      tag.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-      tag.crossOrigin = "";
       tag.async = true;
       tag.onload = () => resolve();
       tag.onerror = () => reject(new Error("Leaflet failed to load."));
