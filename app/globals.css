@@ -190,3 +190,5 @@ html[data-theme="light"] video {
 @media(max-width:700px){.blink-admin-form-grid{grid-template-columns:1fr}.blink-admin-management-head{align-items:flex-start;flex-direction:column}.blink-admin-user-row{align-items:flex-start;flex-direction:column}.blink-admin-user-actions{width:100%;justify-content:flex-start}.blink-admin-user-actions button{flex:1}}
 
 .blink-options-button{font-weight:800;letter-spacing:.04em;min-width:112px}.blink-admin-user-actions{position:relative}.blink-admin-user-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;display:grid;min-width:190px;padding:6px;background:#171a22;border:1px solid #3a4050;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45)}.blink-admin-user-menu button{width:100%;text-align:left;border:0!important;background:transparent!important;padding:10px 12px;border-radius:8px}.blink-admin-user-menu button:hover{background:#252a35!important}.blink-admin-user-menu button.danger{color:#ff8d9a}
+
+.blink-admin-user-protected{padding:10px 12px;color:#aeb6c8;font-weight:800;font-size:.86rem;white-space:nowrap}
