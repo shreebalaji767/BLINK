@@ -1353,11 +1353,11 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
-  const nav: [Tab, string, string][] = [
+  const nav = ([
     ["camera", "◉", "Camera"], ["chat", "◌", "Chat"], ["friends", "♙", "Friends"],
     ["stories", "◫", "Stories"], ["spotlight", "▷", "Spotlight"], ["map", "⌖", "Map"], ["memories", "▣", "Memories"], ["profile", "●", "Account"],
     ...(adminAccessChecked && adminRole ? [["admin", "◆", "Admin"] as [Tab, string, string]] : [])
-  ].filter(([id]) => platformSettings[id] !== false);
+  ] as [Tab, string, string][]).filter(([id]) => platformSettings[id] !== false);
 
   return <main className="blink-app">
     <header className="blink-topbar">
