@@ -800,29 +800,34 @@ export default function BlinkApp({ email }: { email: string }) {
       </div>}
 
 
-      {tab === "spotlight" && (\n        <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => setTab("camera")}>＋ Create</button></div>
-        <p className="blink-feature-note">A public short-video/photo feed for discovery. Posts can be liked and remain separate from private chats.</p>
-        <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
-          <div className="blink-spotlight-media">{p.media_path ? <button onClick={async()=>{const u=await mediaUrl(p.media_path); if(u) window.open(u,"_blank","noopener,noreferrer")}}>▶ Open Snap</button> : null}</div>
-          <div className="blink-spotlight-copy"><b>@{directory.find(x=>x.id===p.user_id)?.username || (p.user_id===me ? meUsername : "blink_user")}</b><span>{p.caption || "Spotlight post"}</span><button onClick={()=>toggleSpotlightLike(p.id)}>♡ Like</button></div>
-        </article>)}</div>
-        {!spotlight.length && <div className="blink-empty">No Spotlight posts yet. Create the first one from Camera.</div>}
-      </div>
-      {tab === "memories" && (\n        <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">PRIVATE ARCHIVE</span><h1>Memories</h1></div><button className="blink-primary small" onClick={() => (memoryPrivate ? setMemoryUnlocked(false) : setMemoryPrivate(false))}>{memoryUnlocked ? "Lock" : "My Eyes Only"}</button></div>
-        <div className="blink-memory-toolbar">
-          <input className="blink-search" type="password" value={memoryPasscode} onChange={e=>setMemoryPasscode(e.target.value)} placeholder="Device-only passcode for My Eyes Only" />
-          <button onClick={()=>{ if(memoryPasscode.length>=4){ setMemoryUnlocked(true); notify("Private Memories unlocked on this device."); } else notify("Use at least 4 characters."); }}>Unlock</button>
-          <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" onChange={async e=>{const f=e.target.files?.[0]; if(f && f.size<=4*1024*1024) saveMemoryLocal(await fileToDataUrl(f),f.type,false); else if(f) notify("Choose a file under 4 MB.");}} />
-          <button onClick={()=>storyFileRef.current?.click()}>＋ Import</button>
+      {tab === "spotlight" && (
+        <div className="blink-panel">
+          <div className="blink-panel-head"><div><span className="blink-eyebrow">PUBLIC DISCOVERY</span><h1>Spotlight</h1></div><button className="blink-primary small" onClick={() => setTab("camera")}>＋ Create</button></div>
+          <p className="blink-feature-note">A public short-video/photo feed for discovery. Posts can be liked and remain separate from private chats.</p>
+          <div className="blink-spotlight-feed">{spotlight.map((p) => <article className="blink-spotlight-card" key={p.id}>
+            <div className="blink-spotlight-media">{p.media_path ? <button onClick={async()=>{const u=await mediaUrl(p.media_path); if(u) window.open(u,"_blank","noopener,noreferrer")}}>▶ Open Snap</button> : null}</div>
+            <div className="blink-spotlight-copy"><b>@{directory.find(x=>x.id===p.user_id)?.username || (p.user_id===me ? meUsername : "blink_user")}</b><span>{p.caption || "Spotlight post"}</span><button onClick={()=>toggleSpotlightLike(p.id)}>♡ Like</button></div>
+          </article>)}</div>
+          {!spotlight.length && <div className="blink-empty">No Spotlight posts yet. Create the first one from Camera.</div>}
         </div>
-        <small className="blink-feature-note">Memories are stored locally in this browser in this version. My Eyes Only is a local privacy feature; it is not a substitute for device encryption.</small>
-        <div className="blink-memory-grid">{memoryItems.filter(m=>!m.privateOnly || memoryUnlocked).map(m=><article key={m.id} className="blink-memory-card">
-          <img src={m.dataUrl} alt="Memory" /><div><small>{new Date(m.createdAt).toLocaleString()}</small><button onClick={()=>{const next=memoryItems.filter(x=>x.id!==m.id);setMemoryItems(next);window.localStorage.setItem("blink_memories",JSON.stringify(next));}}>Delete</button></div>
-        </article>)}</div>
-        {!memoryItems.length && <div className="blink-empty">Save a Snap to Memories to build your private archive.</div>}
-      </div>
+      )}
+
+      {tab === "memories" && (
+        <div className="blink-panel">
+          <div className="blink-panel-head"><div><span className="blink-eyebrow">PRIVATE ARCHIVE</span><h1>Memories</h1></div><button className="blink-primary small" onClick={() => setMemoryUnlocked(v => !v)}>{memoryUnlocked ? "Lock" : "My Eyes Only"}</button></div>
+          <div className="blink-memory-toolbar">
+            <input className="blink-search" type="password" value={memoryPasscode} onChange={e=>setMemoryPasscode(e.target.value)} placeholder="Device-only passcode for My Eyes Only" />
+            <button onClick={()=>{ if(memoryPasscode.length>=4){ setMemoryUnlocked(true); notify("Private Memories unlocked on this device."); } else notify("Use at least 4 characters."); }}>Unlock</button>
+            <input ref={storyFileRef} hidden type="file" accept="image/*,video/*" onChange={async e=>{const f=e.target.files?.[0]; if(f && f.size<=4*1024*1024) saveMemoryLocal(await fileToDataUrl(f),f.type,false); else if(f) notify("Choose a file under 4 MB.");}} />
+            <button onClick={()=>storyFileRef.current?.click()}>＋ Import</button>
+          </div>
+          <small className="blink-feature-note">Memories are stored locally in this browser in this version. My Eyes Only is a local privacy feature; it is not a substitute for device encryption.</small>
+          <div className="blink-memory-grid">{memoryItems.filter(m=>!m.privateOnly || memoryUnlocked).map(m=><article key={m.id} className="blink-memory-card">
+            <img src={m.dataUrl} alt="Memory" /><div><small>{new Date(m.createdAt).toLocaleString()}</small><button onClick={()=>{const next=memoryItems.filter(x=>x.id!==m.id);setMemoryItems(next);window.localStorage.setItem("blink_memories",JSON.stringify(next));}}>Delete</button></div>
+          </article>)}</div>
+          {!memoryItems.length && <div className="blink-empty">Save a Snap to Memories to build your private archive.</div>}
+        </div>
+      )}
       {tab === "map" && <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">NO LOCATION HISTORY</span><h1>Map</h1></div>
           <button className="blink-primary small" onClick={() => setGhostMode(!ghostMode)}>{ghostMode ? "Ghost Mode ON" : "Share temporarily"}</button>
