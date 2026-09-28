@@ -79,6 +79,10 @@ export default function BlinkApp({ email }: { email: string }) {
   const [newUserName, setNewUserName] = useState("");
   const [adminUserSearch, setAdminUserSearch] = useState("");
   const [adminUserMenu, setAdminUserMenu] = useState<string | null>(null);
+  const [platformSettings, setPlatformSettings] = useState<Record<string, boolean>>({
+    camera: true, chat: true, friends: true, stories: true, spotlight: true, map: true, memories: true, profile: true, admin: true
+  });
+  const [platformSettingsBusy, setPlatformSettingsBusy] = useState(false);
   const [settingsEmail, setSettingsEmail] = useState(email);
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
@@ -163,6 +167,33 @@ export default function BlinkApp({ email }: { email: string }) {
   function notify(text: string) {
     setToast(text);
     window.setTimeout(() => setToast(""), 2400);
+  }
+
+  async function loadPlatformSettings() {
+    const { data, error } = await supabase.from("blink_platform_settings").select("setting_key, enabled");
+    if (error) return;
+    const next = { ...platformSettings };
+    (data ?? []).forEach((row: { setting_key: string; enabled: boolean }) => { next[row.setting_key] = row.enabled; });
+    setPlatformSettings(next);
+  }
+
+  async function updatePlatformSetting(key: string, enabled: boolean) {
+    if (adminRole !== "owner") return notify("Owner access required.");
+    setPlatformSettingsBusy(true);
+    const previous = platformSettings[key];
+    setPlatformSettings((current) => ({ ...current, [key]: enabled }));
+    const { error } = await supabase.from("blink_platform_settings").upsert(
+      { setting_key: key, enabled, updated_by: me, updated_at: new Date().toISOString() },
+      { onConflict: "setting_key" }
+    );
+    setPlatformSettingsBusy(false);
+    if (error) {
+      setPlatformSettings((current) => ({ ...current, [key]: previous }));
+      notify("Could not update platform setting.");
+      return;
+    }
+    if (!enabled && tab === key) navigateTab("camera");
+    notify(key.charAt(0).toUpperCase() + key.slice(1) + (enabled ? " enabled." : " disabled."));
   }
 
   async function loadMyProfile(userId: string) {
@@ -534,6 +565,7 @@ export default function BlinkApp({ email }: { email: string }) {
         .subscribe();
       publicStoryChannelRef.current = publicStoryChannel;
       await Promise.all([loadDirectory(), loadFriends(user.id), loadBlocked(user.id), loadStories(user.id), loadReceivedStories(user.id), loadSnaps(user.id), loadMyProfile(user.id)]);
+      await loadPlatformSettings();
       if (!cancelled) {
         loadSpotlight(user.id);
         loadMemories(user.id);
@@ -1321,7 +1353,7 @@ export default function BlinkApp({ email }: { email: string }) {
     ["camera", "◉", "Camera"], ["chat", "◌", "Chat"], ["friends", "♙", "Friends"],
     ["stories", "◫", "Stories"], ["spotlight", "▷", "Spotlight"], ["map", "⌖", "Map"], ["memories", "▣", "Memories"], ["profile", "●", "Account"],
     ...(adminAccessChecked && adminRole ? [["admin", "◆", "Admin"] as [Tab, string, string]] : [])
-  ];
+  ].filter(([id]) => platformSettings[id] !== false);
 
   return <main className="blink-app">
     <header className="blink-topbar">
@@ -1649,6 +1681,38 @@ export default function BlinkApp({ email }: { email: string }) {
             <div className="blink-setting-readonly"><span>Public Story visibility</span><b>Allowed for all authenticated users</b></div>
             <div className="blink-setting-readonly"><span>Ephemeral content storage</span><b>Browser + transient delivery only</b></div>
             <small>Owner/Admin privileges are for platform administration and non-content metadata. They do not create a backdoor into private chats, private Stories, friends-only Stories or recipient-only Snaps. A public Story is intentionally viewable by authenticated BLINK users.</small>
+          </div>
+
+          <div className="blink-settings-section blink-platform-controls">
+            <div className="blink-admin-management-head">
+              <div>
+                <span className="blink-eyebrow">PLATFORM CONTROL DECK</span>
+                <h2>BLINK Feature Switchboard</h2>
+                <small>Turn major BLINK surfaces on or off for everyone. Privacy protections remain enforced and cannot be disabled here.</small>
+              </div>
+              <span className="blink-role-badge blink-role-owner">⚡ LIVE CONTROL</span>
+            </div>
+            <div className="blink-platform-grid">
+              {[
+                ["camera", "◉", "Camera", "Photos, video and Snaps"],
+                ["chat", "◌", "Chat", "Browser-local conversations"],
+                ["friends", "♙", "Friends", "Friend discovery and requests"],
+                ["stories", "◫", "Stories", "Story publishing and viewing"],
+                ["spotlight", "▷", "Spotlight", "Public Spotlight posts"],
+                ["map", "⌖", "Map", "Temporary location sharing"],
+                ["memories", "▣", "Memories", "Private browser Memories"],
+                ["profile", "●", "Account", "Profile and account settings"],
+                ["admin", "◆", "Admin", "Owner/Admin control center"]
+              ].map(([key, icon, label, description]) => (
+                <label className="blink-platform-control" key={key}>
+                  <span className="blink-platform-control-icon">{icon}</span>
+                  <span className="blink-platform-control-copy"><b>{label}</b><small>{description}</small></span>
+                  <input type="checkbox" checked={platformSettings[key] !== false} onChange={(e) => updatePlatformSetting(key, e.target.checked)} disabled={platformSettingsBusy || key === "admin"} />
+                  <span className="blink-platform-status">{platformSettings[key] !== false ? "ON" : "OFF"}</span>
+                </label>
+              ))}
+            </div>
+            <small>Admin access stays owner-controlled; private chats, recipient-only Snaps and non-public Stories remain inaccessible unless the viewer is an authorized recipient.</small>
           </div>
 
           <div className="blink-settings-section blink-admin-management">
