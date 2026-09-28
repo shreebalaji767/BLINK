@@ -31,3 +31,47 @@
 .blink-settings-section button {
   width: 100%;
 }
+
+
+.blink-settings-section select.blink-search {
+  appearance: auto;
+}
+
+.blink-setting-toggle,
+.blink-setting-readonly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 42px;
+}
+
+.blink-setting-toggle input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: currentColor;
+}
+
+.blink-setting-readonly {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+}
+
+.blink-setting-readonly span {
+  font-weight: 700;
+}
+
+.blink-settings-section small {
+  opacity: .7;
+  line-height: 1.45;
+}
+
+html[data-theme="light"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html[data-theme="light"] img,
+html[data-theme="light"] video {
+  filter: invert(1) hue-rotate(180deg);
+}
