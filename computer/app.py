@@ -57,10 +57,32 @@ PERSONALITIES = {
 }
 
 COMMON = {
-"hello":["Hey!","Hey, what's up?","Hi. Good to see you.","Hey, I'm here."],
-"thanks":["Anytime.","Sure thing.","No problem.","You're welcome."],
-"bye":["Later.","See you around.","Take care.","Catch you later."]
+"hello":["Hey!","Hey, what's up?","Hi. Good to see you.","Hey, I'm here.","Howdy!","Yo!","Ayo 😄","Heyyy.","What's good?","G'day!"],
+"thanks":["Anytime.","Sure thing.","No problem.","You're welcome.","For sure.","No worries."],
+"bye":["Later.","See you around.","Take care.","Catch you later.","Peace.","I'm out. See ya."]
 }
+
+# Common slang / casual-language understanding. These are interpreted by meaning,
+# not simply echoed back. The characters can recognize abbreviations, stretched
+# spellings, internet slang, and casual greetings while keeping their own style.
+SLANG_PATTERNS = {
+    "greeting": r"\\b(howdy|yo+|sup+|wassup|wazzup|what's up|whats up|what's good|whats good|hey+|heyy+|hiya|ayo|g'day|good morning|morning|good evening)\\b",
+    "agreement": r"\\b(fr|frfr|facts|bet|real|no cap|yup|yep|yeah|yea|yesss|exactly)\\b",
+    "disagreement": r"\\b(nah|nahh|nope|cap|that's cap|thats cap)\\b",
+    "uncertainty": r"\\b(idk|dunno|not sure|ngl idk)\\b",
+    "honesty": r"\\b(ngl|tbh|honestly|lowkey|highkey)\\b",
+    "laughter": r"\\b(lol+|lmao+|lmfao+|rofl)\\b|[😂🤣💀😭]",
+    "surprise": r"\\b(omg|omfg|wtf|wth|bro+|bruh+|dude)\\b",
+    "positive": r"\\b(goated|goat|based|fire|lit|slaps|sick|dope|awesome|valid)\\b",
+    "negative": r"\\b(mid|cooked|trash|sus|cringe|wild)\\b",
+}
+
+def slang_kind(text):
+    low = text.lower()
+    for kind, pattern in SLANG_PATTERNS.items():
+        if re.search(pattern, low):
+            return kind
+    return None
 
 def state_for(cid):
     return STATES.setdefault(cid, State())
@@ -80,8 +102,19 @@ def remember_facts(state, text):
 def humanize(name, bot_key, text, state):
     low = text.lower()
     openers, questions = PERSONALITIES.get(bot_key, PERSONALITIES["warm"])
-    if re.search(r"\b(hi|hello|hey|hola|namaste)\b", low):
-        return stable_choice(COMMON["hello"], f"{bot_key}:{state.turn}:{text}")
+    slang = slang_kind(text)
+
+    # Casual greetings such as "howdy", "yo", "sup", "wassup", "ayo", and
+    # stretched forms like "heyyy" are treated as greetings, not literal words.
+    if slang == "greeting" or re.search(r"\b(hi|hello|hola|namaste)\b", low):
+        greeting = stable_choice(COMMON["hello"], f"{bot_key}:{state.turn}:{text}")
+        if bot_key == "chaotic" and slang in {"greeting"}:
+            return stable_choice(["HOWDYYYY 😂", "YOOO, what's happening?", "AYOOO 😭"], f"{bot_key}:{state.turn}:{text}")
+        if bot_key == "dry" and slang in {"greeting"}:
+            return stable_choice(["Howdy.", "Well, hello there.", "Ah. A greeting."], f"{bot_key}:{state.turn}:{text}")
+        if bot_key == "polite":
+            return stable_choice(["Hello!","Good to hear from you.","Howdy, and hello to you."], f"{bot_key}:{state.turn}:{text}")
+        return greeting
     if re.search(r"\b(thanks|thank you|thx)\b", low):
         return stable_choice(COMMON["thanks"], f"{bot_key}:{state.turn}:{text}")
     if re.search(r"\b(bye|goodnight|good night|see you)\b", low):
@@ -105,6 +138,55 @@ def humanize(name, bot_key, text, state):
         return callback + stable_choice(openers, f"positive:{bot_key}:{state.turn}:{text}") + " " + stable_choice(questions, f"positiveq:{bot_key}:{state.turn}:{text}")
     if state.facts.get("name") and state.turn % 5 == 0:
         return f"{state.facts['name']}, {stable_choice(questions, f'name:{bot_key}:{state.turn}')}"
+
+    # React naturally to slang-heavy messages. The response is still generated
+    # from the character's personality, so every character does not sound alike.
+    if slang == "laughter":
+        laugh = {
+            "dry": ["Yeah, hilarious. I'm devastated.","Okay, that got me."],
+            "sarcastic": ["Glad we're all suffering together 😂","Excellent. Absolute comedy."],
+            "chill": ["lmao yeah","😂 fr"],
+            "energetic": ["LMAOOO 😭","BROOO 😂"],
+            "mischief": ["💀 okay that's actually funny","lmaooo we're doomed"],
+        }
+        if bot_key in laugh:
+            return stable_choice(laugh[bot_key], f"laugh:{bot_key}:{state.turn}:{text}")
+    if slang == "agreement":
+        agreement = {
+            "chill": ["fr.","Yeah, exactly.","No cap."],
+            "confident": ["Facts.","Exactly. That's the point."],
+            "debater": ["I agree with that part.","Fair. That's a solid point."],
+            "sarcastic": ["Wow, we agree. Historic moment."],
+            "energetic": ["YESSS. Exactly!"],
+        }
+        if bot_key in agreement:
+            return stable_choice(agreement[bot_key], f"agree:{bot_key}:{state.turn}:{text}")
+    if slang == "disagreement":
+        disagreement = {
+            "debater": ["Nah, I don't buy that.","Nope. I'm pushing back on that."],
+            "blunt": ["Nah. That's not it."],
+            "sarcastic": ["Yeahhh, I'm gonna call cap on that."],
+            "chill": ["nahhh, not really 😭"],
+            "confident": ["Nope. I disagree."],
+        }
+        if bot_key in disagreement:
+            return stable_choice(disagreement[bot_key], f"disagree:{bot_key}:{state.turn}:{text}")
+    if slang == "surprise" and bot_key in {"energetic","chaotic","mischief","bright"}:
+        return stable_choice(
+            ["BRO WHAT 😭","WAIT—WHAT?","NO WAY 💀","Okay hold up 😂"],
+            f"surprise:{bot_key}:{state.turn}:{text}"
+        )
+    if slang == "positive" and bot_key in {"bright","energetic","competitive","chill"}:
+        return stable_choice(
+            ["Okayyy, I see the hype.","Yeah, that's actually fire.","Valid. I respect it."],
+            f"positive-slang:{bot_key}:{state.turn}:{text}"
+        )
+    if slang == "negative" and bot_key in {"dry","sarcastic","blunt","grouchy"}:
+        return stable_choice(
+            ["Yeah... that's rough.","Oof. Cooked.","Honestly? Kinda mid."],
+            f"negative-slang:{bot_key}:{state.turn}:{text}"
+        )
+
     return callback + stable_choice(openers, f"open:{bot_key}:{state.turn}:{text}") + " " + stable_choice(questions, f"q:{bot_key}:{state.turn}:{text}")
 
 @app.get("/health")
