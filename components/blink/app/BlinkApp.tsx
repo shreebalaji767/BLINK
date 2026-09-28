@@ -841,7 +841,7 @@ export default function BlinkApp({ email }: { email: string }) {
     }
   }
 
-  async function startCamera(requestedFacing: "user" | "environment" = requestedFacing) {
+  async function startCamera(requestedFacing: "user" | "environment" = cameraFacing) {
     if (typeof window === "undefined") return;
     if (!window.isSecureContext) {
       notify("Camera needs HTTPS. Open the deployed BLINK address, not an insecure HTTP page.");
@@ -1146,7 +1146,7 @@ export default function BlinkApp({ email }: { email: string }) {
             <div className="blink-big-icon">◉</div>
             <h1>BLINK CAMERA</h1>
             <p>Capture a photo or video and send it as a disappearing Snap.</p>
-            <button className="blink-primary" onClick={startCamera}>Enable camera</button>
+            <button className="blink-primary" onClick={() => { void startCamera(cameraFacing); }}>Enable camera</button>
             <button className="blink-button secondary" onClick={() => snapFileRef.current?.click()}>Choose from gallery</button>
           </div>}
           <input ref={snapFileRef} type="file" accept="image/*,video/*" capture="user" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => {
