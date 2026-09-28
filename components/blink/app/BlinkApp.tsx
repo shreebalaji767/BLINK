@@ -87,6 +87,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lon: 78.9629 });
+  const [mapZoom, setMapZoom] = useState(10);
   const [ghostMode, setGhostMode] = useState(true);
   const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("user");
   const [cameraFilter, setCameraFilter] = useState<"normal" | "mono" | "sepia" | "vivid" | "cool">("normal");
@@ -1633,8 +1634,22 @@ export default function BlinkApp({ email }: { email: string }) {
       {tab === "map" && (() => {
         const lat = mapCenter.lat;
         const lon = mapCenter.lon;
-        const bbox = [lon - 0.08, lat - 0.06, lon + 0.08, lat + 0.06].map((v) => v.toFixed(6)).join(",");
+        const zoom = Math.min(18, Math.max(3, mapZoom));
+        const latitudeSpan = 120 / Math.pow(2, zoom - 3);
+        const longitudeSpan = latitudeSpan * 1.333333;
+        const bbox = [
+          lon - longitudeSpan / 2,
+          lat - latitudeSpan / 2,
+          lon + longitudeSpan / 2,
+          lat + latitudeSpan / 2
+        ].map((v) => v.toFixed(6)).join(",");
         const mapUrl = "https://www.openstreetmap.org/export/embed.html?bbox=" + encodeURIComponent(bbox) + "&layer=mapnik&marker=" + encodeURIComponent(lat.toFixed(6) + "," + lon.toFixed(6));
+        const zoomIn = () => setMapZoom((value) => Math.min(18, value + 1));
+        const zoomOut = () => setMapZoom((value) => Math.max(3, value - 1));
+        const resetMap = () => {
+          setMapCenter({ lat: 20.5937, lon: 78.9629 });
+          setMapZoom(10);
+        };
         return <div className="blink-panel">
           <div className="blink-panel-head"><div><span className="blink-eyebrow">LIVE MAP · NO LOCATION HISTORY</span><h1>Map</h1></div>
             <button className="blink-primary small" onClick={() => setGhostMode(!ghostMode)}>{ghostMode ? "Ghost Mode ON" : "Share temporarily"}</button>
@@ -1647,6 +1662,11 @@ export default function BlinkApp({ email }: { email: string }) {
               referrerPolicy="no-referrer-when-downgrade"
               className="blink-map-iframe"
             />
+            <div className="blink-map-zoom-controls" aria-label="Map zoom controls">
+              <button type="button" onClick={zoomIn} disabled={zoom >= 18} aria-label="Zoom in" title="Zoom in">+</button>
+              <button type="button" onClick={zoomOut} disabled={zoom <= 3} aria-label="Zoom out" title="Zoom out">−</button>
+            </div>
+            <div className="blink-map-zoom-level" aria-live="polite">Zoom {zoom}</div>
             <div className="blink-map-label">{ghostMode ? "Ghost Mode — your location is not shared or stored" : "Location sharing is temporary and not stored as history"}</div>
           </div>
           <div className="blink-map-controls">
@@ -1660,11 +1680,11 @@ export default function BlinkApp({ email }: { email: string }) {
                 () => notify("Location permission was not granted.")
               );
             }}>⌖ My location</button>
-            <button onClick={() => setMapCenter({ lat: 20.5937, lon: 78.9629 })}>◎ Reset map</button>
+            <button onClick={resetMap}>◎ Reset map</button>
             <button onClick={() => setGhostMode(true)}>👻 Ghost Mode</button>
             <button onClick={() => notify("No location history is stored.")}>✦ Privacy</button>
           </div>
-          <small className="blink-feature-note">Real map data provided by OpenStreetMap. BLINK does not store your location. The map only requests the area currently being viewed.</small>
+          <small className="blink-feature-note">Real map data provided by OpenStreetMap. BLINK does not store your location. Use + / − to zoom; the map only requests the area currently being viewed.</small>
         </div>;
       })()}
 
