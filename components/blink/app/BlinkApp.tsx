@@ -615,6 +615,36 @@ export default function BlinkApp({ email }: { email: string }) {
     setSnaps(next);
   }
 
+  async function findUser(search: string) {
+    const value = search.trim().toLowerCase();
+    setQuery(search);
+    if (!value) {
+      setPeople([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .ilike("username", value + "%")
+      .neq("id", me)
+      .limit(30);
+    if (error) {
+      setPeople([]);
+      notify("Could not search usernames right now.");
+      return;
+    }
+    const results = (data ?? []).map((p: { id: string; username: string }) => ({
+      id: p.id,
+      username: p.username,
+    }));
+    setPeople(results);
+    setDirectory((current) => {
+      const merged = new Map(current.map((p) => [p.id, p]));
+      results.forEach((p) => merged.set(p.id, p));
+      return Array.from(merged.values());
+    });
+  }
+
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const nav: [Tab, string, string][] = [
     ["camera", "◉", "Camera"], ["chat", "◌", "Chat"], ["friends", "♙", "Friends"],
