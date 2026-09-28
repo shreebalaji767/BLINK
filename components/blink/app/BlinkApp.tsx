@@ -141,11 +141,15 @@ export default function BlinkApp({ email }: { email: string }) {
   const validTabs: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile", "admin"];
 
   function navigateTab(next: Tab) {
-    setTab(next);
+    const fallback: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile", "admin"];
+    const target = platformSettings[next] === false
+      ? (fallback.find((id) => platformSettings[id] !== false && (id !== "admin" || Boolean(adminRole))) ?? "profile")
+      : next;
+    setTab(target);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      url.searchParams.set("tab", next);
-      window.history.pushState({ blinkTab: next }, "", url.toString());
+      url.searchParams.set("tab", target);
+      window.history.pushState({ blinkTab: target }, "", url.toString());
     }
   }
 
