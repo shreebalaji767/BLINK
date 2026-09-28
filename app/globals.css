@@ -1,191 +1,106 @@
-/* BLINK responsive visual refresh */
-:root{
-  --blink-bg:#071014;
-  --blink-surface:#0d191c;
-  --blink-surface-2:#112326;
-  --blink-line:rgba(184,230,224,.13);
-  --blink-line-strong:rgba(184,230,224,.24);
-  --blink-text:#f3f8f7;
-  --blink-muted:#8ea6a3;
-  --blink-accent:#b9f1df;
-  --blink-accent-2:#9edbed;
-  --blink-shadow:0 24px 80px rgba(0,0,0,.28)
+/* BLINK UI polish: Spotlight + navigation */
+.blink-panel{animation:blink-fade-in .28s ease both}
+@keyframes blink-fade-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.blink-panel-head{
+  padding:6px 2px 0;
+  margin-bottom:24px;
 }
-html,body{background:var(--blink-bg);color:var(--blink-text);-webkit-font-smoothing:antialiased}
-body{overflow-x:hidden}
-.blink-app{
-  min-height:100svh;
-  padding-bottom:max(92px,calc(76px + env(safe-area-inset-bottom)));
-  background:
-    radial-gradient(circle at 50% -10%,rgba(118,194,184,.18),transparent 34%),
-    radial-gradient(circle at 92% 22%,rgba(93,155,190,.10),transparent 28%),
-    linear-gradient(180deg,#091417 0%,#071014 55%,#050b0e 100%);
+.blink-panel-head>div:first-child{display:grid;gap:7px}
+.blink-panel-head h1{
+  margin:0;
+  font-size:clamp(38px,5vw,58px);
+  line-height:.98;
 }
-.blink-topbar{
-  height:72px;
-  padding:0 clamp(14px,4vw,52px);
-  border-color:var(--blink-line);
-  background:rgba(7,16,20,.72);
-  backdrop-filter:blur(26px);
-  -webkit-backdrop-filter:blur(26px)
+.blink-panel-head .blink-eyebrow{color:#7fa29e}
+.blink-panel-head .blink-button{
+  min-height:46px;
+  padding:11px 18px;
+  border-radius:15px;
+  box-shadow:0 10px 28px rgba(120,215,191,.10)
 }
-.blink-brand{font-size:clamp(25px,3vw,30px);color:var(--blink-text)}
-.blink-brand:after{content:"";display:inline-block;width:7px;height:7px;margin:0 0 3px 5px;border-radius:50%;background:var(--blink-accent);box-shadow:0 0 18px rgba(184,241,223,.7)}
-.blink-round,.blink-button.secondary{border-color:var(--blink-line);background:rgba(17,34,38,.82);color:var(--blink-text)}
-.blink-content{width:min(1280px,100%);padding:clamp(14px,3vw,30px) clamp(12px,3vw,32px)}
-.blink-bottom-nav{
-  width:min(900px,calc(100% - 20px));
-  bottom:max(10px,env(safe-area-inset-bottom));
-  padding:7px;
-  border-color:var(--blink-line-strong);
+.blink-feature-note{
+  margin:0 0 20px;
+  padding:13px 15px;
+  border:1px solid var(--blink-line);
+  border-radius:15px;
+  color:#9bb2af;
+  background:rgba(184,241,223,.035);
+}
+.blink-spotlight-feed{width:min(760px,100%);margin:0 auto}
+.blink-spotlight-card{
   border-radius:28px;
-  background:rgba(9,21,24,.86);
-  backdrop-filter:blur(28px);
-  -webkit-backdrop-filter:blur(28px);
-  box-shadow:0 18px 70px rgba(0,0,0,.42)
+  box-shadow:0 18px 65px rgba(0,0,0,.20);
 }
-.blink-bottom-nav button{min-width:68px;min-height:50px;color:#708986}
-.blink-bottom-nav button.active{color:#071014;background:linear-gradient(135deg,var(--blink-accent),#d6f5ed);box-shadow:0 5px 20px rgba(130,210,190,.12)}
-.blink-panel-head h1,.blink-profile-body h1{letter-spacing:-.065em}
-.blink-camera-stage{
-  width:min(560px,100%);
-  height:min(76svh,760px);
-  min-height:480px;
-  border-color:var(--blink-line);
-  border-radius:34px;
-  box-shadow:var(--blink-shadow)
+.blink-spotlight-media{
+  min-height:420px;
+  border-radius:27px 27px 0 0;
+  position:relative;
 }
-.blink-camera-off{
-  background:
-    radial-gradient(circle at 50% 22%,rgba(119,189,181,.20),transparent 38%),
-    linear-gradient(160deg,#122326,#091114)
+.blink-spotlight-media:before{
+  content:"SPOTLIGHT";
+  position:absolute;
+  top:16px;
+  left:16px;
+  padding:6px 9px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;
+  background:rgba(5,13,15,.42);
+  color:#c8dedb;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.14em;
+  backdrop-filter:blur(10px);
 }
-.blink-big-icon{filter:drop-shadow(0 8px 20px rgba(0,0,0,.35))}
-.blink-camera-bottom input,.blink-search,.blink-composer input{
-  background:rgba(13,25,28,.9);
-  border-color:var(--blink-line);
-  color:var(--blink-text)
+.blink-spotlight-copy{
+  padding:18px;
+  background:linear-gradient(180deg,rgba(17,33,37,.95),rgba(10,21,24,.98));
 }
-.blink-camera-bottom input:focus,.blink-search:focus,.blink-composer input:focus{
-  border-color:rgba(184,241,223,.4);
-  box-shadow:0 0 0 3px rgba(184,241,223,.07)
+.blink-spotlight-copy b{font-size:15px}
+.blink-spotlight-copy span{font-size:12px;color:#839c98}
+.blink-empty{
+  min-height:190px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  padding:35px 20px;
+  border:1px dashed var(--blink-line-strong);
+  border-radius:22px;
+  color:#829a96;
+  background:rgba(184,241,223,.018);
 }
-.blink-primary,.blink-button{
-  background:linear-gradient(135deg,var(--blink-accent),#d9f7ef);
-  color:#071014;
-  font-weight:900
+.blink-bottom-nav button{
+  position:relative;
+  border:1px solid transparent;
 }
-.blink-chat-layout,.blink-friend-card,.blink-story-card,.blink-settings-section,.blink-admin-user-row{
-  border-color:var(--blink-line);
-  background:linear-gradient(145deg,rgba(17,33,37,.92),rgba(9,20,23,.92))
+.blink-bottom-nav button.active:after{
+  content:"";
+  position:absolute;
+  bottom:3px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#557b76;
 }
-.blink-chat-row:hover,.blink-chat-row.selected{background:rgba(184,241,223,.07)}
-.blink-avatar{background:linear-gradient(135deg,#52716f,#263b3e);border-color:rgba(255,255,255,.08)}
-.blink-bubble.other{background:#17272a;border-color:rgba(184,241,223,.06)}
-.blink-bubble.mine{background:#eafaf5;color:#071014}
-.blink-composer,.blink-conversation-head{background:rgba(10,20,23,.88);border-color:var(--blink-line);backdrop-filter:blur(18px)}
-.blink-friend-card,.blink-story-card,.blink-settings-section,.blink-admin-user-row{box-shadow:0 12px 45px rgba(0,0,0,.10)}
-.blink-story-hero{border-color:var(--blink-line);background:linear-gradient(120deg,#15292c,#0a1518)}
-.blink-story-orb{background:linear-gradient(135deg,#eafff8,#739692);color:#102022}
-.blink-story-ring{background:linear-gradient(135deg,#d9fff4,#6eaaa1)}
-.blink-story-ring span{background:#132326}
-.blink-map{border-color:var(--blink-line);background:#0e1a20}
-.blink-map-pin{color:#071014;background:var(--blink-accent);border-color:#effff9}
-.blink-map-label{background:rgba(8,18,21,.82);color:#a9bfbc}
-.blink-profile-cover{background:radial-gradient(circle at 25% 20%,#50706f,#17282b 55%,#091114)}
-.blink-profile-body{background:rgba(12,25,28,.94);border-color:var(--blink-line);box-shadow:var(--blink-shadow)}
-.blink-setting-readonly,.blink-admin-add-user{background:rgba(184,241,223,.035);border-color:var(--blink-line)}
-.blink-role-admin{background:#18272d;border-color:#3c6470}
-.blink-role-owner{background:#29251b;border-color:#75643b}
-.blink-platform-control{background:linear-gradient(145deg,#142427,#0d1a1d);border-color:var(--blink-line)}
-.blink-platform-control:hover{border-color:var(--blink-line-strong);box-shadow:0 10px 28px rgba(0,0,0,.2)}
-.blink-platform-control-icon{background:#203538}
-.blink-platform-control input:checked{background:#74c8b0}
-.blink-toast{background:#132326;border-color:var(--blink-line-strong)}
-.blink-memory-card,.blink-spotlight-card{background:#0d1a1d;border-color:var(--blink-line)}
-.blink-spotlight-media{background:radial-gradient(circle,#1b3539,#081013)}
-.blink-recipient-strip button,.blink-inbox-snaps button,.blink-card-actions button,.blink-map-controls button,.blink-memory-toolbar button{
-  background:#142427;border-color:var(--blink-line);color:var(--blink-text)
+.blink-bottom-nav button.active small{font-weight:950}
+@media(min-width:901px){
+  .blink-bottom-nav{gap:5px}
+  .blink-bottom-nav button{flex:1}
 }
-.blink-story-compose,.blink-request-box,.blink-group-create{background:#0e1b1e;border-color:var(--blink-line)}
-.blink-admin-user-menu{background:#122326;border-color:var(--blink-line-strong)}
-.blink-admin-user-menu button:hover{background:rgba(184,241,223,.07)!important}
-
-/* fluid layouts */
-.blink-friend-grid,.blink-story-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-.blink-platform-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-.blink-memory-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
-.blink-admin-form-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
-.blink-content img,.blink-content video{max-width:100%}
-.blink-panel,.blink-camera-page,.blink-profile-page{min-width:0}
-.blink-panel-head{flex-wrap:wrap}
-.blink-story-hero{flex-wrap:wrap}
-.blink-admin-user-copy{min-width:0}
-.blink-admin-user-copy b{overflow-wrap:anywhere}
-.blink-setting-readonly span{min-width:0}
-.blink-setting-readonly b{overflow-wrap:anywhere;text-align:right}
-
-/* tablet */
-@media(max-width:900px){
-  .blink-chat-layout{grid-template-columns:1fr}
-  .blink-chat-list{border-right:0;border-bottom:1px solid var(--blink-line);max-height:250px;overflow:auto}
-  .blink-conversation{min-height:500px}
-  .blink-camera-stage{height:min(74svh,720px)}
-}
-
-/* phone */
 @media(max-width:620px){
-  .blink-app{padding-bottom:max(86px,calc(76px + env(safe-area-inset-bottom)))}
-  .blink-topbar{height:62px;padding:0 12px}
-  .blink-brand{font-size:25px}
-  .blink-top-actions .blink-button{display:none}
-  .blink-top-actions .blink-round{width:38px;height:38px}
-  .blink-content{padding:12px 10px}
-  .blink-panel-head{align-items:flex-start;flex-direction:column;gap:10px}
-  .blink-panel-head h1{font-size:40px}
-  .blink-camera-stage{width:100%;height:min(74svh,700px);min-height:430px;border-radius:25px}
-  .blink-camera-bottom{display:grid;grid-template-columns:1fr}
-  .blink-friend-grid,.blink-story-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  .blink-friend-card{padding:14px}
-  .blink-map{height:58svh;min-height:400px}
-  .blink-bottom-nav{width:calc(100% - 12px);padding:6px;overflow-x:auto;justify-content:flex-start}
-  .blink-bottom-nav button{flex:1 0 64px;min-width:64px}
-  .blink-profile-cover{height:180px;border-radius:22px 22px 0 0}
-  .blink-profile-body{padding:62px 16px 25px;border-radius:0 0 22px 22px}
-  .blink-settings-section{padding:14px;border-radius:16px}
-  .blink-admin-management-head{align-items:flex-start;flex-direction:column}
-  .blink-admin-user-row{align-items:flex-start;flex-direction:column}
-  .blink-admin-user-actions{width:100%;justify-content:flex-start}
-  .blink-admin-user-actions button{flex:1}
-  .blink-platform-grid{grid-template-columns:1fr}
-  .blink-memory-toolbar{grid-template-columns:1fr 1fr}
-  .blink-memory-toolbar .blink-search{grid-column:1/-1}
-  .blink-spotlight-media{height:56svh;min-height:330px;max-height:560px}
-  .blink-chat-layout{border-radius:18px;min-height:calc(100svh - 170px)}
-  .blink-chat-list{max-height:220px}
-  .blink-messages{padding:14px 10px;min-height:300px}
-  .blink-bubble{max-width:88%}
-  .blink-composer{padding:8px}
+  .blink-panel{padding-top:3px}
+  .blink-panel-head{margin-bottom:18px;padding:3px 2px 0}
+  .blink-panel-head h1{font-size:42px}
+  .blink-panel-head .blink-button{width:100%;justify-content:center}
+  .blink-feature-note{font-size:12px;line-height:1.5}
+  .blink-spotlight-feed{width:100%}
+  .blink-spotlight-card{border-radius:22px}
+  .blink-spotlight-media{min-height:48svh;height:52svh;max-height:560px;border-radius:21px 21px 0 0}
+  .blink-spotlight-copy{padding:15px}
+  .blink-empty{min-height:150px;border-radius:18px}
 }
-
-/* tiny phones + landscape phones */
 @media(max-width:380px){
-  .blink-bottom-nav button{flex-basis:58px;min-width:58px;padding-left:4px;padding-right:4px}
+  .blink-bottom-nav{width:calc(100% - 8px)}
+  .blink-bottom-nav button{flex-basis:56px;min-width:56px}
   .blink-bottom-nav small{font-size:8px}
-  .blink-panel-head h1{font-size:34px}
-  .blink-camera-stage{min-height:390px}
-  .blink-friend-grid,.blink-story-grid{grid-template-columns:1fr}
-}
-@media(orientation:landscape) and (max-height:600px){
-  .blink-camera-stage{height:calc(100svh - 125px);min-height:330px}
-  .blink-topbar{height:56px}
-  .blink-chat-layout{min-height:calc(100svh - 100px)}
-}
-@media(pointer:coarse){
-  button,.blink-primary,.blink-button{min-height:42px}
-  .blink-round{min-width:42px}
-  .blink-bottom-nav button{min-height:50px}
-}
-@media(prefers-reduced-motion:reduce){
-  *,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+  .blink-panel-head h1{font-size:37px}
 }
