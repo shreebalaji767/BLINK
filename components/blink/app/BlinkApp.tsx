@@ -29,6 +29,8 @@ export default function BlinkApp({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>("camera");
   const [me, setMe] = useState("");
   const [people, setPeople] = useState<Person[]>([]);
+  const [directory, setDirectory] = useState<Person[]>([]);
+  const [outgoing, setOutgoing] = useState<Person[]>([]);
   const [friends, setFriends] = useState<Person[]>([]);
   const [requests, setRequests] = useState<Person[]>([]);
   const [blocked, setBlocked] = useState<Person[]>([]);
@@ -61,14 +63,16 @@ export default function BlinkApp({ email }: { email: string }) {
   }
 
   async function loadFriends(userId: string) {
-    const { data } = await supabase.from("friendships").select("requester_id,addressee_id,status").eq("status", "accepted");
-    const ids = (data ?? []).flatMap((r: any) =>
-      r.requester_id === userId ? [r.addressee_id] : r.addressee_id === userId ? [r.requester_id] : []
-    );
-    setFriends(ids.map((id) => ({ id })));
-
-    const incoming = (data ?? []).filter((r: any) => r.addressee_id === userId && r.status === "pending").map((r: any) => r.requester_id);
-    setRequests(incoming.map((id) => ({ id })));
+    const [{ data: accepted }, { data: incoming }, { data: sent }] = await Promise.all([
+      supabase.from("friendships").select("requester_id,addressee_id").eq("status", "accepted")
+        .or("requester_id.eq." + userId + ",addressee_id.eq." + userId),
+      supabase.from("friendships").select("requester_id").eq("addressee_id", userId).eq("status", "pending"),
+      supabase.from("friendships").select("addressee_id").eq("requester_id", userId).eq("status", "pending")
+    ]);
+    const ids = (accepted ?? []).map((r: any) => r.requester_id === userId ? r.addressee_id : r.requester_id);
+    setFriends(ids.map((id: string) => ({ id })));
+    setRequests((incoming ?? []).map((r: any) => ({ id: r.requester_id })));
+    setOutgoing((sent ?? []).map((r: any) => ({ id: r.addressee_id })));
   }
 
   async function loadBlocked(userId: string) {
@@ -113,6 +117,8 @@ export default function BlinkApp({ email }: { email: string }) {
       if (!alive || !data.user) return;
       setMe(data.user.id);
       await Promise.all([loadFriends(data.user.id), loadBlocked(data.user.id), loadStories(data.user.id), loadSnaps(data.user.id), loadBots()]);
+      const { data: allIds } = await supabase.from("user_ids").select("id").limit(5000);
+      setDirectory((allIds ?? []).map((x: any) => ({ id: x.id })).filter((x: Person) => x.id !== data.user!.id));
     })();
     return () => {
       alive = false;
@@ -132,30 +138,28 @@ export default function BlinkApp({ email }: { email: string }) {
   async function findUserId(value: string) {
     setQuery(value);
     const trimmed = value.trim();
-    if (!trimmed) {
-      setPeople([]);
-      return;
-    }
-    if (!/^[0-9a-f-]{36}$/i.test(trimmed)) {
-      setPeople([]);
-      return;
-    }
-    const { data } = await supabase.from("user_ids").select("id").eq("id", trimmed).maybeSingle();
-    setPeople(data ? [{ id: data.id }] : []);
+    if (!trimmed) { setPeople([]); return; }
+    const needle = trimmed.toLowerCase();
+    setPeople(directory.filter((p) => p.id.toLowerCase().includes(needle)).slice(0, 60));
   }
 
   async function sendFriendRequest(person: Person) {
     const { error } = await supabase.from("friendships").insert({ requester_id: me, addressee_id: person.id });
+    if (!error) { setOutgoing((items) => [...items, person]); setPeople((items) => items.filter((p) => p.id !== person.id)); }
     notify(error ? "Friend request could not be sent." : "Friend request sent.");
   }
 
-  async function acceptRequest(person: Person) {
-    const { error } = await supabase.from("friendships").update({ status: "accepted" })
+  async function respondToRequest(person: Person, status: "accepted" | "rejected") {
+    const { error } = await supabase.from("friendships").update({ status })
       .eq("requester_id", person.id).eq("addressee_id", me).eq("status", "pending");
-    if (!error) {
-      await loadFriends(me);
-      notify("Friend request accepted.");
-    }
+    if (!error) { await loadFriends(me); notify(status === "accepted" ? "Friend request accepted." : "Request declined."); }
+    else notify("Could not update request.");
+  }
+  async function cancelRequest(person: Person) {
+    const { error } = await supabase.from("friendships").delete()
+      .eq("requester_id", me).eq("addressee_id", person.id).eq("status", "pending");
+    if (!error) { setOutgoing((items) => items.filter((p) => p.id !== person.id)); notify("Friend request cancelled."); }
+    else notify("Could not cancel request.");
   }
 
   async function blockUser(person: Person) {
@@ -462,19 +466,20 @@ export default function BlinkApp({ email }: { email: string }) {
 
       {tab === "friends" && <div className="blink-panel">
         <div className="blink-panel-head"><div><span className="blink-eyebrow">USER IDS ONLY</span><h1>Friends</h1></div></div>
-        <input className="blink-search" value={query} onChange={(e) => findUserId(e.target.value)} placeholder="Paste a BLINK User ID…" />
+        <input className="blink-search" value={query} onChange={(e) => findUserId(e.target.value)} placeholder="Search people by any part of their User ID…" />
         {requests.length > 0 && <div className="blink-request-box"><b>Friend requests</b>{requests.map((p) =>
-          <div key={p.id}><Avatar id={p.id} /><span>{shortId(p.id)}</span><button className="blink-primary small" onClick={() => acceptRequest(p)}>Accept</button></div>
+          <div key={p.id}><Avatar id={p.id} /><span>{shortId(p.id)}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => respondToRequest(p, "rejected")}>Decline</button></div>
         )}</div>}
         <div className="blink-friend-grid">
           {(query ? people : friends).map((p) => <article className="blink-friend-card" key={p.id}>
             <Avatar id={p.id} large /><h3>{shortId(p.id)}</h3><p>{p.id}</p>
             <div className="blink-card-actions">
-              {friendIds.has(p.id) ? <button onClick={() => openFriendChat(p)}>Chat</button> : <button onClick={() => sendFriendRequest(p)}>Add friend</button>}
+              {friendIds.has(p.id) ? <button onClick={() => openFriendChat(p)}>Chat</button> : outgoing.some((x) => x.id === p.id) ? <button onClick={() => cancelRequest(p)}>Requested · Cancel</button> : requests.some((x) => x.id === p.id) ? <button onClick={() => respondToRequest(p, "accepted")}>Accept request</button> : <button onClick={() => sendFriendRequest(p)}>＋ Add friend</button>}
               <button onClick={() => blocked.some((b) => b.id === p.id) ? unblockUser(p) : blockUser(p)}>{blocked.some((b) => b.id === p.id) ? "Unblock" : "Block"}</button>
             </div>
           </article>)}
         </div>
+        {outgoing.length > 0 && <div className="blink-request-box"><b>Sent requests</b>{outgoing.map((p) => <div key={p.id}><Avatar id={p.id} /><span>{p.id}</span><button onClick={() => cancelRequest(p)}>Cancel request</button></div>)}</div>}
         {blocked.length > 0 && <div className="blink-request-box"><b>Blocked by you</b>{blocked.map((p) =>
           <div key={p.id}><Avatar id={p.id} /><span>{shortId(p.id)}</span><button onClick={() => unblockUser(p)}>Unblock</button></div>
         )}</div>}
