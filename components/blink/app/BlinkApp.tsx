@@ -86,6 +86,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [settingsEmail, setSettingsEmail] = useState(email);
   const [avatarEmoji, setAvatarEmoji] = useState("3F");
   const [appearance, setAppearance] = useState<"dark" | "light">("dark");
+  const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lon: 78.9629 });
   const [ghostMode, setGhostMode] = useState(true);
   const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("user");
   const [cameraFilter, setCameraFilter] = useState<"normal" | "mono" | "sepia" | "vivid" | "cool">("normal");
@@ -1629,13 +1630,43 @@ export default function BlinkApp({ email }: { email: string }) {
           {!memoryItems.length && <div className="blink-empty">Save a Snap to Memories to build your private archive.</div>}
         </div>
       )}
-      {tab === "map" && <div className="blink-panel">
-        <div className="blink-panel-head"><div><span className="blink-eyebrow">NO LOCATION HISTORY</span><h1>Map</h1></div>
-          <button className="blink-primary small" onClick={() => setGhostMode(!ghostMode)}>{ghostMode ? "Ghost Mode ON" : "Share temporarily"}</button>
-        </div>
-        <div className="blink-map"><div className="blink-map-grid" /><div className="blink-map-label">{ghostMode ? "Ghost Mode — no location is stored" : "Location sharing is temporary and not stored as history"}</div></div>
-        <div className="blink-map-controls"><button onClick={() => setGhostMode(true)}>👻 Ghost Mode</button><button onClick={() => notify("Temporary location expires automatically.")}>⌖ Expiry</button><button onClick={() => notify("No location history is stored.")}>✦ Privacy</button></div>
-      </div>}
+      {tab === "map" && (() => {
+        const lat = mapCenter.lat;
+        const lon = mapCenter.lon;
+        const bbox = [lon - 0.08, lat - 0.06, lon + 0.08, lat + 0.06].map((v) => v.toFixed(6)).join(",");
+        const mapUrl = "https://www.openstreetmap.org/export/embed.html?bbox=" + encodeURIComponent(bbox) + "&layer=mapnik&marker=" + encodeURIComponent(lat.toFixed(6) + "," + lon.toFixed(6));
+        return <div className="blink-panel">
+          <div className="blink-panel-head"><div><span className="blink-eyebrow">LIVE MAP · NO LOCATION HISTORY</span><h1>Map</h1></div>
+            <button className="blink-primary small" onClick={() => setGhostMode(!ghostMode)}>{ghostMode ? "Ghost Mode ON" : "Share temporarily"}</button>
+          </div>
+          <div className="blink-map blink-real-map">
+            <iframe
+              title="BLINK real map"
+              src={mapUrl}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="blink-map-iframe"
+            />
+            <div className="blink-map-label">{ghostMode ? "Ghost Mode — your location is not shared or stored" : "Location sharing is temporary and not stored as history"}</div>
+          </div>
+          <div className="blink-map-controls">
+            <button onClick={() => {
+              if (!navigator.geolocation) return notify("Location is not supported by this browser.");
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  setMapCenter({ lat: position.coords.latitude, lon: position.coords.longitude });
+                  notify("Map centered on your current location.");
+                },
+                () => notify("Location permission was not granted.")
+              );
+            }}>⌖ My location</button>
+            <button onClick={() => setMapCenter({ lat: 20.5937, lon: 78.9629 })}>◎ Reset map</button>
+            <button onClick={() => setGhostMode(true)}>👻 Ghost Mode</button>
+            <button onClick={() => notify("No location history is stored.")}>✦ Privacy</button>
+          </div>
+          <small className="blink-feature-note">Real map data provided by OpenStreetMap. BLINK does not store your location. The map only requests the area currently being viewed.</small>
+        </div>;
+      })()}
 
       {tab === "admin" && adminAccessChecked && adminRole && <div className="blink-panel">
         <div className="blink-panel-head">
