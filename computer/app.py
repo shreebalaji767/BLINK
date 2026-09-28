@@ -104,8 +104,39 @@ def humanize(name, bot_key, text, state):
     openers, questions = PERSONALITIES.get(bot_key, PERSONALITIES["warm"])
     slang = slang_kind(text)
 
-    # Casual greetings such as "howdy", "yo", "sup", "wassup", "ayo", and
-    # stretched forms like "heyyy" are treated as greetings, not literal words.
+    # Handle conversational "what are you doing?" messages before generic greetings.
+    # This prevents "howdy" and typo variants like "HPWDY" from getting a generic reply.
+    if re.search(r"\b(what(?:'s| is) up|whats up|what are you doing|what r u doing|whatre you doing|wyd|howdy)\b", low) or re.fullmatch(r"h+p?wd+y+\??", low):
+        doing = {
+            "warm": ["Not much. I am here with you. What are you up to?", "Just hanging around. Tell me how your day is going."],
+            "curious": ["Mostly wondering what you are actually up to. What is the story?", "I am here, but now I want to know what you are doing."],
+            "chill": ["Just vibing 😎 What about you?", "Nothing wild. Taking it easy. You?"],
+            "bright": ["I am good! Just hanging out ✨ What are you doing?", "Doing alright! Give me the interesting update."],
+            "dry": ["Existing. A demanding schedule.", "Answering you. Riveting stuff."],
+            "chaotic": ["Making questionable decisions 😂 What about you?", "Trying to behave. Failing spectacularly."],
+            "shy": ["Um... just here. I am glad you messaged though.", "Not much... what are you doing?"],
+            "confident": ["I am good. What are you working on?", "Doing fine. Your turn."],
+            "serious": ["I am here. What is actually going on with you?", "Doing alright. What brought you here?"],
+            "sarcastic": ["Thriving dramatically, obviously.", "Living the dream. The budget version."],
+            "kind": ["I am here. How are you really doing?", "Just hanging around. Tell me what is going on."],
+            "energetic": ["FULL POWER 😂 What are YOU doing?!", "I am good! Give me the update!"],
+            "philosopher": ["I am here, thinking about things. What about you?", "Interesting question. Maybe the better question is what you are doing."],
+            "competitive": ["I am ready. What are we tackling?", "Doing fine. What is today's challenge?"],
+            "grouchy": ["Surviving. Coffee would improve the situation.", "Still here. Against all odds."],
+            "dramatic": ["Surviving act two. The plot remains unstable.", "Present, alive, and waiting for the next plot twist."],
+            "practical": ["I am good. What do you need?", "Doing fine. What is the next thing?"],
+            "romantic": ["I am good. It is nicer now that you are here.", "Just thinking. And now I am curious about you."],
+            "storyteller": ["I am between chapters. What happened in your day?", "Waiting for the next interesting scene, apparently."],
+            "rebel": ["Doing my own thing. Obviously.", "Questioning the premise, as usual."],
+            "mischief": ["Planning absolutely nothing suspicious. Probably.", "Trying not to cause trouble. No promises."],
+            "polite": ["I am doing well, thank you. How are you?", "I am alright. It is nice to hear from you."],
+            "blunt": ["I am fine. What do you want to talk about?", "Good enough. Your turn."],
+            "motivator": ["Doing well. Now tell me what you are working toward.", "I am good. What is your next move?"],
+            "debater": ["I am fine. But what exactly are you up to?", "Doing alright. What is your position on the day so far?"]
+        }
+        return stable_choice(doing.get(bot_key, doing["warm"]), f"doing:{bot_key}:{state.turn}:{text}")
+
+    # Generic greetings are handled after conversational intents.
     if slang == "greeting" or re.search(r"\b(hi|hello|hola|namaste)\b", low):
         greeting = stable_choice(COMMON["hello"], f"{bot_key}:{state.turn}:{text}")
         if bot_key == "chaotic" and slang in {"greeting"}:
