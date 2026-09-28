@@ -85,7 +85,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const chatFileRef = useRef<HTMLInputElement>(null);
   const snapFileRef = useRef<HTMLInputElement>(null);
   const storyFileRef = useRef<HTMLInputElement>(null);
-  const realtimeChannelRef = useRef<any>(null);
+  const realtimeChannelRef = useRef<any>(null);\n  const conversationIdRef = useRef("");\n  conversationIdRef.current = conversationId;
 
   function notify(text: string) {
     setToast(text);
@@ -325,7 +325,7 @@ export default function BlinkApp({ email }: { email: string }) {
             const active = [...current.filter((m) => m.id !== incoming.id), incoming]
               .filter((m) => m.expires_at === "after_seen" || new Date(m.expires_at).getTime() > Date.now());
             window.localStorage.setItem(key, JSON.stringify(active));
-            if (conversationId === cid) setMessages(active);
+            if (conversationIdRef.current === cid) setMessages(active);
           } else if (payload.kind === "snap") {
             const snap: Snap = {
               id: String(payload.id || crypto.randomUUID()),
@@ -575,7 +575,7 @@ export default function BlinkApp({ email }: { email: string }) {
     notify(current.includes(messageId) ? "Message unsaved." : "Message saved.");
   }
 
-  function loadBots() {
+  function personalityLabel(key: string) {\n    const labels: Record<string, string> = {\n      warm: "Warm · listens first", curious: "Curious · asks why", chill: "Chill · low pressure", bright: "Bright · upbeat",\n      dry: "Dry · deadpan humor", chaotic: "Chaotic · unpredictable", shy: "Shy · gentle", confident: "Confident · direct",\n      serious: "Serious · thoughtful", sarcastic: "Sarcastic · teasing", kind: "Kind · supportive", energetic: "Energetic · loud fun",\n      philosopher: "Philosophical · reflective", competitive: "Competitive · goal driven", grouchy: "Grouchy · coffee powered",\n      dramatic: "Dramatic · theatrical", practical: "Practical · useful", romantic: "Romantic · sentimental", storyteller: "Storyteller · vivid",\n      rebel: "Rebel · questions rules", mischief: "Mischief · playful trouble", polite: "Polite · considerate", blunt: "Blunt · straight talk",\n      motivator: "Motivator · encouraging", debater: "Debater · challenges ideas"\n    };\n    return labels[key] || "Distinct personality";\n  }\n\n  function loadBots() {
     setBots([
       { id: "mira-warm", bot_key: "warm", display_name: "Mira", avatar_emoji: "🌷" },
       { id: "leo-curious", bot_key: "curious", display_name: "Leo", avatar_emoji: "🔎" },
@@ -668,7 +668,7 @@ export default function BlinkApp({ email }: { email: string }) {
       const options = slangReplies[slangKey];
       if (options) return options[Math.floor(Math.random() * options.length)];
     }
-    const replies: Record<string,string[]> = { warm: ["That sounds important to you. Tell me more.", "I am listening. No rush.", "Yeah, I get why you would feel that way."], curious: ["Wait, why? I need the backstory.", "Interesting. What happened next?", "Okay, now I am curious."], chill: ["Fair enough 😎", "Yeah, that is a vibe.", "I can live with that."], bright: ["Okayyy, I like where this is going!", "That actually sounds fun.", "Wait, that is kind of great."], dry: ["Well. That certainly happened.", "Ah yes, the classic situation.", "Beautiful. A tiny disaster with excellent timing."], chaotic: ["OH. We are doing this now.", "Okay, this escalated beautifully.", "I have questions. Probably bad ones."], shy: ["Oh... yeah, I get that.", "Um. Okay. I was thinking about that too.", "I do not know if this helps, but..."], confident: ["I see the situation.", "Yeah. I know what I would do.", "That is manageable."], serious: ["Let us look at this carefully.", "There are a couple of things here.", "Okay. Let us separate the facts from the noise."], sarcastic: ["Oh, excellent. Because apparently life needed another subplot.", "Naturally. Why would anything be simple?", "Love that for you. Truly."], kind: ["That sounds hard.", "I get why that would matter to you.", "Hey, that is okay."], energetic: ["YES! Okay, I am listening!", "Ohhh, now we are talking!", "Okay! Give me the whole story!"], philosopher: ["That is interesting, because it says something bigger too.", "Hmm. There is a deeper question underneath that.", "Maybe the strange part is why we care about it at all."], competitive: ["Okay. I see the challenge.", "Interesting. Now I want to beat that problem.", "Fine. Let us make a plan."], grouchy: ["Yeah, because apparently peace was too much to ask.", "Great. Another thing to deal with.", "I have opinions, and most of them involve coffee."], dramatic: ["Oh, this is a MOMENT.", "I can already hear the soundtrack.", "No. No, this deserves a full story."], practical: ["Okay. Let us make this useful.", "Simple version: here is what matters.", "Got it. We can work with that."], romantic: ["That has a little more feeling in it than you are admitting.", "Hmm. That sounds like one of those moments.", "Some things are easier to feel than explain."], storyteller: ["Oh, I can see the scene already.", "Now that sounds like the beginning of a story.", "And suddenly, the ordinary day was not ordinary anymore."], rebel: ["Why are we assuming the usual way is the right way?", "I would question that rule.", "Maybe the problem is the rule itself."], mischief: ["I have a terrible idea.", "This is dangerously entertaining.", "Okay, do not panic, but I have a plan."], polite: ["I understand.", "That makes sense.", "Thank you for explaining that."], blunt: ["Okay. Straight answer.", "Here is the thing.", "I am going to be direct."], motivator: ["Good. Keep going.", "That is a start.", "You are not stuck; you are just at the next step."], debater: ["I can see the argument, but I am not convinced yet.", "Okay, let us test that idea.", "There is another side to this."] };
+    if (/\\b(hp?wd?y|howdy|what'?s up|whats up|what are you doing|wyd)\\b/i.test(lower)) {\n      const casual: Record<string,string[]> = {\n        warm: ["Not much. I am here though. What is going on with you?", "Just hanging around. How is your day actually going?"],\n        curious: ["Now I want the real answer. What are you up to?", "Okay, but what is the story behind that?"],\n        chill: ["Not much 😎 just taking it easy. You?", "Just vibing. What about you?"],\n        bright: ["I am good! What are you up to? ✨", "Doing alright! Give me the interesting version."],\n        dry: ["Existing. Very ambitious, I know.", "Apparently I am answering questions today."],\n        chaotic: ["CURRENTLY MAKING QUESTIONABLE LIFE CHOICES 😂 You?", "Trying to behave. It is not going well."],\n        shy: ["Um... not much. I am glad you messaged though.", "Just here. What are you doing?"],\n        confident: ["I am good. What are you working on?", "Doing fine. Your turn."],\n        serious: ["I am alright. What is actually on your mind?", "Doing okay. What brought you here?"],\n        sarcastic: ["Oh, you know. Thriving dramatically.", "Living the dream. The budget version."],\n        kind: ["I am okay. Thanks for asking. How are you really doing?", "I am here. Tell me what is going on."],\n        energetic: ["FULL POWER 😂 What are YOU doing?!", "I am good! Give me the update!"],\n        philosopher: ["Doing alright. Funny how 'what are you doing?' can mean 'how are you?' too.", "I am here, thinking about things. What about you?"],\n        competitive: ["I am good. What are we trying to accomplish?", "Ready. What is today's challenge?"],\n        grouchy: ["Surviving. Coffee would improve the situation.", "Still here. Against all odds."],\n        dramatic: ["I am surviving act two. The plot remains unstable.", "Present, alive, and waiting for the next plot twist."],\n        practical: ["I am good. What do you need?", "Doing fine. What is the next thing?"],\n        romantic: ["I am good. It is nicer now that you are here.", "Just thinking. And now I am curious about you."],\n        storyteller: ["I am between chapters. What happened in your day?", "Waiting for the next interesting scene, apparently."],\n        rebel: ["Doing my own thing. Obviously.", "Questioning the premise, as usual."],\n        mischief: ["Planning absolutely nothing suspicious. Probably.", "Trying not to cause trouble. No promises."],\n        polite: ["I am doing well, thank you. How are you?", "I am alright. It is nice to hear from you."],\n        blunt: ["I am fine. What do you want to talk about?", "Good enough. Your turn."],\n        motivator: ["Doing well. Now tell me what you are working toward.", "I am good. What is your next move?"],\n        debater: ["I am fine. But what do you actually mean by 'howdy'?", "Doing alright. What is your position on the day so far?"]\n      };\n      const options = casual[bot.bot_key] || casual.warm;\n      return options[Math.floor(Math.random() * options.length)];\n    }\n    const replies: Record<string,string[]> = { warm: ["That sounds important to you. Tell me more.", "I am listening. No rush.", "Yeah, I get why you would feel that way."], curious: ["Wait, why? I need the backstory.", "Interesting. What happened next?", "Okay, now I am curious."], chill: ["Fair enough 😎", "Yeah, that is a vibe.", "I can live with that."], bright: ["Okayyy, I like where this is going!", "That actually sounds fun.", "Wait, that is kind of great."], dry: ["Well. That certainly happened.", "Ah yes, the classic situation.", "Beautiful. A tiny disaster with excellent timing."], chaotic: ["OH. We are doing this now.", "Okay, this escalated beautifully.", "I have questions. Probably bad ones."], shy: ["Oh... yeah, I get that.", "Um. Okay. I was thinking about that too.", "I do not know if this helps, but..."], confident: ["I see the situation.", "Yeah. I know what I would do.", "That is manageable."], serious: ["Let us look at this carefully.", "There are a couple of things here.", "Okay. Let us separate the facts from the noise."], sarcastic: ["Oh, excellent. Because apparently life needed another subplot.", "Naturally. Why would anything be simple?", "Love that for you. Truly."], kind: ["That sounds hard.", "I get why that would matter to you.", "Hey, that is okay."], energetic: ["YES! Okay, I am listening!", "Ohhh, now we are talking!", "Okay! Give me the whole story!"], philosopher: ["That is interesting, because it says something bigger too.", "Hmm. There is a deeper question underneath that.", "Maybe the strange part is why we care about it at all."], competitive: ["Okay. I see the challenge.", "Interesting. Now I want to beat that problem.", "Fine. Let us make a plan."], grouchy: ["Yeah, because apparently peace was too much to ask.", "Great. Another thing to deal with.", "I have opinions, and most of them involve coffee."], dramatic: ["Oh, this is a MOMENT.", "I can already hear the soundtrack.", "No. No, this deserves a full story."], practical: ["Okay. Let us make this useful.", "Simple version: here is what matters.", "Got it. We can work with that."], romantic: ["That has a little more feeling in it than you are admitting.", "Hmm. That sounds like one of those moments.", "Some things are easier to feel than explain."], storyteller: ["Oh, I can see the scene already.", "Now that sounds like the beginning of a story.", "And suddenly, the ordinary day was not ordinary anymore."], rebel: ["Why are we assuming the usual way is the right way?", "I would question that rule.", "Maybe the problem is the rule itself."], mischief: ["I have a terrible idea.", "This is dangerously entertaining.", "Okay, do not panic, but I have a plan."], polite: ["I understand.", "That makes sense.", "Thank you for explaining that."], blunt: ["Okay. Straight answer.", "Here is the thing.", "I am going to be direct."], motivator: ["Good. Keep going.", "That is a start.", "You are not stuck; you are just at the next step."], debater: ["I can see the argument, but I am not convinced yet.", "Okay, let us test that idea.", "There is another side to this."] };
     const options = replies[bot.bot_key] || replies.warm;
     return options[Math.floor(Math.random() * options.length)];
   }
@@ -1150,9 +1150,9 @@ export default function BlinkApp({ email }: { email: string }) {
         </div>
         <div className="blink-chat-layout">
           <aside className="blink-chat-list">
-            <div className="blink-bot-list"><b>PEOPLE — EVERYONE IS DIFFERENT</b>{bots.map((b) =>
+            <div className="blink-bot-list"><b>PEOPLE — EVERYONE HAS A PERSONALITY</b>{bots.map((b) =>
               <button key={b.id} className={activeBot?.id === b.id ? "blink-chat-row selected" : "blink-chat-row"} onClick={() => openBotChat(b)}>
-                <Avatar emoji={b.avatar_emoji} /><span className="blink-chat-copy"><b>{b.display_name}</b><small>Human-like character · unique personality</small></span>
+                <Avatar emoji={b.avatar_emoji} /><span className="blink-chat-copy"><b>{b.display_name}</b><small>{personalityLabel(b.bot_key)}</small></span>
               </button>
             )}</div>
             {friends.length ? friends.map((f) =>
@@ -1165,7 +1165,7 @@ export default function BlinkApp({ email }: { email: string }) {
             {(activePerson || activeBot) ? <>
               <div className="blink-conversation-head">
                 <Avatar id={activePerson?.id} emoji={activeBot?.avatar_emoji} />
-                <div><b>{activeBot?.display_name ?? activePerson?.username ?? shortId(activePerson?.id ?? "")}</b><small>Browser-only · {chatRetention === "seen" ? "disappears after seen" : "expires " + chatRetention}</small></div>
+                <div><b>{activeBot?.display_name ?? "@" + (activePerson?.username ?? shortId(activePerson?.id ?? ""))}</b><small>{activeBot ? personalityLabel(activeBot.bot_key) : "Friend · browser-only chat"} · {chatRetention === "seen" ? "disappears after seen" : "expires " + chatRetention}</small></div>
               </div>
               <div className="blink-messages">
                 {messages.map((m) => {
@@ -1182,14 +1182,14 @@ export default function BlinkApp({ email }: { email: string }) {
               </div>
               <div className="blink-composer">
                 <button onClick={() => chatFileRef.current?.click()}>＋</button>
-                <input value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendText()} placeholder={activeBot ? "Talk to the computer…" : "Send a message…"} />
+                <input value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendText()} placeholder={activeBot ? "Write a message…" : "Send a message…"} />
                 <button onClick={recordingVoice ? stopVoiceRecording : startVoiceRecording}>{recordingVoice ? "■" : "🎙"}</button>
                 <button onClick={sendText}>➤</button>
                 <input ref={chatFileRef} hidden type="file" accept="image/*,video/*,audio/*" capture="environment" onChange={(e) => {
                   const f = e.target.files?.[0]; if (f) sendChatFile(f);
                 }} />
               </div>
-            </> : <div className="blink-empty">Choose a friend or a computer bot.</div>}
+            </> : <div className="blink-empty">Choose someone to talk to. Your chats stay on this device.</div>}
           </section>
         </div>
       </div>}
@@ -1198,20 +1198,20 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-panel-head"><div><span className="blink-eyebrow">USERNAME DIRECTORY</span><h1>Friends</h1></div></div>
         <input className="blink-search" value={query} onChange={(e) => findUser(e.target.value)} placeholder="Search people by username…" />
         {requests.length > 0 && <div className="blink-request-box"><b>Friend requests</b>{requests.map((p) =>
-          <div key={p.id}><Avatar id={p.id} /><span>{p.username || shortId(p.id)}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => declineRequest(p)}>Decline</button></div>
+          <div key={p.id}><Avatar id={p.id} /><span>@{p.username || "blink_user"}</span><button className="blink-primary small" onClick={() => respondToRequest(p, "accepted")}>Accept</button><button className="blink-button secondary small" onClick={() => declineRequest(p)}>Decline</button></div>
         )}</div>}
         <div className="blink-friend-grid">
           {(query ? people : directory).map((p) => <article className="blink-friend-card" key={p.id}>
-            <Avatar id={p.id} large /><h3>{shortId(p.id)}</h3><p>{p.username || shortId(p.id)}</p>
+            <Avatar id={p.id} large /><h3>@{p.username || "blink_user"}</h3><p>BLINK member · username searchable</p>
             <div className="blink-card-actions">
               {friendIds.has(p.id) ? <button onClick={() => openFriendChat(p)}>Chat</button> : outgoing.some((x) => x.id === p.id) ? <button onClick={() => cancelRequest(p)}>Requested · Cancel</button> : requests.some((x) => x.id === p.id) ? <button onClick={() => respondToRequest(p, "accepted")}>Accept request</button> : <button onClick={() => sendFriendRequest(p)}>＋ Add friend</button>}
               <button onClick={() => blocked.some((b) => b.id === p.id) ? unblockUser(p) : blockUser(p)}>{blocked.some((b) => b.id === p.id) ? "Unblock" : "Block"}</button>
             </div>
           </article>)}
         </div>
-        {outgoing.length > 0 && <div className="blink-request-box"><b>Sent requests</b>{outgoing.map((p) => <div key={p.id}><Avatar id={p.id} /><span>{p.username || shortId(p.id)}</span><button onClick={() => cancelRequest(p)}>Cancel request</button></div>)}</div>}
+        {outgoing.length > 0 && <div className="blink-request-box"><b>Sent requests</b>{outgoing.map((p) => <div key={p.id}><Avatar id={p.id} /><span>@{p.username || "blink_user"}</span><button onClick={() => cancelRequest(p)}>Cancel request</button></div>)}</div>}
         {blocked.length > 0 && <div className="blink-request-box"><b>Blocked by you</b>{blocked.map((p) =>
-          <div key={p.id}><Avatar id={p.id} /><span>{p.username || shortId(p.id)}</span><button onClick={() => unblockUser(p)}>Unblock</button></div>
+          <div key={p.id}><Avatar id={p.id} /><span>@{p.username || "blink_user"}</span><button onClick={() => unblockUser(p)}>Unblock</button></div>
         )}</div>}
       </div>}
 
