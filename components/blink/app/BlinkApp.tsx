@@ -414,9 +414,9 @@ export default function BlinkApp({ email }: { email: string }) {
       setAvatarEmoji(profile?.avatar_emoji || window.localStorage.getItem("blink_avatar_" + user.id) || "3F");
       setGhostMode(storedGhost === null ? true : storedGhost === "true");
       setAppearance(storedAppearance === "light" ? "light" : "dark");
-      setChatRetention(window.localStorage.getItem("blink_chat_retention") || "24h");
-      setSnapRetention(window.localStorage.getItem("blink_snap_retention") || "24h");
-      setStoryRetention(window.localStorage.getItem("blink_story_retention") || "24h");
+      setChatRetention(window.localStorage.getItem("blink_chat_retention_" + user.id) || "24h");
+      setSnapRetention(window.localStorage.getItem("blink_snap_retention_" + user.id) || "24h");
+      setStoryRetention(window.localStorage.getItem("blink_story_retention_" + user.id) || "24h");
       const storedStoryPrivacy = window.localStorage.getItem("blink_story_privacy_" + user.id);
       setStoryPrivacy(storedStoryPrivacy === "private" || storedStoryPrivacy === "public" ? storedStoryPrivacy : "friends");
       const { data: sessionData } = await supabase.auth.getSession();
@@ -1294,7 +1294,7 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-panel-head"><div><span className="blink-eyebrow">DEVICE-LOCAL EPHEMERAL CHAT</span><h1>Chat</h1></div><button className="blink-primary small" onClick={() => navigateTab("friends")}>＋ New chat</button><button className="blink-button secondary small" onClick={() => notify("Select friends below to create a group.")}>👥 Group</button></div>
         <div className="blink-ephemeral-settings">
           <label>Delete chat messages
-            <select className="blink-search" value={chatRetention} onChange={(e) => { setChatRetention(e.target.value); window.localStorage.setItem("blink_chat_retention", e.target.value); }}>
+            <select className="blink-search" value={chatRetention} onChange={(e) => { setChatRetention(e.target.value); window.localStorage.setItem("blink_chat_retention_" + me, e.target.value); }}>
               <option value="seen">After seen</option>
               <option value="10s">10 seconds</option>
               <option value="30s">30 seconds</option>
@@ -1311,7 +1311,7 @@ export default function BlinkApp({ email }: { email: string }) {
             </select>
           </label>
           <label>Delete Snaps
-            <select className="blink-search" value={snapRetention} onChange={(e) => { setSnapRetention(e.target.value); window.localStorage.setItem("blink_snap_retention", e.target.value); }}>
+            <select className="blink-search" value={snapRetention} onChange={(e) => { setSnapRetention(e.target.value); window.localStorage.setItem("blink_snap_retention_" + me, e.target.value); }}>
               <option value="10s">10 seconds</option>
               <option value="30s">30 seconds</option>
               <option value="1m">1 minute</option>
@@ -1411,7 +1411,7 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-panel-head"><div><span className="blink-eyebrow">BROWSER ONLY · {storyRetention === "24h" ? "24 HOURS" : retentionLabel(storyRetention).toUpperCase()}</span><h1>Stories</h1></div><button className="blink-primary small" onClick={() => storyFileRef.current?.click()}>＋ Story</button></div>
         <div className="blink-ephemeral-settings">
           <label>Keep Story for
-            <select className="blink-search" value={storyRetention} onChange={(e) => { setStoryRetention(e.target.value); window.localStorage.setItem("blink_story_retention", e.target.value); }}>
+            <select className="blink-search" value={storyRetention} onChange={(e) => { setStoryRetention(e.target.value); window.localStorage.setItem("blink_story_retention_" + me, e.target.value); }}>
               <option value="10s">10 seconds</option>
               <option value="30s">30 seconds</option>
               <option value="1m">1 minute</option>
