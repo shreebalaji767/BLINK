@@ -1862,18 +1862,3 @@ export default function BlinkApp({ email }: { email: string }) {
     {toast && <div className="blink-toast" role="status">{toast}</div>}
   </main>;
 }
-.blink-admin-management{display:grid;gap:14px}
-.blink-admin-management h2{margin:3px 0;font-size:28px;letter-spacing:-.04em}
-.blink-admin-management-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
-.blink-admin-add-user{display:grid;gap:10px;padding:14px;border:1px solid #303542;border-radius:16px;background:rgba(255,255,255,.025)}
-.blink-admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.blink-admin-form-grid .blink-search{margin:0}
-.blink-admin-user-list{display:grid;gap:8px}
-.blink-admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #2b303d;border-radius:16px;background:#101219}
-.blink-admin-user-copy{display:grid;gap:3px;min-width:0}
-.blink-admin-user-copy small{color:#858c9c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.blink-admin-user-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.blink-admin-user-actions button{border:1px solid #303542;background:#181b23;color:#fff;border-radius:10px;padding:8px 10px}
-.blink-admin-user-actions button.danger{border-color:#63333b}
-.blink-admin-user-actions button:disabled{opacity:.45;cursor:not-allowed}
-@media(max-width:700px){.blink-admin-form-grid{grid-template-columns:1fr}.blink-admin-management-head{align-items:flex-start;flex-direction:column}.blink-admin-user-row{align-items:flex-start;flex-direction:column}.blink-admin-user-actions{width:100%;justify-content:flex-start}.blink-admin-user-actions button{flex:1}}
