@@ -57,6 +57,7 @@ export default function BlinkApp({ email }: { email: string }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [adminRole, setAdminRole] = useState<"owner" | "admin" | null>(null);
+  const [adminAccessChecked, setAdminAccessChecked] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState<Record<string, boolean>>({});
   const [ownerMetrics, setOwnerMetrics] = useState({
     totalUsers: 0,
@@ -146,6 +147,10 @@ export default function BlinkApp({ email }: { email: string }) {
     return () => window.removeEventListener("popstate", readTabFromUrl);
   }, []);
 
+  useEffect(() => {
+    if (adminAccessChecked && tab === "admin" && !adminRole) navigateTab("camera");
+  }, [adminAccessChecked, adminRole, tab]);
+
   function notify(text: string) {
     setToast(text);
     window.setTimeout(() => setToast(""), 2400);
@@ -171,11 +176,13 @@ export default function BlinkApp({ email }: { email: string }) {
     const { data } = await supabase.from("blink_admins").select("role, permissions, enabled").eq("user_id", userId).maybeSingle();
     if (!data?.enabled) {
       setAdminRole(null);
+      setAdminAccessChecked(true);
       setAdminPermissions({});
       return;
     }
     setAdminRole(data.role === "owner" || data.role === "admin" ? data.role : null);
     setAdminPermissions((data.permissions ?? {}) as Record<string, boolean>);
+    setAdminAccessChecked(true);
   }
 
   async function loadFriends(userId: string) {
@@ -401,8 +408,8 @@ export default function BlinkApp({ email }: { email: string }) {
         .select("role, permissions, enabled")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (adminRecord?.enabled) {
-        setAdminRole(adminRecord.role === "owner" ? "owner" : "admin");
+      if (adminRecord?.enabled && (adminRecord.role === "owner" || adminRecord.role === "admin")) {
+        setAdminRole(adminRecord.role);
         setAdminPermissions((adminRecord.permissions ?? {}) as Record<string, boolean>);
       } else {
         setAdminRole(null);
@@ -1499,7 +1506,7 @@ export default function BlinkApp({ email }: { email: string }) {
         <div className="blink-map-controls"><button onClick={() => setGhostMode(true)}>👻 Ghost Mode</button><button onClick={() => notify("Temporary location expires automatically.")}>⌖ Expiry</button><button onClick={() => notify("No location history is stored.")}>✦ Privacy</button></div>
       </div>}
 
-      {tab === "admin" && adminRole && <div className="blink-panel">
+      {tab === "admin" && adminAccessChecked && adminRole && <div className="blink-panel">
         <div className="blink-panel-head">
           <div><span className="blink-eyebrow">{adminRole === "owner" ? "OWNER CONTROL CENTER" : "ADMIN CONTROL CENTER"}</span><h1>{adminRole === "owner" ? "Owner Dashboard" : "Admin Center"}</h1></div>
           {adminRole === "owner" && <button className="blink-primary small" onClick={() => loadOwnerMetrics()} disabled={ownerDashboardBusy}>{ownerDashboardBusy ? "Refreshing…" : "Refresh"}</button>}
