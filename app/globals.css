@@ -209,3 +209,6 @@ html[data-theme="light"] video {
 .blink-platform-status{grid-column:2/4;font-size:9px;font-weight:900;letter-spacing:.12em;color:#8f96a8}
 @media (max-width:900px){.blink-platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:620px){.blink-platform-grid{grid-template-columns:1fr}}
+
+
+.blink-real-map{position:relative;overflow:hidden;min-height:460px;padding:0}.blink-map-iframe{display:block;width:100%;height:460px;border:0;background:#111}.blink-real-map .blink-map-label{z-index:2}.blink-map-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.blink-map-controls button{min-height:42px}
