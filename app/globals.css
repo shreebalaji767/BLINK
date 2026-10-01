@@ -352,3 +352,41 @@ img,video,iframe,canvas{max-width:100%}
   .blink-content{max-width:1280px}
   .blink-camera-stage{max-width:580px}
 }
+
+
+/* Responsive foundation — BLINK scales from small phones to large desktop displays. */
+html { min-width: 320px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { min-width: 320px; }
+img, video, canvas, svg { max-width: 100%; }
+button, input, textarea, select { touch-action: manipulation; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (hover: none) and (pointer: coarse) {
+  button, a, input, select, textarea { min-height: 44px; }
+}
+@media (max-width: 900px) {
+  .blink-content { width: 100%; }
+  .blink-chat-layout { min-height: calc(100svh - 150px); }
+  .blink-camera-stage { width: min(100%, 560px); }
+}
+@media (max-width: 600px) {
+  .blink-topbar { padding-inline: 12px; }
+  .blink-content { padding-inline: 10px; }
+  .blink-panel-head { gap: 10px; }
+  .blink-panel-head h1, .blink-profile-body h1 { overflow-wrap: anywhere; }
+  .blink-chat-layout { border-radius: 18px; }
+  .blink-bubble { max-width: 86%; }
+  .blink-composer { padding: 9px; }
+  .blink-composer input { font-size: 16px; }
+  .blink-camera-stage { width: 100%; min-height: min(500px, 72svh); height: 72svh; border-radius: 22px; }
+  .blink-profile-cover { height: 190px; }
+  .blink-profile-body { padding-inline: 18px; }
+}
+@media (max-width: 380px) {
+  .blink-bottom-nav { width: calc(100% - 10px); }
+  .blink-bottom-nav button { min-width: 42px; padding-inline: 4px; }
+  .blink-bottom-nav small { display: none; }
+  .blink-friend-grid, .blink-story-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 1400px) {
+  .blink-content { width: min(1280px, calc(100% - 64px)); }
+}
