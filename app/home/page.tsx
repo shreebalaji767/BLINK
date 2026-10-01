@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Home",
-  description: "Your private BLINK space for camera, chat, stories, friends, memories, and more.",
+  description: "BLSSNVJ21 private BLINK space for camera, chat, stories, friends, memories, and more.",
   robots: { index: false, follow: false },
 };
 
