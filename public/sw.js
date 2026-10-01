@@ -1,5 +1,5 @@
-const CACHE = "blink-shell-v2";
-const SHELL = ["/", "/login", "/icon.svg", "/manifest.webmanifest"];
+const CACHE = "blssnvj21-shell-v3";
+const SHELL = ["/", "/login", "/icon.svg", "/apple-icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
