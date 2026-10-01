@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   publisher: "BLINK",
   category: "social",
   manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "BLINK", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: ["/icon.svg"],
