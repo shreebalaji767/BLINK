@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { getSiteUrl } from "@/lib/env";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://blink-eqad.onrender.com";
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -13,21 +14,31 @@ export const metadata: Metadata = {
   authors: [{ name: "BLINK" }],
   creator: "BLINK",
   publisher: "BLINK",
+  category: "social",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/icon.svg"],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "BLINK",
     title: "BLINK — Camera, Chat & Stories",
     description: "Chat, share snaps, post stories, and connect through BLINK.",
-    url: siteUrl
+    url: siteUrl,
   },
   twitter: {
     card: "summary",
     title: "BLINK — Camera, Chat & Stories",
-    description: "A lightweight social communication experience."
+    description: "A lightweight social communication experience.",
   },
-  robots: { index: true, follow: true }
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 };
 
 export const viewport: Viewport = {
@@ -35,7 +46,7 @@ export const viewport: Viewport = {
   colorScheme: "dark light",
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover"
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
