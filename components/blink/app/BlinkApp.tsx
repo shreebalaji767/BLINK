@@ -145,7 +145,7 @@ export default function BlinkApp({ email }: { email: string }) {
 
   const validTabs: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile", "admin"];
 
-  function navigateTab(next: Tab) {
+  function navigateTab(next: Tab, replace = false) {
     const fallback: Tab[] = ["camera", "chat", "friends", "stories", "spotlight", "map", "memories", "profile", "admin"];
     const target = platformSettings[next] === false
       ? (fallback.find((id) => platformSettings[id] !== false && (id !== "admin" || Boolean(adminRole))) ?? "profile")
@@ -154,7 +154,8 @@ export default function BlinkApp({ email }: { email: string }) {
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", target);
-      window.history.pushState({ blinkTab: target }, "", url.toString());
+      const method = replace ? "replaceState" : "pushState";
+      window.history[method]({ blinkTab: target }, "", url.toString());
     }
   }
 
@@ -162,7 +163,7 @@ export default function BlinkApp({ email }: { email: string }) {
     if (typeof window === "undefined") return;
     const readTabFromUrl = () => {
       const requested = new URLSearchParams(window.location.search).get("tab") as Tab | null;
-      navigateTab(requested && validTabs.includes(requested) ? requested : "camera");
+      navigateTab(requested && validTabs.includes(requested) ? requested : "camera", true);
     };
     readTabFromUrl();
     window.addEventListener("popstate", readTabFromUrl);
@@ -1450,7 +1451,10 @@ export default function BlinkApp({ email }: { email: string }) {
 
   return <main className="blink-app">
     <header className="blink-topbar">
-      <button className="blink-brand" onClick={() => navigateTab("camera")}>BLINK</button>
+      <button className="blink-brand" onClick={() => navigateTab("camera")} aria-label="BLINK home">
+        <img src="/icon.svg" alt="" width="36" height="36" />
+        <span>BLINK</span>
+      </button>
       <div className="blink-top-actions">
         <button className="blink-round" onClick={() => navigateTab("friends")}>⌕</button><button className="blink-round" onClick={() => navigateTab("spotlight")}>▷</button><button className="blink-round" onClick={() => navigateTab("memories")}>▣</button>
         <button className="blink-round" onClick={() => notify(snaps.length ? snaps.length + " new Snap(s)" : "No new Snaps")}>♡</button>
@@ -2071,7 +2075,7 @@ export default function BlinkApp({ email }: { email: string }) {
     </section>
 
     <nav className="blink-bottom-nav" aria-label="Main navigation">{nav.map(([id, icon, label]) =>
-      <button key={id} className={tab === id ? "active" : ""} onClick={() => navigateTab(id)}><span className="blink-icon">{icon}</span><small>{label}</small></button>
+      <button key={id} className={tab === id ? "active" : ""} aria-current={tab === id ? "page" : undefined} aria-label={label} onClick={() => navigateTab(id)}><span className="blink-icon" aria-hidden="true">{icon}</span><small>{label}</small></button>
     )}</nav>
     {toast && <div className="blink-toast" role="status">{toast}</div>}
   </main>;
