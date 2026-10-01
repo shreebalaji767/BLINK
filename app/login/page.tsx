@@ -11,7 +11,7 @@ export default function LoginPage() {
   return (
     <main className="blink-shell" aria-labelledby="blink-login-title">
       <section className="blink-card">
-        <p className="blink-logo" aria-label="BLINK">BLINK</p>
+        <div className="blink-logo-wrap" aria-label="BLSSNVJ21 · BLINK"><img className="blink-logo-image" src="/icon.svg" alt="" width="72" height="72" /><div className="blink-logo-text">BLSSNVJ21</div><div className="blink-logo-subtitle">BLINK</div></div>
         <h1 id="blink-login-title" className="blink-sr-only">Sign in to BLINK</h1>
         <p className="blink-muted">Sign in or create your account.</p>
         <LoginForm />
