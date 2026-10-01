@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BlinkApp from "@/components/blink/app/BlinkApp";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Your private BLINK space for camera, chat, stories, friends, memories, and more.",
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = "force-dynamic";
 
