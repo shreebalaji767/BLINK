@@ -402,3 +402,28 @@ html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-rendering:optimiz
 .blink-brand img{width:36px;height:36px;display:block;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.28)}
 .blink-brand span{display:inline-block}
 @media(max-width:420px){.blink-brand img{width:32px;height:32px;border-radius:9px}.blink-brand{gap:7px}}
+
+/* BLSSNVJ21 responsive polish */
+html { min-width: 320px; text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+.blink-toast { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: min(92vw, 520px); }
+.blink-bottom-nav { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+.blink-bottom-nav button { min-width: 52px; min-height: 52px; }
+@media (max-width: 360px) {
+  .blink-topbar { padding-inline: 10px; }
+  .blink-brand { font-size: 24px; }
+  .blink-top-actions .blink-button { padding: 8px 10px; }
+  .blink-content { padding-inline: 8px; }
+  .blink-bottom-nav { gap: 0; }
+  .blink-bottom-nav button { min-width: 42px; padding-inline: 4px; }
+  .blink-bottom-nav small { font-size: 9px; }
+}
+@media (min-width: 1400px) {
+  .blink-content { width: min(1280px, 100%); }
+}
+@media (pointer: coarse) {
+  button, input, select, textarea { touch-action: manipulation; }
+  button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
