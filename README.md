@@ -2,9 +2,9 @@
 
 BLINK is a lightweight social communication web application for chat, snaps, stories, friends, profiles, and temporary sharing.
 
-## Version 1.3.0
+## Version 1.4.0
 
-This release upgrades the application foundation without replacing the existing BLINK social features.
+This release hardens the application foundation while preserving the existing BLINK social features.
 
 ### Production upgrades
 
@@ -28,7 +28,10 @@ This release upgrades the application foundation without replacing the existing 
 - Custom 404 page
 - Responsive desktop/mobile interface
 - Browser favicon fallback at `/favicon.ico`
-- Safer service-worker offline fallback that does not replace non-document requests with the login page
+- Service-worker cache versioning and safe update prompts
+- `/health` deployment health endpoint with no-store responses
+- `.well-known/security.txt` responsible-disclosure contact
+- Additional response-security headers and no-store API caching
 
 ## Current stack
 
@@ -89,6 +92,8 @@ npm run check
 ```
 
 This runs ESLint, TypeScript validation, and a production build.
+
+For deployment monitoring, `GET /health` returns a small no-store JSON health response.
 
 ## Deployment
 
