@@ -6,7 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "BLINK",
     id: "/?app=blssnvj21",
     dir: "ltr",
-    description: "BLSSNVJ21 — BLINK camera, chat, stories, friends, snaps, and private social communication.",
+    description:
+      "BLSSNVJ21 — BLINK camera, chat, stories, friends, snaps, and private social communication.",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -17,12 +18,35 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "en",
     categories: ["social", "communication"],
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
+      {
+        src: "/icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any",
+      },
+      {
+        src: "/icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "maskable",
+      },
     ],
     prefer_related_applications: false,
     launch_handler: { client_mode: "navigate-existing" },
     shortcuts: [
-      { name: "Open BLINK", short_name: "Open", url: "/home", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }] },
+      {
+        name: "Open BLINK",
+        short_name: "Open",
+        url: "/home",
+        icons: [
+          {
+            src: "/icon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+        ],
+      },
     ],
   };
 }
