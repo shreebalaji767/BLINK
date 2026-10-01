@@ -4,16 +4,18 @@ import { getSiteUrl } from "@/lib/env";
 import PwaRegister from "@/components/blink/PwaRegister";
 
 const siteUrl = getSiteUrl();
+const brand = "BLSSNVJ21";
+const siteDescription = "BLSSNVJ21 — BLINK camera, chat, stories, friends, snaps, and private social communication.";
 
 export const metadata: Metadata = {
-  title: { default: "BLINK — Camera, Chat & Stories", template: "%s · BLINK" },
-  description: "BLINK is a lightweight social communication app for chat, snaps, stories, friends, and temporary sharing.",
-  applicationName: "BLINK",
+  title: { default: "BLSSNVJ21 · BLINK", template: "%s · BLSSNVJ21" },
+  description: siteDescription,
+  applicationName: brand,
   generator: "Next.js",
-  keywords: ["BLINK", "social", "chat", "stories", "snaps", "messaging"],
-  authors: [{ name: "BLINK" }],
-  creator: "BLINK",
-  publisher: "BLINK",
+  keywords: ["BLSSNVJ21", "BLINK", "social", "chat", "stories", "snaps", "messaging"],
+  authors: [{ name: brand }],
+  creator: brand,
+  publisher: brand,
   category: "social",
   manifest: "/manifest.webmanifest",
   metadataBase: new URL(siteUrl),
@@ -27,15 +29,15 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
   openGraph: {
     type: "website",
-    siteName: "BLINK",
-    title: "BLINK — Camera, Chat & Stories",
-    description: "Chat, share snaps, post stories, and connect through BLINK.",
+    siteName: brand,
+    title: "BLSSNVJ21 · BLINK",
+    description: siteDescription,
     url: siteUrl,
   },
   twitter: {
     card: "summary",
-    title: "BLINK — Camera, Chat & Stories",
-    description: "A lightweight social communication experience.",
+    title: "BLSSNVJ21 · BLINK",
+    description: siteDescription,
   },
   robots: {
     index: true,
