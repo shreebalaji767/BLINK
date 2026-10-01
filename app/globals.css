@@ -437,3 +437,8 @@ html { min-width: 320px; text-size-adjust: 100%; -webkit-text-size-adjust: 100%;
 .blink-brand-copy strong{font-size:17px;letter-spacing:-.055em}
 .blink-brand-copy small{margin-top:4px;font-size:9px;font-weight:900;letter-spacing:.22em;color:#858c9c}
 @media(max-width:520px){.blink-brand{gap:7px}.blink-brand img{width:34px;height:34px;border-radius:9px}.blink-brand-copy strong{font-size:15px}.blink-brand-copy small{font-size:8px;margin-top:3px}}
+
+
+.blink-pwa-install{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:1000;display:inline-flex;align-items:center;gap:9px;padding:10px 15px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(15,16,22,.92);color:#fff;font-weight:850;box-shadow:0 12px 35px rgba(0,0,0,.35);backdrop-filter:blur(16px)}
+.blink-pwa-install img{width:24px;height:24px;border-radius:7px}.blink-pwa-install:hover{transform:translateY(-2px)}
+@media(max-width:520px){.blink-pwa-install{right:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:9px 13px}.blink-pwa-install span{font-size:13px}}
