@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: "/?source=pwa",
-    name: "BLINK — Camera, Chat & Stories",
-    short_name: "BLINK",
-    description: "A lightweight social communication app for chat, snaps, stories, friends, and temporary sharing.",
+    id: "/?app=blssnvj21",
+    name: "BLSSNVJ21 — BLINK",
+    short_name: "BLSSNVJ21",
+    description: "BLSSNVJ21 — BLINK camera, chat, stories, friends, snaps, and private social communication.",
     start_url: "/",
     scope: "/",
     display: "standalone",
