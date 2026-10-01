@@ -1,8 +1,8 @@
-# BLINK
+# BLSSNVJ21 · BLINK
 
 BLINK is a lightweight social communication web application for chat, snaps, stories, friends, profiles, and temporary sharing.
 
-## Version 1.1.0
+## Version 1.2.0
 
 This release upgrades the application foundation without replacing the existing BLINK social features.
 
@@ -14,7 +14,7 @@ This release upgrades the application foundation without replacing the existing 
 - Verified server-side auth using `auth.getClaims()`
 - Next.js `proxy.ts` session refresh flow
 - Installable PWA manifest
-- Dedicated BLINK app icon
+- Dedicated BLSSNVJ21 · BLINK app icon
 - Mobile-safe viewport and standalone app metadata
 - Canonical URL and Open Graph/Twitter metadata
 - Robots rules that keep authenticated/private routes out of indexing
@@ -51,7 +51,7 @@ This release upgrades the application foundation without replacing the existing 
 - Privacy options such as Ghost Mode
 - Dark/light appearance support
 - Responsive mobile navigation
-- PWA install metadata
+- PWA install metadata with BLSSNVJ21 branding
 - SEO metadata, robots and sitemap support
 
 ## Development
