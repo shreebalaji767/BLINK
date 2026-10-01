@@ -2,15 +2,17 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BLINK",
+    name: "BLINK — Camera, Chat & Stories",
     short_name: "BLINK",
-    description: "Chat, snaps, stories, friends, and temporary sharing.",
+    description: "A lightweight social communication app for chat, snaps, stories, friends, and temporary sharing.",
     start_url: "/",
+    scope: "/",
     display: "standalone",
+    orientation: "portrait-primary",
     background_color: "#050507",
     theme_color: "#050507",
-    orientation: "portrait-primary",
+    lang: "en",
     categories: ["social", "communication"],
-    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }]
+    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }],
   };
 }
