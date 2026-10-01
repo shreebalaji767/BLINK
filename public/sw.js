@@ -1,5 +1,5 @@
-const CACHE = "blink-shell-v1";
-const SHELL = ["/", "/login", "/icon.svg"];
+const CACHE = "blink-shell-v2";
+const SHELL = ["/", "/login", "/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -21,6 +21,12 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request).then((cached) => cached || caches.match("/")))
+    fetch(event.request).then((response) => {
+      if (response.ok && event.request.destination === "document") {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+      }
+      return response;
+    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("/")))
   );
 });
