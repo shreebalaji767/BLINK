@@ -19,10 +19,10 @@ export const metadata: Metadata = {
   category: "social",
   manifest: "/manifest.webmanifest",
   metadataBase: new URL(siteUrl),
-  appleWebApp: { capable: true, title: "BLINK", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: brand, statusBarStyle: "black-translucent" },
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    shortcut: ["/icon.svg"],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
   },
   alternates: { canonical: "/" },
