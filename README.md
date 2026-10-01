@@ -113,6 +113,20 @@ BLINK uses verified Supabase claims for server-side access checks and keeps auth
 
 Temporary or disappearing content is not a guarantee against screenshots, screen recordings, photography, copying, or other preservation.
 
+## Responsive UI
+
+BLINK is designed as a responsive application rather than a fixed desktop page:
+
+- Small phones: 320px+ layouts with compact navigation
+- Phones: touch-friendly controls and camera-first layouts
+- Tablets: adaptive two-column/chat layouts
+- Laptops and desktops: centered content with wider working areas
+- Large displays: constrained content width for readability
+- Touch devices: larger interaction targets
+- Reduced-motion preference is respected
+- Safe viewport units are used for modern mobile browsers
+- Images and video scale without overflowing their containers
+
 ## PWA / app metadata
 
 BLINK includes:
