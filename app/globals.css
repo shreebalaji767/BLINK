@@ -427,3 +427,13 @@ html { min-width: 320px; text-size-adjust: 100%; -webkit-text-size-adjust: 100%;
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* BLSSNVJ21 brand system */
+.blink-brand{display:inline-flex;align-items:center;gap:10px;padding:5px 8px 5px 4px;border-radius:16px;transition:background .2s ease,transform .2s ease}
+.blink-brand:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
+.blink-brand img{display:block;width:40px;height:40px;border-radius:11px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.blink-brand-copy{display:grid;justify-items:start;line-height:1}
+.blink-brand-copy strong{font-size:17px;letter-spacing:-.055em}
+.blink-brand-copy small{margin-top:4px;font-size:9px;font-weight:900;letter-spacing:.22em;color:#858c9c}
+@media(max-width:520px){.blink-brand{gap:7px}.blink-brand img{width:34px;height:34px;border-radius:9px}.blink-brand-copy strong{font-size:15px}.blink-brand-copy small{font-size:8px;margin-top:3px}}
