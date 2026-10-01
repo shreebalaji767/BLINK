@@ -1,11 +1,43 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://blink-eqad.onrender.com";
+
 export const metadata: Metadata = {
-  title: "BLINK — Camera, Chat & Stories",
-  description: "BLINK is an ephemeral social camera app."
+  metadataBase: new URL(siteUrl),
+  title: { default: "BLINK — Camera, Chat & Stories", template: "%s · BLINK" },
+  description: "BLINK is a lightweight social communication app for chat, snaps, stories, friends, and temporary sharing.",
+  applicationName: "BLINK",
+  generator: "Next.js",
+  keywords: ["BLINK", "social", "chat", "stories", "snaps", "messaging"],
+  authors: [{ name: "BLINK" }],
+  creator: "BLINK",
+  publisher: "BLINK",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+  openGraph: {
+    type: "website",
+    siteName: "BLINK",
+    title: "BLINK — Camera, Chat & Stories",
+    description: "Chat, share snaps, post stories, and connect through BLINK.",
+    url: siteUrl
+  },
+  twitter: {
+    card: "summary",
+    title: "BLINK — Camera, Chat & Stories",
+    description: "A lightweight social communication experience."
+  },
+  robots: { index: true, follow: true }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#050507",
+  colorScheme: "dark light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en" suppressHydrationWarning><body>{children}</body></html>;
 }
