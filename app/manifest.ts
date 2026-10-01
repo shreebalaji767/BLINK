@@ -13,6 +13,12 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#050507",
     lang: "en",
     categories: ["social", "communication"],
-    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }],
+    icons: [
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
+    ],
+    prefer_related_applications: false,
+    shortcuts: [
+      { name: "Open BLINK", short_name: "Open", url: "/home", icons: [{ src: "/icon.svg", sizes: "any" }] },
+    ],
   };
 }
