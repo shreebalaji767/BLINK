@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getSiteUrl } from "@/lib/env";
+import PwaRegister from "@/components/blink/PwaRegister";
 
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
   title: { default: "BLINK — Camera, Chat & Stories", template: "%s · BLINK" },
   description: "BLINK is a lightweight social communication app for chat, snaps, stories, friends, and temporary sharing.",
   applicationName: "BLINK",
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   publisher: "BLINK",
   category: "social",
   manifest: "/manifest.webmanifest",
+  metadataBase: new URL(siteUrl),
   appleWebApp: { capable: true, title: "BLINK", statusBarStyle: "black-translucent" },
-  formatDetection: { telephone: false },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: ["/icon.svg"],
@@ -53,5 +53,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" suppressHydrationWarning><body>{children}</body></html>;
+  return <html lang="en" suppressHydrationWarning><body>{children}<PwaRegister /></body></html>;
 }
