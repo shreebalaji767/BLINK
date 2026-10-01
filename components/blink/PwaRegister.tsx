@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
+
 export default function PwaRegister() {
   const [installable, setInstallable] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
@@ -12,8 +14,10 @@ export default function PwaRegister() {
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
 
     const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
+      const promptEvent = event as BeforeInstallPromptEvent;
+      if (typeof promptEvent.prompt !== "function") return;
+      promptEvent.preventDefault();
+      setDeferredPrompt(promptEvent);
       setInstallable(true);
     };
     const onInstalled = () => {
