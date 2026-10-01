@@ -19,9 +19,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: ["/icon.svg"],
-    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
   },
   alternates: { canonical: "/" },
+  formatDetection: { telephone: false },
   openGraph: {
     type: "website",
     siteName: "BLINK",
