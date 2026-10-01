@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /home
+Disallow: /api
+Disallow: /auth
+
+Sitemap: https://blink-eqad.onrender.com/sitemap.xml
