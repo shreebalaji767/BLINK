@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self)" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" }
+];
+
 const nextConfig: NextConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
+  }
 };
 
 export default nextConfig;
