@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "BLSSNVJ21 — BLINK",
-    short_name: "BLSSNVJ21",
+    short_name: "BLINK",
     id: "/?app=blssnvj21",
     dir: "ltr",
     description: "BLSSNVJ21 — BLINK camera, chat, stories, friends, snaps, and private social communication.",
