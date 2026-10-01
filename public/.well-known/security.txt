@@ -1,0 +1,3 @@
+Contact: mailto:security@blink-eqad.onrender.com
+Preferred-Languages: en
+Canonical: https://blink-eqad.onrender.com/.well-known/security.txt
