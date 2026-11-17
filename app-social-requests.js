@@ -282,16 +282,16 @@
     const reactions=buildReactionCounts(person,text);
     return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text,minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),reactions,replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
   };
-  const npcKey=p=>p.world+"|"+p.place+"|"+p.name;
-  // Migrate the earlier name-only history format to stable world/place/name keys.
-  // Without this, old saved names never match npcKey() and every refresh repeats the roster.
+  // NPC names are the stable identity across reloads. World/place can change
+  // when directory data is expanded, so they must not be part of the history key.
+  const npcKey=p=>p.name;
+  // Migrate both legacy name-only entries and the previous world|place|name format.
   function migrateSeenNPCHistory(){
     const saved=readLocalArray("blinkSeenNPCs").filter(value=>typeof value==="string");
     const migrated=new Set();
     for(const value of saved){
-      if(people.some(person=>npcKey(person)===value)){migrated.add(value);continue;}
-      const legacyPerson=people.find(person=>person.name===value);
-      if(legacyPerson)migrated.add(npcKey(legacyPerson));
+      const person=people.find(candidate=>candidate.name===value||value.endsWith("|"+candidate.name));
+      if(person)migrated.add(person.name);
     }
     state.seenNPCs=migrated;
     writeLocalArray("blinkSeenNPCs",[...migrated]);
