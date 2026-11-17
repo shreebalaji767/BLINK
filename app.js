@@ -2,12 +2,24 @@
   "use strict";
   const $ = (s) => document.querySelector(s);
   const worlds = [
-    {name:"Fantasy",color:"#8c79b7",emoji:"🧙",people:[["Gandalf","🧙","Middle-earth"],["Legolas","🏹","Middle-earth"],["Shrek","🧅","Far Far Away"],["Elsa","❄️","Arendelle"],["Hiccup","🐉","Berk"],["Dumbledore","🪄","Wizarding World"],["Geralt","⚔️","The Continent"],["Sauron","👁️","Middle-earth"]]},
-    {name:"Sci-Fi",color:"#65a6b7",emoji:"🛸",people:[["Darth Vader","🖤","Galactic Empire"],["Spock","🖖","Star Trek"],["The Doctor","🚀","Time and Space"],["Leia Organa","⭐","Rebel Alliance"],["Optimus Prime","🤖","Cybertron"],["Ripley","🚨","USCSS Nostromo"],["Yoda","🐸","Jedi Order"],["Wall-E","🤖","Earth"]]},
-    {name:"Anime",color:"#d98b9d",emoji:"🍥",people:[["Naruto","🍥","Hidden Leaf"],["Luffy","🍖","Grand Line"],["Sailor Moon","🌙","Tokyo"],["Goku","🐉","Earth"],["Gojo","🕶️","Jujutsu High"],["Pikachu","⚡","Kanto"],["Anya Forger","🥜","Ostania"],["Totoro","🌳","Forest"]]},
-    {name:"Comics",color:"#d59b52",emoji:"💥",people:[["Batman","🦇","Gotham"],["Spider-Man","🕷️","New York"],["Wonder Woman","🛡️","Themyscira"],["Deadpool","🔴","Earth-616"],["Joker","🃏","Gotham"],["Superman","☀️","Metropolis"],["Harley Quinn","🔨","Gotham"],["Loki","🐍","Asgard"]]},
-    {name:"Games",color:"#75a47b",emoji:"🎮",people:[["Mario","🍄","Mushroom Kingdom"],["Link","🗡️","Hyrule"],["Kirby","🌸","Dream Land"],["Lara Croft","🧭","Tomb Raider"],["Sonic","💨","Green Hill"],["Kiryu","🐉","Kamurocho"],["Chell","🟠","Aperture"],["Sans","💀","Underground"]]},
-    {name:"Cartoons",color:"#d4a4d0",emoji:"📺",people:[["SpongeBob","🧽","Bikini Bottom"],["Shaggy","🥪","Mystery Inc."],["Bugs Bunny","🥕","Looney Tunes"],["Rick Sanchez","🧪","Dimension C-137"],["Finn","🗡️","Land of Ooo"],["Daria","👓","Lawndale"],["Homer Simpson","🍩","Springfield"],["Scooby-Doo","🐕","Mystery Inc."]]}
+    {name:"Fantasy",color:"#8c79b7",emoji:"🧙",people:[
+      ["Mara the Stablehand","🐴","Middle-earth"],["Pip the Ferry Keeper","🚣","Middle-earth"],["Bram the Blacksmith","🔨","Berk"],["Nella the Market Baker","🥖","Arendelle"],["Tovin the Tavern Cook","🍲","The Continent"],["Hettie the Greenhouse Assistant","🌱","Wizarding World"],["Orin the Archive Clerk","📚","Rivendell"],["Della the Bridge Tollkeeper","🪙","Far Far Away"]
+    ]},
+    {name:"Sci-Fi",color:"#65a6b7",emoji:"🛸",people:[
+      ["Jex the Dockside Parts Dealer","🔧","Galactic Empire"],["Mira the Night-Shift Dispatcher","📟","Star Trek"],["UNIT Records Intern","🗃️","Time and Space"],["K-4 Transit Mechanic","🤖","Cybertron"],["Cargo Bay Technician","🧰","USCSS Nostromo"],["Rebel Supply Quartermaster","📦","Rebel Alliance"],["Outer-Rim Moisture Farmer","🌵","Jedi Order"],["Orbital Salvage Sorter","🛰️","Earth"]
+    ]},
+    {name:"Anime",color:"#d98b9d",emoji:"🍥",people:[
+      ["Riku the Ramen Stall Assistant","🍜","Hidden Leaf"],["Pavo the Harbor Dockworker","⚓","Grand Line"],["Emi the Last-Train Conductor","🚉","Tokyo"],["Capsule Delivery Rider","🛵","Earth"],["Jin the School Gate Monitor","📋","Jujutsu High"],["Kanto Poké Mart Cashier","🧃","Kanto"],["Olek the Apartment Caretaker","🧹","Ostania"],["Mori the Forest Path Guide","🍃","Forest"]
+    ]},
+    {name:"Comics",color:"#d59b52",emoji:"💥",people:[
+      ["Gotham Night-Bus Driver","🚌","Gotham"],["Queens Bodega Cashier","🥤","New York"],["Themysciran Archive Keeper","📜","Themyscira"],["Earth-616 Parking Inspector","🅿️","Earth-616"],["Gotham Evidence Room Clerk","🗂️","Gotham"],["Metropolis Elevator Technician","🛗","Metropolis"],["Harbor District Flower Seller","💐","Gotham"],["Asgardian Banquet Dishwasher","🍽️","Asgard"]
+    ]},
+    {name:"Games",color:"#75a47b",emoji:"🎮",people:[
+      ["Mushroom Kingdom Toadstool Vendor","🍄","Mushroom Kingdom"],["Hyrule Stablehand","🐎","Hyrule"],["Dream Land Pastry Seller","🥐","Dream Land"],["Museum Night Guard","🔦","Tomb Raider"],["Green Hill Checkpoint Attendant","🚩","Green Hill"],["Kamurocho Karaoke Receptionist","🎤","Kamurocho"],["Aperture Maintenance Technician","🧯","Aperture"],["Underground Noticeboard Keeper","💀","Underground"]
+    ]},
+    {name:"Cartoons",color:"#d4a4d0",emoji:"📺",people:[
+      ["Bikini Bottom Fry-Cook Trainee","🍟","Bikini Bottom"],["Mystery Motel Receptionist","🛎️","Mystery Inc."],["Acme Prop Warehouse Clerk","📦","Looney Tunes"],["Interdimensional Customs Officer","🛂","Dimension C-137"],["Candy Kingdom Parcel Courier","📮","Land of Ooo"],["Lawndale School Hall Monitor","📋","Lawndale"],["Springfield Night-Shift Cashier","🥤","Springfield"],["Mystery Inc. Van Mechanic","🔩","Mystery Inc."]
+    ]}
   ];
   const openers = [
     "Quick update: the tiny problem I ignored yesterday has formed a committee.",
@@ -44,16 +56,54 @@
     "I stand by the first half of this statement."
   ];
   const characterNotes = {
-    "Gandalf":["the inn charged me extra for the room with the least prophecy in it","I have misplaced my pipe and suspect the eagles know more than they admit"],
-    "Batman":["the cave's new motion sensor keeps alerting me to my own dramatic entrances","Alfred labelled the leftovers. I have ignored the label and regret it"],
-    "Spider-Man":["the landlord has emailed again about the ceiling. I cannot keep saying 'weather event'","the train was delayed by a man in a cape arguing with a pigeon"],
-    "Darth Vader":["the helmet fogged up during a budget meeting and nobody offered assistance","someone changed the conference room booking to 'dark side karaoke'"],
-    "Yoda":["the kettle, I have descaled. Proud, I am. The instructions, ignored, I have","a parking ticket, I received. In this economy, difficult the Force is"],
-    "SpongeBob":["Squidward has put a tiny cone around my desk and called it a boundary","the Krusty Krab ran out of napkins and somehow this is now a leadership issue"],
-    "Shrek":["someone has left a wellness pamphlet outside my swamp. It is soggy now","the council wants me to attend a 'community listening circle'. I live in a swamp"],
-    "Loki":["I was asked to sign for a parcel addressed to 'the other Loki'. There are four of us on this street","the palace has introduced a rota for dramatic entrances. I was not consulted"],
-    "Mario":["the plumbing inspection was mostly questions about the pipes. Suspiciously specific questions","someone keeps leaving mushrooms in the staff fridge with no labels"],
-    "Dumbledore":["the staff meeting could have been an owl","I have once again lost a very important object in a room that was not there yesterday"]
+    "Mara the Stablehand":["the stable's complaint box contains one carrot and a very detailed threat","someone keeps booking the same horse under increasingly fake names"],
+    "Pip the Ferry Keeper":["the river has started returning lost property from people who are still alive","a passenger paid in buttons and somehow I owe him change"],
+    "Bram the Blacksmith":["the village keeps bringing me cursed spoons instead of actual swords","the new anvil rings whenever someone lies near it"],
+    "Nella the Market Baker":["the palace requested a cake shaped like a tax audit","someone keeps leaving enchanted flour outside the back door"],
+    "Tovin the Tavern Cook":["the stew has been reviewed by a wizard and a very disappointed duck","the kitchen inventory lists one ghost under 'dry goods'"],
+    "Hettie the Greenhouse Assistant":["a mandrake has learned to whistle the staff rota","the greenhouse door is locked from the inside and nobody is in there"],
+    "Orin the Archive Clerk":["three books have checked themselves out and left no forwarding address","the index now has a category called 'things that remember being books'"],
+    "Della the Bridge Tollkeeper":["a troll tried to pay with an invoice for future tolls","the bridge is technically a boat today and nobody told accounting"],
+    "Jex the Dockside Parts Dealer":["a customer returned a hyperdrive because it made a noise 'like an ex'","the spare-parts shelf is humming in a language I do not speak"],
+    "Mira the Night-Shift Dispatcher":["the station's automated announcements keep adding passive-aggressive comments","a shuttle filed a noise complaint against its own engine"],
+    "UNIT Records Intern":["the archive has a folder labelled 'probably not aliens' and it is the largest folder","my supervisor said to stop logging unexplained blue lights as 'office lighting'"],
+    "K-4 Transit Mechanic":["the moving walkway has applied for a transfer","someone keeps installing cupholders on machinery that has no cups"],
+    "Cargo Bay Technician":["the cargo manifest says 'miscellaneous eggs' and I am not opening that crate","the motion detector keeps reporting one extra person, always behind me"],
+    "Rebel Supply Quartermaster":["we are short 400 ration packs and somehow overstocked on ceremonial capes","someone requisitioned a tiny screwdriver as a strategic asset"],
+    "Outer-Rim Moisture Farmer":["the vaporator is making a sound like it wants to negotiate","a Jawa returned a part I have never owned"],
+    "Orbital Salvage Sorter":["the sorting belt keeps sending the same boot back around","I labelled a mystery object 'probably a chair' and it started unfolding"],
+    "Riku the Ramen Stall Assistant":["a customer asked for extra spice and then challenged the soup to a duel","the broth timer has been counting down from a number with seven digits"],
+    "Pavo the Harbor Dockworker":["a crate marked 'definitely not treasure' is making coin noises","the gulls have learned the shift whistle and now they clock out before us"],
+    "Emi the Last-Train Conductor":["the same passenger gets on at the last stop and asks if this is the first stop","someone left a perfectly dry umbrella on a train during a typhoon"],
+    "Capsule Delivery Rider":["the delivery app says the address is 'two minutes in the future'","a customer rated me one star because the package arrived before they ordered it"],
+    "Jin the School Gate Monitor":["the school gate scanner keeps recognising people who have not arrived yet","someone left a cursed umbrella in lost property and it is raining indoors"],
+    "Kanto Poké Mart Cashier":["a customer tried to return a sandwich because it evolved","the self-checkout keeps asking whether I want to register as a trainer"],
+    "Olek the Apartment Caretaker":["the lift refuses to stop at floor four unless someone says please","a tenant reported a suspicious noise coming from inside the building directory"],
+    "Mori the Forest Path Guide":["the trail markers have been rearranged into what looks like a complaint","a tree has been leaving acorns on my desk in alphabetical order"],
+    "Gotham Night-Bus Driver":["the passenger who boards at 2:13 never appears on the CCTV","someone paid the fare with a very convincing apology note"],
+    "Queens Bodega Cashier":["the fridge is making web-shaped ice and I have decided not to ask","a superhero left exact change and a six-page incident report"],
+    "Themysciran Archive Keeper":["the scroll return slot has rejected a prophecy for being overdue","someone keeps borrowing books about diplomatic etiquette and returning them wet"],
+    "Earth-616 Parking Inspector":["a portal opened in a loading zone and still had an expired meter","I issued a ticket to a parked bicycle and it appealed"],
+    "Gotham Evidence Room Clerk":["the evidence labels keep changing to 'not this one, the other one'","someone returned a crowbar with a thank-you card"],
+    "Metropolis Elevator Technician":["the express lift keeps stopping to let in pigeons","a button labelled 'roof' now takes people to the basement"],
+    "Harbor District Flower Seller":["a customer ordered twelve roses and asked me to make them look less suspicious","the tulips have been leaning away from the courthouse"],
+    "Asgardian Banquet Dishwasher":["one goblet keeps returning clean before I wash it","the feast hall has a new rule about not putting enchanted cutlery in the sink"],
+    "Mushroom Kingdom Toadstool Vendor":["customers keep asking whether the mushrooms are for eating or jumping","the shop's loyalty card has somehow become a royal document"],
+    "Hyrule Stablehand":["a horse has learned to untie the other horses and is charging them for freedom","the stable ledger has a hoofprint signature in the manager column"],
+    "Dream Land Pastry Seller":["the puff pastries keep floating toward the ceiling in formation","someone ordered a cake that is mostly frosting and one tiny sword"],
+    "Museum Night Guard":["the security camera shows me entering rooms before I walk into them","the statue is facing the wall again; nobody will admit moving it"],
+    "Green Hill Checkpoint Attendant":["the speed sensor clocked a hedgehog-shaped blur going backwards","someone keeps moving the finish line three metres to the left"],
+    "Kamurocho Karaoke Receptionist":["room 6 has been booked under the name 'Definitely Not The Boss'","the microphone is picking up a second voice that only sings the chorus"],
+    "Aperture Maintenance Technician":["the test chamber requested a window and then filed a safety complaint about sunlight","the maintenance ladder is now listed as experimental equipment"],
+    "Underground Noticeboard Keeper":["the lost-and-found has a human-sized hole with a note saying 'found'","someone pinned a warning to the board and then stole the board"],
+    "Bikini Bottom Fry-Cook Trainee":["the fryer has started beeping in Morse code for more oil","a customer asked whether the secret formula is gluten-free"],
+    "Mystery Motel Receptionist":["guests keep checking in under the name 'not the monster'","room 12 has been vacant for years but someone keeps ordering towels"],
+    "Acme Prop Warehouse Clerk":["the anvils are stored alphabetically and still keep falling on the wrong shelf","inventory says we have 800 fake doors and not one real exit"],
+    "Interdimensional Customs Officer":["a traveller declared three memories and one suspiciously warm timeline","the scanner flagged a suitcase for containing a smaller scanner"],
+    "Candy Kingdom Parcel Courier":["the delivery address is written as 'third gumdrop after the singing bush'","one parcel keeps arriving before I leave the depot"],
+    "Lawndale School Hall Monitor":["the lost-property bin contains a complete desk and nobody has claimed it","someone keeps replacing the fire-drill map with a seating chart"],
+    "Springfield Night-Shift Cashier":["the self-checkout has started asking customers how their marriage is","a man tried to pay for milk with arcade tokens and a weather forecast"],
+    "Mystery Inc. Van Mechanic":["the van has one extra seat whenever it rains","I found a sandwich in the engine compartment and it was still warm"]
   };
   const details = [
     "the receipt was itemised, which somehow made it more insulting",
