@@ -167,24 +167,6 @@
     "Springfield Night-Shift Cashier":["the self-checkout has started asking customers how their marriage is","a man tried to pay for milk with arcade tokens and a weather forecast"],
     "Mystery Inc. Van Mechanic":["the van has one extra seat whenever it rains","I found a sandwich in the engine compartment and it was still warm"]
   };
-  const details = [
-    "the receipt was itemised, which somehow made it more insulting",
-    "there were two witnesses and one of them was taking notes on a napkin",
-    "the notice said 9:00, but nobody specified which calendar",
-    "I have a photo, but in the background the same thing is happening again",
-    "the person responsible said 'that's not usually attached' and walked away",
-    "it was resolved in the group chat, then immediately un-resolved in person",
-    "I am still waiting for the promised follow-up email"
-  ];
-  const templates = [
-    p => p.name+": "+pick(characterNotes[p.name]||["I went to do one ordinary thing and somehow became the person in charge","the local office has my name spelled three different ways and all of them are legally binding"])+". "+pick(details)+".",
-    p => "At "+p.place+" today, "+p.name+" "+pick(["waited 25 minutes for a form that turned out to be a person","politely asked who approved the new staircase; nobody made eye contact","watched a minor disagreement become an official calendar event","found a handwritten apology addressed to 'whoever keeps doing that'"])+". "+pick(endings),
-    p => "Has anyone else noticed that "+pick(["the same three people keep arriving just before something breaks","the public noticeboard is using increasingly personal examples","the staff teapot is always warm even when nobody has been in the room","every official form has a box for 'unusual animal involvement'"])+ "? Asking because "+p.name+" has now had to explain it twice.",
-    p => "I was standing behind "+p.name+" in "+p.place+" and heard them say, very calmly: '"+pick(["I don't think that door was there yesterday","we agreed not to feed it after midnight","please put the sword back before the inspection","that is not my emergency pigeon"])+"'. Nobody in the queue reacted. That is the worrying part.",
-    p => "A completely ordinary update from "+p.name+": "+pick(["the appointment has moved to the abandoned lighthouse","the spare key is now considered a diplomatic object","the meeting minutes have been classified as a weather system","the local bakery is asking customers to declare magical side effects"])+". "+pick(details)+".",
-    p => p.name+" posted a photo of "+pick(["a very normal sandwich with a tiny official seal on it","a cracked paving stone shaped exactly like the mayor","three identical lost-property tickets","a suspiciously familiar hat on an unfamiliar statue"])+ " with the caption: '"+pick(["not getting involved again","this feels like a trap but it is a nice hat","I have asked twice and nobody will explain","please tell me this belongs to someone"])+"'.",
-    p => "Update from "+p.place+": "+p.name+" has "+pick(["apologised to the entire queue, including a decorative fern","been asked to stop using the emergency bell for routine announcements","returned the borrowed ladder but not the small moon","started a spreadsheet to track who keeps moving the chairs"])+". The spreadsheet already has 11 tabs."
-  ];
   const pick = a => a[Math.floor(Math.random()*a.length)];
   const people = worlds.flatMap(w => w.people.map(([name,emoji,place])=>({name,emoji,place,world:w.name,color:w.color})));
   // Expand each existing setting into original supporting residents, generated locally.
