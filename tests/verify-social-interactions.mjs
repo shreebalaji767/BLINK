@@ -4,7 +4,7 @@ import vm from "node:vm";
 
 const html = readFileSync("index.html", "utf8");
 const app = readFileSync("app-social-requests.js", "utf8");
-const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map((m) => m[1]);
+const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
 
 class FakeElement {
   constructor(id = "") {
