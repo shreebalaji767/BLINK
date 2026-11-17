@@ -350,14 +350,16 @@
         state.sentRequests.delete(name);
         toast("Friend request declined.");
       }else if(action==="cancel"){
+        // Withdraw the outgoing request entirely; it must disappear from Sent Requests.
+        if(!state.sentRequests.has(name))return;
         state.sentRequests.delete(name);
-        toast("Sent request cancelled.");
       }else{return;}
       saveSocial();
       render();
       if(action==="add")toast("Friend request sent to "+name+".");
       else if(action==="accept")toast("You are now connected with "+name+".");
       else if(action==="decline")toast("Friend request declined.");
+      else if(action==="cancel")toast("Request to "+name+" cancelled and removed from Sent Requests.");
       return;
     }
     const profile=target.closest("[data-open-profile]");
