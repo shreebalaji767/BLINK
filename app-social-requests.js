@@ -274,7 +274,7 @@
   const readLocalArray=key=>{try{const raw=localStorage.getItem(key);const value=raw?JSON.parse(raw):[];return Array.isArray(value)?value:[];}catch(error){console.warn("BLINK could not read local data:",key,error);return [];}};
   const writeLocalArray=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
   const loadSocialSet=key=>new Set(readLocalArray(key).filter(name=>typeof name==="string"&&validSocialNames.has(name)));
-  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,friends:loadSocialSet("blinkFriends"),sentRequests:loadSocialSet("blinkSentRequests"),receivedRequests:loadSocialSet("blinkReceivedRequests"),following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string"))};
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,friends:loadSocialSet("blinkFriends"),sentRequests:loadSocialSet("blinkSentRequests"),receivedRequests:loadSocialSet("blinkReceivedRequests"),handledIncomingRequests:loadSocialSet("blinkHandledIncomingRequests"),following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string"))};
   const ago = n => n<1?"just now":n+"m ago";
   const makePost = (person, customText) => {
     const text=customText||generatePostText(person);
@@ -288,7 +288,7 @@
   function chooseUnseenNPC(){let pool=unseenNPCs();if(!pool.length){state.seenNPCs.clear();saveSeenNPCs();pool=[...people];toast("You've met the whole current roster. Starting a fresh cycle.");}const person=pick(pool);state.seenNPCs.add(npcKey(person));saveSeenNPCs();return person;}
   function seed(){const pool=unseenNPCs().sort(()=>Math.random()-.5);const batch=pool.slice(0,34);batch.forEach((p,i)=>{state.seenNPCs.add(npcKey(p));const post=makePost(p,Math.random()<.24?pick(openers)+" "+pick(endings):null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post);});saveSeenNPCs();ensureIncomingRequests(3,5);}
   function ensureIncomingRequests(minimum=1,maximum=2){
-    const candidates=people.filter(p=>!state.friends.has(p.name)&&!state.sentRequests.has(p.name)&&!state.receivedRequests.has(p.name));
+    const candidates=people.filter(p=>!state.friends.has(p.name)&&!state.sentRequests.has(p.name)&&!state.receivedRequests.has(p.name)&&!state.handledIncomingRequests.has(p.name));
     const target=Math.min(candidates.length,Math.max(state.receivedRequests.size,minimum+Math.floor(Math.random()*(maximum-minimum+1))));
     while(state.receivedRequests.size<target&&candidates.length){const index=Math.floor(Math.random()*candidates.length);state.receivedRequests.add(candidates.splice(index,1)[0].name);}
     saveSocial();
@@ -311,7 +311,7 @@
     resolveOutgoingRequests();
     const shouldReceive=Math.random()<.30 || (state.generated%3===0&&!state.receivedRequests.size);
     if(shouldReceive){
-      const candidates=people.filter(x=>x.name!==p.name&&!state.friends.has(x.name)&&!state.sentRequests.has(x.name)&&!state.receivedRequests.has(x.name));
+      const candidates=people.filter(x=>x.name!==p.name&&!state.friends.has(x.name)&&!state.sentRequests.has(x.name)&&!state.receivedRequests.has(x.name)&&!state.handledIncomingRequests.has(x.name));
       if(candidates.length){const requester=pick(candidates);state.receivedRequests.add(requester.name);saveSocial();toast(requester.name+" sent you a friend request.");}
     }
     if(state.generated%5===0)ensureIncomingRequests(2,4);
@@ -320,7 +320,7 @@
   }
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   const observer={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
-  const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);try{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));}catch(error){console.warn("BLINK could not persist friend data in this browser.",error);}const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
+  const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests,state.handledIncomingRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);try{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));localStorage.setItem("blinkHandledIncomingRequests",JSON.stringify([...state.handledIncomingRequests]));}catch(error){console.warn("BLINK could not persist friend data in this browser.",error);}const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
   const personByName=name=>people.find(p=>p.name===name)||null;
   function profileMarkup(person){
     const own=person.name===observer.name;
@@ -397,6 +397,7 @@
         if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
         state.receivedRequests.delete(name);
         state.sentRequests.delete(name);
+        state.handledIncomingRequests.add(name);
         state.friends.add(name);
         toast("You are now connected with "+name+".");
       }else if(action==="decline"){
