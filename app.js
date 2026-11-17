@@ -192,42 +192,57 @@
   const generatedNPCs=[];
   worlds.forEach((w,wi)=>{const places=[...new Set(w.people.map(person=>person[2]))];places.forEach((place,pi)=>npcJobs.forEach(([emoji,job],ri)=>{const first=npcFirst[(wi*7+pi*3+ri*5)%npcFirst.length];const last=npcLast[(wi*11+pi*5+ri*3)%npcLast.length];generatedNPCs.push({name:first+" "+last+" · "+job,emoji,place,world:w.name,color:w.color,kind:"Original background NPC"});}));});
   people.push(...generatedNPCs);
-  const replyTemplates = [
-    (commenter, author, subject) => "I came here to ask about “" + subject + "”. Is there an update, or are we all just processing this together?",
-    (commenter, author, subject) => "The detail about “" + subject + "” is exactly where I lost my composure. Please explain that part.",
-    (commenter, author, subject) => "I have one follow-up question about “" + subject + "”: who thought that was the sensible option?",
-    (commenter, author, subject) => "Can confirm I heard about “" + subject + "” from three different people. Each version somehow made it worse.",
-    (commenter, author, subject) => "Respectfully, “" + subject + "” deserves its own investigation, preferably with snacks.",
-    (commenter, author, subject) => "I was having a normal day until I read “" + subject + "”. Now I need the full timeline.",
-    (commenter, author, subject) => "The paperwork for “" + subject + "” is going to be absolutely unbearable. I volunteer nobody.",
-    (commenter, author, subject) => "Wait, so “" + subject + "” actually happened? I thought that was just a rumour from the break room.",
-    (commenter, author, subject) => "I have seen many things at " + author.place + ", but “" + subject + "” is a new personal record.",
-    (commenter, author, subject) => "Not to be dramatic, but “" + subject + "” has changed the way I look at this entire neighbourhood.",
-    (commenter, author, subject) => "I would like to submit the phrase “" + subject + "” as evidence that we need a new supervisor.",
-    (commenter, author, subject) => "The fact that “" + subject + "” is apparently today's normal update is deeply concerning.",
-    (commenter, author, subject) => "I read “" + subject + "” aloud and the nearest appliance switched itself off.",
-    (commenter, author, subject) => "Can someone make a diagram of “" + subject + "”? The explanation in the group chat is getting less reliable.",
-    (commenter, author, subject) => "I support your right to report “" + subject + "”, and my right to never be involved.",
-    (commenter, author, subject) => "Respectfully, the confidence involved in “" + subject + "” is doing unreasonable things to my standards. I am intrigued.",
-    (commenter, author, subject) => "I was not prepared to find “" + subject + "” attractive as a concept. Please do not make me explain this.",
-    (commenter, author, subject) => "This is a sponsored comment: need a witness, replacement part, or emotional support after “" + subject + "”? Our imaginary hotline is always busy.",
-    (commenter, author, subject) => "ADVERTISEMENT: Tired of “" + subject + "”? Try our premium solution: a clipboard, two biscuits, and absolutely no authority.",
-    (commenter, author, subject) => "Sponsored by Nobody™: we saw “" + subject + "” and decided not to get involved. Nobody™ — wisely unavailable.",
-    (commenter, author, subject) => "I can offer no solution to “" + subject + "”. I can, however, offer a very specific sandwich and a chair.",
-    (commenter, author, subject) => "Please pin this update about “" + subject + "”. The next shift will otherwise invent a completely different version.",
-    (commenter, author, subject) => "I have forwarded “" + subject + "” to the relevant department. They replied with a picture of a closed door.",
-    (commenter, author, subject) => "If “" + subject + "” has a part two, please post it. I have already cancelled my evening plans."
+  const replyStyles = [
+    (c,a,x) => pick(["Wait, where was this? I passed through "+a.place+" earlier and it looked normal.","I work nearby. This is the first I'm hearing of it, which is somehow worse.","Was this before or after the notice went up? Nobody in our shift can agree.","I saw the aftermath, not the actual thing. The cleanup crew looked exhausted."]),
+    (c,a,x) => pick(["That explains the "+x+". I thought I was the only one who noticed.","The "+x+" part is getting left out whenever people retell this.","My colleague told me a completely different version of the "+x+".","Can we get one clear timeline for the "+x+" situation?"]),
+    (c,a,x) => pick(["I am begging people to stop making this a normal Tuesday.","Not saying I told you so, but I did ask about this last week.","This is why we have a sign. This is also why nobody reads the sign.","I leave for ONE shift and apparently the whole place develops lore."]),
+    (c,a,x) => pick(["Genuine question: who is actually responsible for sorting this out?","Did anyone file a report, or is the group chat the official record now?","Is the service back to normal or should we avoid that entrance?","Please tell me somebody took a photo before it was moved."]),
+    (c,a,x) => pick(["I was there. The post is mostly accurate, but the timing is off by about ten minutes.","Small correction: it happened near "+a.place+", not inside the building.","I heard the same thing from the other shift. Their version has an additional witness.","Can confirm the first half. I left before it became everybody's problem."]),
+    (c,a,x) => pick(["My only contribution is that the queue was already like this when I arrived.","I have no useful information, just the receipt that proves I was unfortunately present.","I was trying to eat lunch when this came up. Lunch is now cold.","The person who knows the answer is reading this and pretending not to."]),
+    (c,a,x) => pick(["This is going to be in the handover notes for the next six months.","Please keep updates in this thread. The rumours in the corridor are getting creative.","I have forwarded this to the relevant desk. They asked me not to forward it again.","Someone is going to have to explain this at the morning briefing."]),
+    (c,a,x) => pick(["Not to defend anyone, but there is definitely a missing part of this story.","I heard an apology was issued. Was it the real apology or the laminated one?","The official explanation leaves out the bit everybody is asking about.","I would wait for confirmation before blaming the night shift. Again."]),
+    (c,a,x) => pick(["I know this is serious, but the mental image is taking me out.","Why did I read this while drinking tea. I nearly inhaled the cup.","I laughed and then remembered I have to go there tomorrow.","This is objectively a mess. Unfortunately it is also the funniest thing I've read today."]),
+    (c,a,x) => pick(["Respectfully, whoever handled that has excellent commitment to the bit.","I support the situation's right to be strange, from a safe distance.","I need the confidence of whoever thought that was going to work.","The audacity is impressive. The planning, less so."]),
+    (c,a,x) => pick(["Okay but who is the person in the background of this entire story? Asking for no particular reason.","I came for the update and stayed because the person involved sounds unfairly charming.","This is not the time to flirt with the person responsible. I am choosing growth.","I would volunteer to help, but I suspect I would make the situation worse."]),
+    (c,a,x) => pick(["Have you tried "+pick(["writing it on a form","asking the supervisor","turning it off and on again","putting a little fence around it"] )+"? This advice is free and worth exactly that.","Tired of "+x+"? Try our new premium service: one clipboard and a legally distinct shrug.","Sponsored by "+pick(["Definitely Not The Management","Three Goblins In A Coat","The Department Of Unasked Questions"])+": we cannot fix this, but we can sell you a commemorative mug."]),
+    (c,a,x) => pick(["I was told not to comment on this. Anyway, "+x+" is still happening.","Deleting my earlier message because apparently this has become evidence.","The group chat has been locked. The family group chat has not.","I have muted this thread and yet somehow I am still here."])
   ];
+  const extractReplyAnchor = postText => {
+    const clean = String(postText || "this situation").replace(/\\s+/g," ").trim();
+    const quoted = clean.match(/[“"]([^”"]{4,70})[”"]/);
+    if (quoted) return quoted[1].trim();
+    const chunks = clean.split(/[.!?;]+/).map(s=>s.trim()).filter(s=>s.length>12);
+    const useful = chunks.find(s=>! /^(HEARD AT|UNCONFIRMED|LOCAL GOSSIP|OVERHEARD AT|BREAKING|SHIFT REPORT|PUBLIC NOTICE|CUSTOMER SERVICE LOG)/i.test(s));
+    const anchor = (useful || chunks[0] || clean).replace(/^(apparently|someone says|the rumour is|a whisper going around)\\s+/i,"");
+    return anchor.slice(0,72).replace(/[,:—-]+$/,"").trim() || "this situation";
+  };
   const makeReplies = (person, postText) => {
     const locals = people.filter(p => p.world === person.world && p.name !== person.name);
     const pool = (locals.length ? locals : people).slice().sort(() => Math.random() - 0.5);
     const count = 3 + Math.floor(Math.random() * 10);
-    const subject = String(postText || "this update").replace(/\\s+/g," ").trim().slice(0, 105);
-    return Array.from({length:Math.min(count, pool.length)}, (_, i) => {
+    const anchor = extractReplyAnchor(postText);
+    const shortAnchor = anchor.length > 58 ? anchor.slice(0,55).trimEnd()+"…" : anchor;
+    const usedStyles = replyStyles.slice().sort(() => Math.random() - 0.5);
+    const replies = [];
+    for (let i=0; i<Math.min(count,pool.length); i++) {
       const commenter = pool[i];
-      const reply = pick(replyTemplates)(commenter,person,subject);
-      return {person:commenter,text:reply,minutes:Math.floor(Math.random()*180)};
-    });
+      const style = usedStyles[i % usedStyles.length];
+      let reply = style(commenter,person,shortAnchor);
+      if (i===0 && Math.random()<0.45) reply = pick(["Hold on, ","Wait, ","Sorry, ","No because "])+reply;
+      if (i>0 && Math.random()<0.24) reply = pick(["Replying to the above: ","Adding to this: ","Also, "])+reply;
+      replies.push({person:commenter,text:reply,minutes:Math.floor(Math.random()*180)});
+    }
+    // Occasional clearly unserious thirst/ad parody, not a mandatory feature of every thread.
+    if (replies.length>4 && Math.random()<0.22) {
+      const insertAt = 1+Math.floor(Math.random()*(replies.length-1));
+      const commenter = pool[Math.min(pool.length-1,replies.length)];
+      replies.splice(insertAt,0,{person:commenter,text:pick([
+        "Respectfully, I am trying to follow the incident report but the person telling it has main-character cheekbones. Focus is difficult.",
+        "Is there a sign-up sheet for helping with this or am I just here because the witness is pretty?",
+        "ADVERTISEMENT: Are you also emotionally unprepared for "+shortAnchor+"? Buy our emergency snack box. No refunds, no questions."
+      ]),minutes:Math.floor(Math.random()*180)});
+    }
+    return replies;
   };
   const reactionOptions = [{emoji:"👍",name:"Like"},{emoji:"❤️",name:"Love"},{emoji:"😂",name:"Funny"},{emoji:"😮",name:"Wow"},{emoji:"😢",name:"Sad"},{emoji:"😡",name:"Angry"},{emoji:"🤯",name:"Mind blown"}];
   // Shape each post's reaction mix around what was said and who is saying it.
