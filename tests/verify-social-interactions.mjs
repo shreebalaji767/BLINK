@@ -84,14 +84,15 @@ const clickSocial = (action, name, nested = false) => {
   const button = new FakeElement();
   button.dataset = { social: action, person: name };
   const child = new FakeElement();
+  child.nodeType = 3;
   child.parentElement = button;
   const target = nested ? child : button;
   documentListeners.click({
     target,
-    composedPath: () => nested ? [child, button, elements.get("feed"), document] : [button, elements.get("feed"), document],
     preventDefault() {},
     stopPropagation() {},
   });
+  return button;
 };
 
 const received = read("blinkReceivedRequests");
@@ -101,7 +102,9 @@ const authors = [...feed.matchAll(/data-person="([^"]+)"/g)].map((m) => m[1]);
 const outgoingName = authors.find((name) => !received.includes(name));
 assert.ok(outgoingName, "feed should expose an NPC profile that can receive a request");
 
-clickSocial("add", outgoingName, true);
+const sentButton = clickSocial("add", outgoingName, true);
+assert.equal(sentButton.textContent, "✓ Request sent", "clicked button must immediately show sent state");
+assert.equal(sentButton.disabled, true, "clicked button must prevent duplicate requests");
 assert.ok(read("blinkSentRequests").includes(outgoingName), "send request must persist");
 assert.equal(read("blinkFriends").includes(outgoingName), false, "sending must not instantly create a friend");
 
