@@ -283,6 +283,20 @@
     return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text,minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),reactions,replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
   };
   const npcKey=p=>p.world+"|"+p.place+"|"+p.name;
+  // Migrate the earlier name-only history format to stable world/place/name keys.
+  // Without this, old saved names never match npcKey() and every refresh repeats the roster.
+  function migrateSeenNPCHistory(){
+    const saved=readLocalArray("blinkSeenNPCs").filter(value=>typeof value==="string");
+    const migrated=new Set();
+    for(const value of saved){
+      if(people.some(person=>npcKey(person)===value)){migrated.add(value);continue;}
+      const legacyPerson=people.find(person=>person.name===value);
+      if(legacyPerson)migrated.add(npcKey(legacyPerson));
+    }
+    state.seenNPCs=migrated;
+    writeLocalArray("blinkSeenNPCs",[...migrated]);
+  }
+  migrateSeenNPCHistory();
   function saveSeenNPCs(){writeLocalArray("blinkSeenNPCs",[...state.seenNPCs]);}
   function unseenNPCs(){return people.filter(p=>!state.seenNPCs.has(npcKey(p)));}
   function chooseUnseenNPC(){let pool=unseenNPCs();if(!pool.length){state.seenNPCs.clear();saveSeenNPCs();pool=[...people];toast("You've met the whole current roster. Starting a fresh cycle.");}const person=pick(pool);state.seenNPCs.add(npcKey(person));saveSeenNPCs();return person;}
