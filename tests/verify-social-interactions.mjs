@@ -9,6 +9,7 @@ const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
 class FakeElement {
   constructor(id = "") {
     this.id = id;
+    this.nodeType = 1;
     this.value = "";
     this.innerHTML = "";
     this.textContent = "";
