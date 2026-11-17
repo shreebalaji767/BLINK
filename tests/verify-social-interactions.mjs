@@ -111,12 +111,14 @@ assert.equal(sentButton.textContent, "✓ Request sent", "clicked button must im
 assert.equal(sentButton.disabled, true, "clicked button must prevent duplicate requests");
 assert.ok(read("blinkSentRequests").includes(outgoingName), "send request must persist");
 assert.equal(read("blinkFriends").includes(outgoingName), false, "sending must not instantly create a friend");
+assert.ok(read("blinkNotifications").some((item) => item.type === "sent" && item.message.includes(outgoingName)), "sending must create a saved notification");
 
 const acceptedName = received[0];
 clickSocial("accept", acceptedName);
 assert.ok(read("blinkFriends").includes(acceptedName), "accept must create a friend");
 assert.equal(read("blinkReceivedRequests").includes(acceptedName), false, "accept must clear incoming request");
 assert.ok(read("blinkHandledIncomingRequests").includes(acceptedName), "accepted NPC request must be remembered");
+assert.ok(read("blinkNotifications").some((item) => item.type === "accepted" && item.message.includes(acceptedName)), "accepting an incoming request must notify and persist");
 
 const declinedName = received[1];
 clickSocial("decline", declinedName);
@@ -130,6 +132,11 @@ clickSocial("add", outgoingName);
 elements.get("generateBtn").listeners.click();
 assert.ok(read("blinkFriends").includes(outgoingName), "NPC should be able to accept an outgoing request during simulation");
 assert.equal(read("blinkSentRequests").includes(outgoingName), false, "resolved request must leave sent list");
+assert.ok(read("blinkNotifications").some((item) => item.type === "accepted" && item.message.includes(outgoingName)), "NPC acceptance of an outgoing request must create a notification");
+navItems[0].dataset.view = "friends";
+navItems[0].listeners.click();
+assert.ok(elements.get("feed").innerHTML.includes("Notifications"), "Friends & Requests must display the saved notifications");
+assert.ok(elements.get("feed").innerHTML.includes("accepted your friend request"), "acceptance must appear in the notification list");
 
 const count = Number(elements.get("requestCount").textContent);
 assert.equal(count, read("blinkSentRequests").length + read("blinkReceivedRequests").length, "badge must match both request lists");
