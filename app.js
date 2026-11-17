@@ -55,40 +55,69 @@
     ]}
   ];
   const openers = [
-    "Quick update: the tiny problem I ignored yesterday has formed a committee.",
-    "I went out for one normal errand and came back with a receipt, a minor curse and somebody else's lunch.",
-    "Not to alarm anyone, but the town noticeboard has started replying to the notices.",
-    "I have now heard three different versions of what happened and all three were told by me.",
-    "Does anyone know why the palace lift stops at a floor that is not on the buttons?",
-    "The person behind me in the queue knew my full government name. I was buying onions.",
-    "I was promised a quiet afternoon. There are currently six witnesses and a damp horse.",
-    "Small administrative issue: the emergency plan has become sentient and is asking for weekends off.",
-    "I tried to return a library book and the librarian asked me to return the year 1842 as well.",
-    "Someone has put a tiny hat on the warning statue. The statue looks happier. This is making the warning less effective.",
-    "I am not saying the map is lying. I am saying it has moved the river since breakfast.",
-    "The group chat has gone quiet in the exact way a kitchen goes quiet when something is burning.",
-    "I have spent forty minutes looking for my keys. They were in the dragon. The dragon says we never discussed this.",
-    "The new neighbour is very polite, but their mailbox is full of teeth.",
-    "I have received a formal complaint about my tone from a person who communicates exclusively through thunder.",
-    "Today's forecast: light rain, heavy omens, and a chance of somebody bringing up the incident at dinner.",
-    "I only asked one question at the meeting. Somehow I am now responsible for the moon.",
-    "There is a handwritten sign on the tavern door that says 'please stop testing the floor'. I have questions.",
-    "I think the prophecy has been edited. The handwriting is definitely mine, but I don't remember owning that pen.",
-    "I bought the cheap version and now the artifact keeps asking me to upgrade."
+    "I need everyone to understand that this started as a routine maintenance request.",
+    "The notice said this would take five minutes. It has now acquired a witness list.",
+    "I was trying to be helpful. There is apparently a form for that, and I used the wrong one.",
+    "The queue was moving normally until somebody asked whether the person at the front was supposed to be there.",
+    "A small correction to the story going around: nobody was chased. We all walked briskly in the same direction.",
+    "I have been asked to explain why the break-room kettle is now part of an ongoing investigation.",
+    "The new rule is understandable in theory and impossible to follow in the building we actually have.",
+    "I thought the strange noise was coming from the pipes. The pipes have submitted a statement denying this.",
+    "Today's shift began with a missing key, a duplicated delivery, and a very confident pigeon.",
+    "I would like to report an administrative error without becoming the administrative error.",
+    "Someone has labelled the communal leftovers. The label is longer than the ingredients list.",
+    "There was a completely normal announcement over the loudspeaker, followed by someone whispering 'not again'.",
+    "I have just learned that the emergency contact number belongs to the person causing the emergency.",
+    "The meeting could have been an email. The email could have been a warning. The warning has now been forwarded to me.",
+    "I am not qualified to settle this dispute, but apparently I am the only one who read the sign.",
+    "The replacement part arrived on time. Unfortunately, it appears to be the original part wearing a different label.",
+    "A customer asked for the manager, then apologised to the manager, then asked me to hide the manager.",
+    "We have reached the stage of the problem where people are bringing snacks to watch."
   ];
   const endings = [
-    "Anyway, I have screenshots but they make it look worse.",
-    "I am going to leave this here before it becomes a meeting.",
-    "Please do not tag the person involved. They are already in the room.",
-    "The official report will say 'weather-related'.",
-    "I would explain further but the kettle is making the noise again.",
-    "If anyone needs me, I will be somewhere with a door that locks.",
-    "This is a normal amount of paperwork. I have checked.",
-    "I am choosing not to learn what the wet footprints mean.",
-    "No follow-up questions until everyone has eaten.",
-    "I stand by the first half of this statement."
+    "Nobody was injured, but three people have changed their lunch route.",
+    "The official version is shorter and leaves out the part that matters.",
+    "I have written it all down. The paper is now missing.",
+    "For now, the sign has been turned around and everyone is pretending that counts as a solution.",
+    "The supervisor said we should keep this informal. There are already 19 pages.",
+    "I am not naming names because the person involved is reading this over my shoulder.",
+    "The repair is temporary, the apology is permanent, and the invoice is somehow addressed to me.",
+    "We agreed to discuss it tomorrow, which is how it became tomorrow's problem.",
+    "I would post the picture, but the picture has become evidence.",
+    "The kettle is fine. The committee formed around it is not.",
+    "Please use the side entrance until somebody explains what the front entrance is doing.",
+    "I have clocked out. Whatever happens next is between the building and its landlord.",
+    "No one has admitted anything, but somebody brought the exact replacement screws.",
+    "This is now a policy question, which means it will take six weeks and a ceremonial stamp.",
+    "I am choosing to believe this is the last update. It probably isn't."
   ];
-  const characterNotes = {
+  const details = [
+    "the receipt has a second page listing a witness",
+    "the time on the form is correct, but the date belongs to next week",
+    "two people independently described the same hat and neither person owns a hat",
+    "the person who complained is now helping with the investigation",
+    "the replacement key opens the cupboard, the stairwell, and one very private diary",
+    "the apology was sincere, although it was addressed to the wrong department",
+    "the camera footage ends exactly when everyone looks directly at the camera",
+    "the delivery was signed for by someone who was still waiting outside",
+    "the official explanation uses the phrase 'routine atmospheric irregularity'",
+    "someone has highlighted the relevant paragraph in a colour that does not exist here",
+    "the only available evidence is a damp napkin and a surprisingly detailed sketch",
+    "the person in charge keeps saying this is not their first incident, which is not reassuring"
+  ];
+  const templates = [
+    p => p.name+": "+pick(characterNotes[p.name]||["I was covering the desk for ten minutes and came back to a new procedure nobody can explain","the shift log has three entries in my handwriting that I do not remember writing"])+". "+pick(details)+". "+pick(endings),
+    p => "SHIFT REPORT — "+p.place+". "+p.name+" recorded "+pick(["a delivery addressed to the room that was demolished last month","a customer dispute over an item nobody remembers putting on sale","an unexplained queue forming outside a locked cupboard","a maintenance request submitted by the maintenance equipment itself"])+". Status: "+pick(["technically resolved","awaiting a signature","passed to the next shift","being described as a misunderstanding"])+".",
+    p => "Neighbourhood update: "+p.name+" at "+p.place+" has asked people to stop "+pick(["leaving labelled jars on the windowsill","borrowing the same ladder and returning a different ladder","moving the public bench six inches every night","using the noticeboard to settle personal arguments"])+". The request is reasonable. The responses are not.",
+    p => "I was behind "+p.name+" at "+p.place+" when they said, ' "+pick(["That is not the form for a missing staircase.","I can explain the receipt, but not the horse.","We agreed the bell was only for actual emergencies.","Please stop putting unofficial names on the delivery crates.","Nobody is allowed to feed the lift anymore."])+ "'. The clerk nodded like this was a recurring issue.",
+    p => "PUBLIC NOTICE from "+p.place+": "+pick(["Please do not leave unattended parcels that are ticking, purring, or asking for directions.","The lost-property desk cannot accept claims for borrowed time.","Staff are reminded that 'because it looked lonely' is not an approved reason for adopting equipment.","The west corridor is open again. Please ignore the additional west corridor."])+ " — posted by "+p.name+". Someone has already written 'make me' underneath.",
+    p => p.name+" has started a spreadsheet after "+pick(["the communal mug went missing for the fourth time","three departments ordered the same replacement door","the night shift and day shift reported different numbers of stairs","the supply cupboard began returning items with feedback"])+". It has columns for date, witnesses, estimated cost, and 'who keeps doing this'.",
+    p => "A small scene from "+p.place+": "+p.name+" "+pick(["held the door open for a delivery trolley that was not moving","waited patiently while two officials argued over whose stamp was more official","put a traffic cone around a puddle and then had to direct traffic around it","tried to return a borrowed umbrella to the person who was currently using it"])+". Nobody raised their voice. That somehow made it worse.",
+    p => "CUSTOMER SERVICE LOG: "+p.name+" at "+p.place+". Complaint: "+pick(["the timetable is accurate but the journey is not","the soup was delivered with a receipt from a different century","the lift arrived before the button was pressed","the parcel contained exactly what was ordered, just not by this customer"])+". Resolution offered: "+pick(["a refund","a written apology","a replacement with no guarantees","a meeting that nobody requested"])+".",
+    p => "The rumour about "+p.place+" is almost correct. "+p.name+" confirms that "+pick(["the night guard did hear singing from the storage room","the missing crate was found behind the same crate","the new rule was written by someone who does not work here","the official map has been quietly corrected twice"])+". The part people keep leaving out is "+pick(details)+".",
+    p => "BREAKING, according to the very unreliable noticeboard: "+p.name+" has allegedly "+pick(["been promoted to temporary keeper of the spare keys","banned one specific chair from the premises","declared the staff biscuits a protected resource","challenged the timetable to provide a written explanation"])+". The noticeboard refuses to identify its sources."
+  ];
+    const characterNotes = {
     "Mara the Stablehand":["the stable's complaint box contains one carrot and a very detailed threat","someone keeps booking the same horse under increasingly fake names"],
     "Pip the Ferry Keeper":["the river has started returning lost property from people who are still alive","a passenger paid in buttons and somehow I owe him change"],
     "Bram the Blacksmith":["the village keeps bringing me cursed spoons instead of actual swords","the new anvil rings whenever someone lies near it"],
@@ -166,18 +195,24 @@
   worlds.forEach((w,wi)=>{const places=[...new Set(w.people.map(person=>person[2]))];places.forEach((place,pi)=>npcJobs.forEach(([emoji,job],ri)=>{const first=npcFirst[(wi*7+pi*3+ri*5)%npcFirst.length];const last=npcLast[(wi*11+pi*5+ri*3)%npcLast.length];generatedNPCs.push({name:first+" "+last+" · "+job,emoji,place,world:w.name,color:w.color,kind:"Original background NPC"});}));});
   people.push(...generatedNPCs);
   const replyLines = [
-    "I was there. That is not even the strangest part.",
-    "Can confirm. The paperwork is somehow worse.",
-    "Please stop posting about this. Management reads this feed.",
-    "This happened to me last week but with a different hat.",
-    "I have questions and unfortunately I know the answer.",
-    "We are still waiting for the official incident report.",
-    "Not to be dramatic, but I am moving to the next district.",
-    "The person responsible is pretending not to see this post.",
-    "I told the group chat this would happen.",
-    "Adding this to the list of things we are apparently not allowed to discuss."
+    "I was on the previous shift. The version in the log is missing a very important sandwich.",
+    "That is not what happened, but it is close enough that I am worried.",
+    "Can we please not make this an official procedure.",
+    "I have the receipt. I also have no idea why I kept the receipt.",
+    "The same thing happened here, except ours had a clipboard.",
+    "I can confirm the queue was there before the announcement.",
+    "Please tell me someone has checked whether the door is still a door.",
+    "I told the supervisor this would happen. I have the message timestamp.",
+    "As the person who cleaned it up: absolutely do not touch it.",
+    "I am not involved. I am replying only to correct the spelling of my name.",
+    "This is why we have a sign. This is also why the sign is now missing.",
+    "I can lend you a ladder, but I need it back as a ladder.",
+    "The official explanation is technically true and emotionally dishonest.",
+    "I saw the whole thing and still cannot explain the middle part.",
+    "Whoever has my lunch container, please return the lid separately.",
+    "I have forwarded this to the group chat. They are arguing about the hat again."
   ];
-  const makeReplies = person => {
+    const makeReplies = person => {
     const locals = people.filter(p => p.world === person.world && p.name !== person.name);
     const count = 1 + Math.floor(Math.random()*3);
     return Array.from({length:count},() => ({person:pick(locals.length?locals:people),text:pick(replyLines),minutes:Math.floor(Math.random()*90)}));
