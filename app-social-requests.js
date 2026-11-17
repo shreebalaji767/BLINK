@@ -352,21 +352,32 @@
   // One document-level delegate keeps social actions working after every feed re-render.
   // Capture phase ensures social buttons work even if another handler stops bubbling.
   document.addEventListener("click",e=>{
-    const target=e.target instanceof Element?e.target:e.target?.parentElement;
-    if(!target)return;
-    const social=target.closest("button[data-social]");
+    // Resolve the actionable element from the complete click path. This also
+    // handles taps on nested spans/icons and browsers that report a text node.
+    const path=typeof e.composedPath==="function"?e.composedPath():[];
+    const target=e.target?.nodeType===1?e.target:e.target?.parentElement;
+    const social=path.find(node=>node?.nodeType===1&&node.matches?.("[data-social]"))||target?.closest?.("[data-social]");
     if(social){
       e.preventDefault();
       e.stopPropagation();
-      const name=social.dataset.person,action=social.dataset.social;
-      if(!name)return;
+      const name=social.dataset?.person||social.getAttribute?.("data-person");
+      const action=social.dataset?.social||social.getAttribute?.("data-social");
+      if(!name||!action)return;
       if(action==="profile"){
         state.profile=name;state.view="profile";state.world="All";
       }else if(action==="add"){
-        if(!validSocialNames.has(name)||name===observer.name||state.receivedRequests.has(name))return;
+        if(!validSocialNames.has(name)||name===observer.name){
+          toast("That NPC could not be found. Refresh the directory and try again.");
+          return;
+        }
+        if(state.receivedRequests.has(name)){
+          render();
+          toast(name+" has already sent you a request. Accept it in Friends & Requests.");
+          return;
+        }
         if(state.friends.has(name)||state.sentRequests.has(name)){
-          social.textContent=state.friends.has(name)?"✓ Friends":"✓ Request sent";
-          social.disabled=true;
+          render();
+          toast(state.friends.has(name)?"You are already friends with "+name+".":"Your request to "+name+" is already pending.");
           return;
         }
         // Update the clicked control immediately, before any re-render or storage work.
