@@ -409,6 +409,7 @@
       else if(action==="cancel")toast("Request to "+name+" cancelled and removed from Sent Requests.");
       return;
     }
+    if(!target)return;
     const profile=target.closest("[data-open-profile]");
     if(profile){
       state.profile=profile.dataset.openProfile;state.view="profile";render();return;
