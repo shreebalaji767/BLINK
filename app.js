@@ -315,8 +315,9 @@
   }
   let toastTimer;function toast(s){const t=$("#toast");t.textContent=s;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2100)}
   // One document-level delegate keeps social actions working after every feed re-render.
+  // Capture phase ensures social buttons work even if another handler stops bubbling.
   document.addEventListener("click",e=>{
-    const target=e.target instanceof Element?e.target:null;
+    const target=e.target?.closest?e.target:e.target?.parentElement;
     if(!target)return;
     const social=target.closest("[data-social]");
     if(social){
@@ -365,7 +366,7 @@
       case"comment":state.openComments.has(id)?state.openComments.delete(id):state.openComments.add(id);render();break;
       case"reply":{const input=card.querySelector(".comment-box input");if(input?.value.trim()){p.replies.push({person:{name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",color:"#777"},text:input.value.trim(),minutes:0});p.comments=p.replies.length;state.openComments.add(id);render();toast("Reply added locally.");}}
     }
-  });
+  },true);
   $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>`<button class="world-filter" data-world="${w.name}"><i class="world-dot" style="background:${w.color}"></i>${w.name}</button>`).join("");
   $("#worldFilters").addEventListener("click",e=>{const b=e.target.closest("[data-world]");if(!b)return;state.world=b.dataset.world;document.querySelectorAll(".world-filter").forEach(x=>x.classList.toggle("active",x===b));state.visible=14;render()});
   document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>{state.view=b.dataset.view;if(state.view==="profile")state.profile="self";document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x===b));render()}));
