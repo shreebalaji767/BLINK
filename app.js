@@ -314,7 +314,58 @@
     $("#chaosLevel").textContent=state.generated>20?"CRITICAL":state.generated>8?"ELEVATED":"UNSTABLE";
   }
   let toastTimer;function toast(s){const t=$("#toast");t.textContent=s;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2100)}
-  $("#feed").addEventListener("click",e=>{const social=e.target.closest("[data-social]");if(social){const name=social.dataset.person,action=social.dataset.social;if(action==="profile"){state.profile=name;state.view="profile";state.world="All";}if(action==="add"){if(name!==observer.name&&!state.friends.has(name)&&!state.sentRequests.has(name)){state.sentRequests.add(name);toast("Friend request sent to "+name+".");}}if(action==="accept"){state.receivedRequests.delete(name);state.sentRequests.delete(name);state.friends.add(name);}if(action==="decline"){state.receivedRequests.delete(name);state.sentRequests.delete(name);}saveSocial();render();return;}const profile=e.target.closest("[data-open-profile]");if(profile){state.profile=profile.dataset.openProfile;state.view="profile";render();return;}const profileName=e.target.closest(".post-name");if(profileName&&profileName.closest(".post")){const card=profileName.closest(".post"),post=state.posts.find(x=>x.id===card.dataset.id);if(post){state.profile=post.person.name;state.view="profile";render();return;}}const b=e.target.closest("[data-action]");if(!b)return;const card=b.closest(".post"),id=card.dataset.id,p=state.posts.find(x=>x.id===id);if(!p)return;switch(b.dataset.action){case"like":state.liked.has(id)?state.liked.delete(id):state.liked.add(id);render();break;case"react":{const emoji=b.dataset.reaction;if(state.reactions[id]===emoji)delete state.reactions[id];else state.reactions[id]=emoji;render();break;}case"save":state.saved.has(id)?state.saved.delete(id):state.saved.add(id);localStorage.setItem("blinkSaved",JSON.stringify([...state.saved]));render();toast("Saved locally.");break;case"follow":state.following.has(p.person.name)?state.following.delete(p.person.name):state.following.add(p.person.name);localStorage.setItem("blinkFollowing",JSON.stringify([...state.following]));render();break;case"comment":state.openComments.has(id)?state.openComments.delete(id):state.openComments.add(id);render();break;case"reply":{const input=card.querySelector(".comment-box input");if(input.value.trim()){p.replies.push({person:{name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",color:"#777"},text:input.value.trim(),minutes:0});p.comments=p.replies.length;state.openComments.add(id);render();toast("Reply added locally.");}}}});
+  // One document-level delegate keeps social actions working after every feed re-render.
+  document.addEventListener("click",e=>{
+    const target=e.target instanceof Element?e.target:null;
+    if(!target)return;
+    const social=target.closest("[data-social]");
+    if(social){
+      e.preventDefault();
+      e.stopPropagation();
+      const name=social.dataset.person,action=social.dataset.social;
+      if(!name)return;
+      if(action==="profile"){
+        state.profile=name;state.view="profile";state.world="All";
+      }else if(action==="add"){
+        if(name===observer.name||state.friends.has(name)||state.sentRequests.has(name))return;
+        state.sentRequests.add(name);
+        toast("Friend request sent to "+name+".");
+      }else if(action==="accept"){
+        state.receivedRequests.delete(name);
+        state.sentRequests.delete(name);
+        state.friends.add(name);
+        toast("You are now connected with "+name+".");
+      }else if(action==="decline"){
+        state.receivedRequests.delete(name);
+        state.sentRequests.delete(name);
+        toast("Friend request declined.");
+      }else{return;}
+      saveSocial();
+      render();
+      return;
+    }
+    const profile=target.closest("[data-open-profile]");
+    if(profile){
+      state.profile=profile.dataset.openProfile;state.view="profile";render();return;
+    }
+    const profileName=target.closest(".post-name");
+    if(profileName&&profileName.closest(".post")){
+      const card=profileName.closest(".post"),post=state.posts.find(x=>x.id===card.dataset.id);
+      if(post){state.profile=post.person.name;state.view="profile";render();return;}
+    }
+    const b=target.closest("[data-action]");
+    if(!b)return;
+    const card=b.closest(".post"),id=card?.dataset.id,p=state.posts.find(x=>x.id===id);
+    if(!p)return;
+    switch(b.dataset.action){
+      case"like":state.liked.has(id)?state.liked.delete(id):state.liked.add(id);render();break;
+      case"react":{const emoji=b.dataset.reaction;if(state.reactions[id]===emoji)delete state.reactions[id];else state.reactions[id]=emoji;render();break;}
+      case"save":state.saved.has(id)?state.saved.delete(id):state.saved.add(id);localStorage.setItem("blinkSaved",JSON.stringify([...state.saved]));render();toast("Saved locally.");break;
+      case"follow":state.following.has(p.person.name)?state.following.delete(p.person.name):state.following.add(p.person.name);localStorage.setItem("blinkFollowing",JSON.stringify([...state.following]));render();break;
+      case"comment":state.openComments.has(id)?state.openComments.delete(id):state.openComments.add(id);render();break;
+      case"reply":{const input=card.querySelector(".comment-box input");if(input?.value.trim()){p.replies.push({person:{name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",color:"#777"},text:input.value.trim(),minutes:0});p.comments=p.replies.length;state.openComments.add(id);render();toast("Reply added locally.");}}
+    }
+  });
   $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>`<button class="world-filter" data-world="${w.name}"><i class="world-dot" style="background:${w.color}"></i>${w.name}</button>`).join("");
   $("#worldFilters").addEventListener("click",e=>{const b=e.target.closest("[data-world]");if(!b)return;state.world=b.dataset.world;document.querySelectorAll(".world-filter").forEach(x=>x.classList.toggle("active",x===b));state.visible=14;render()});
   document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>{state.view=b.dataset.view;if(state.view==="profile")state.profile="self";document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x===b));render()}));
