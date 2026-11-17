@@ -192,34 +192,55 @@
   const generatedNPCs=[];
   worlds.forEach((w,wi)=>{const places=[...new Set(w.people.map(person=>person[2]))];places.forEach((place,pi)=>npcJobs.forEach(([emoji,job],ri)=>{const first=npcFirst[(wi*7+pi*3+ri*5)%npcFirst.length];const last=npcLast[(wi*11+pi*5+ri*3)%npcLast.length];generatedNPCs.push({name:first+" "+last+" · "+job,emoji,place,world:w.name,color:w.color,kind:"Original background NPC"});}));});
   people.push(...generatedNPCs);
-  const replyLines = [
-    "I was on the previous shift. The version in the log is missing a very important sandwich.",
-    "That is not what happened, but it is close enough that I am worried.",
-    "Can we please not make this an official procedure.",
-    "I have the receipt. I also have no idea why I kept the receipt.",
-    "The same thing happened here, except ours had a clipboard.",
-    "I can confirm the queue was there before the announcement.",
-    "Please tell me someone has checked whether the door is still a door.",
-    "I told the supervisor this would happen. I have the message timestamp.",
-    "As the person who cleaned it up: absolutely do not touch it.",
-    "I am not involved. I am replying only to correct the spelling of my name.",
-    "This is why we have a sign. This is also why the sign is now missing.",
-    "I can lend you a ladder, but I need it back as a ladder.",
-    "The official explanation is technically true and emotionally dishonest.",
-    "I saw the whole thing and still cannot explain the middle part.",
-    "Whoever has my lunch container, please return the lid separately.",
-    "I have forwarded this to the group chat. They are arguing about the hat again."
+  const replyTemplates = [
+    (commenter, author, subject) => "I was there for the first half of this. The second half has been officially classified as a furniture issue.",
+    (commenter, author, subject) => "Can confirm. I saw " + author.name + " explaining this to a completely uninterested " + pick(["goose","lift","enchanted spoon","security camera","vending machine","haunted timetable"]) + ".",
+    (commenter, author, subject) => "This is why I stopped using the " + pick(["main staircase","north portal","staff kettle","public noticeboard","communal teleport","break-room cupboard"]) + ". It knows too much.",
+    (commenter, author, subject) => "Small correction: the paperwork was filed correctly. The filing cabinet has since appealed.",
+    (commenter, author, subject) => "My cousin works nearby and says the official version has been translated into three languages and none of them agree.",
+    (commenter, author, subject) => "I have a photo, but every time I open it the background gets one corridor longer.",
+    (commenter, author, subject) => "Please stop tagging me. I only lent them a bucket. I did not approve the bucket's decisions.",
+    (commenter, author, subject) => "The same thing happened on my shift, except the witness was a very judgmental sandwich.",
+    (commenter, author, subject) => "I asked the supervisor about this. They stared at the ceiling and said, 'not in front of the forms'.",
+    (commenter, author, subject) => "For legal reasons, I would like to clarify that my involvement was limited to holding the map upside down.",
+    (commenter, author, subject) => "I can confirm the noise was real. I cannot confirm it came from a direction.",
+    (commenter, author, subject) => "Someone has already started selling commemorative mugs. The mugs are also witnesses.",
+    (commenter, author, subject) => "I knew this would happen when they replaced the normal sign with one that says 'probably'.",
+    (commenter, author, subject) => "Not to make this about me, but my lunch has been missing since the incident and it had a name tag.",
+    (commenter, author, subject) => "I have forwarded this to the group chat. We are now arguing about whether the pigeon counts as management.",
+    (commenter, author, subject) => "The council says there is no issue. The council has quietly moved its office to a boat.",
+    (commenter, author, subject) => "I was told not to discuss this publicly, which is why I am discussing it in the replies.",
+    (commenter, author, subject) => "The person responsible has apologised. Unfortunately, they apologised to the wrong century.",
+    (commenter, author, subject) => "I can lend you a ladder, but last time it came back with a promotion and a different name.",
+    (commenter, author, subject) => "This is not gossip if I attach a spreadsheet. I have attached a spreadsheet.",
+    (commenter, author, subject) => "My shift report simply says 'no'. Management has asked me to be more specific.",
+    (commenter, author, subject) => "I recognise that exact " + pick(["hat","footprint","receipt","smell","ominous humming","unlicensed staircase"]) + ". It owes me money.",
+    (commenter, author, subject) => "Everyone is ignoring the real question: who gave the " + pick(["door","dragon","printer","soup","moon","tax form"]) + " a staff badge?",
+    (commenter, author, subject) => "I have no evidence, only a strong feeling and three identical biscuits arranged in a warning shape.",
+    (commenter, author, subject) => "The night shift says it was here first. The day shift says the night shift is a rumour.",
+    (commenter, author, subject) => "Please update the noticeboard. It is currently giving people advice and none of us are qualified to receive it.",
+    (commenter, author, subject) => "I was going to make a joke, but the incident has already hired a lawyer.",
+    (commenter, author, subject) => "This explains why there was a queue outside my locker. I do not have a locker.",
+    (commenter, author, subject) => "I would like to deny everything, especially the parts nobody has accused me of yet.",
+    (commenter, author, subject) => "The local rumour has evolved. It now has a title, a theme song, and a booking fee."
   ];
-    const makeReplies = person => {
+  const makeReplies = (person, postText) => {
     const locals = people.filter(p => p.world === person.world && p.name !== person.name);
-    const count = 1 + Math.floor(Math.random()*3);
-    return Array.from({length:count},() => ({person:pick(locals.length?locals:people),text:pick(replyLines),minutes:Math.floor(Math.random()*90)}));
+    const pool = (locals.length ? locals : people).slice().sort(() => Math.random() - 0.5);
+    const count = 3 + Math.floor(Math.random() * 10);
+    const subject = String(postText || "this situation").split(/[.!?]/)[0].slice(0, 90);
+    return Array.from({length:Math.min(count, pool.length)}, (_, i) => {
+      const commenter = pool[i];
+      const template = pick(replyTemplates);
+      return {person:commenter,text:template(commenter,person,subject),minutes:Math.floor(Math.random()*180)};
+    });
   };
   const state = {posts:[],view:"feed",world:"All",sort:"latest",visible:14,following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),generated:0,openComments:new Set(),seenNPCs:new Set(JSON.parse(localStorage.getItem("blinkSeenNPCs")||"[]"))};
   const ago = n => n<1?"just now":n+"m ago";
   const makePost = (person, customText) => {
-    const replies=makeReplies(person);
-    return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||generatePostText(person),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
+    const text=customText||generatePostText(person);
+    const replies=makeReplies(person,text);
+    return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text,minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
   };
   const npcKey=p=>p.world+"|"+p.place+"|"+p.name;
   function saveSeenNPCs(){localStorage.setItem("blinkSeenNPCs",JSON.stringify([...state.seenNPCs]));}
