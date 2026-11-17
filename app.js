@@ -193,48 +193,40 @@
   worlds.forEach((w,wi)=>{const places=[...new Set(w.people.map(person=>person[2]))];places.forEach((place,pi)=>npcJobs.forEach(([emoji,job],ri)=>{const first=npcFirst[(wi*7+pi*3+ri*5)%npcFirst.length];const last=npcLast[(wi*11+pi*5+ri*3)%npcLast.length];generatedNPCs.push({name:first+" "+last+" · "+job,emoji,place,world:w.name,color:w.color,kind:"Original background NPC"});}));});
   people.push(...generatedNPCs);
   const replyTemplates = [
-    (commenter, author, subject) => "I was there for the first half of this. The second half has been officially classified as a furniture issue.",
-    (commenter, author, subject) => "Can confirm. I saw " + author.name + " explaining this to a completely uninterested " + pick(["goose","lift","enchanted spoon","security camera","vending machine","haunted timetable"]) + ".",
-    (commenter, author, subject) => "This is why I stopped using the " + pick(["main staircase","north portal","staff kettle","public noticeboard","communal teleport","break-room cupboard"]) + ". It knows too much.",
-    (commenter, author, subject) => "Small correction: the paperwork was filed correctly. The filing cabinet has since appealed.",
-    (commenter, author, subject) => "My cousin works nearby and says the official version has been translated into three languages and none of them agree.",
-    (commenter, author, subject) => "I have a photo, but every time I open it the background gets one corridor longer.",
-    (commenter, author, subject) => "Please stop tagging me. I only lent them a bucket. I did not approve the bucket's decisions.",
-    (commenter, author, subject) => "The same thing happened on my shift, except the witness was a very judgmental sandwich.",
-    (commenter, author, subject) => "I asked the supervisor about this. They stared at the ceiling and said, 'not in front of the forms'.",
-    (commenter, author, subject) => "For legal reasons, I would like to clarify that my involvement was limited to holding the map upside down.",
-    (commenter, author, subject) => "I can confirm the noise was real. I cannot confirm it came from a direction.",
-    (commenter, author, subject) => "Someone has already started selling commemorative mugs. The mugs are also witnesses.",
-    (commenter, author, subject) => "I knew this would happen when they replaced the normal sign with one that says 'probably'.",
-    (commenter, author, subject) => "Not to make this about me, but my lunch has been missing since the incident and it had a name tag.",
-    (commenter, author, subject) => "I have forwarded this to the group chat. We are now arguing about whether the pigeon counts as management.",
-    (commenter, author, subject) => "The council says there is no issue. The council has quietly moved its office to a boat.",
-    (commenter, author, subject) => "I was told not to discuss this publicly, which is why I am discussing it in the replies.",
-    (commenter, author, subject) => "The person responsible has apologised. Unfortunately, they apologised to the wrong century.",
-    (commenter, author, subject) => "I can lend you a ladder, but last time it came back with a promotion and a different name.",
-    (commenter, author, subject) => "This is not gossip if I attach a spreadsheet. I have attached a spreadsheet.",
-    (commenter, author, subject) => "My shift report simply says 'no'. Management has asked me to be more specific.",
-    (commenter, author, subject) => "I recognise that exact " + pick(["hat","footprint","receipt","smell","ominous humming","unlicensed staircase"]) + ". It owes me money.",
-    (commenter, author, subject) => "Everyone is ignoring the real question: who gave the " + pick(["door","dragon","printer","soup","moon","tax form"]) + " a staff badge?",
-    (commenter, author, subject) => "I have no evidence, only a strong feeling and three identical biscuits arranged in a warning shape.",
-    (commenter, author, subject) => "The night shift says it was here first. The day shift says the night shift is a rumour.",
-    (commenter, author, subject) => "Please update the noticeboard. It is currently giving people advice and none of us are qualified to receive it.",
-    (commenter, author, subject) => "I was going to make a joke, but the incident has already hired a lawyer.",
-    (commenter, author, subject) => "This explains why there was a queue outside my locker. I do not have a locker.",
-    (commenter, author, subject) => "I would like to deny everything, especially the parts nobody has accused me of yet.",
-    (commenter, author, subject) => "The local rumour has evolved. It now has a title, a theme song, and a booking fee."
+    (commenter, author, subject) => "I came here to ask about “" + subject + "”. Is there an update, or are we all just processing this together?",
+    (commenter, author, subject) => "The detail about “" + subject + "” is exactly where I lost my composure. Please explain that part.",
+    (commenter, author, subject) => "I have one follow-up question about “" + subject + "”: who thought that was the sensible option?",
+    (commenter, author, subject) => "Can confirm I heard about “" + subject + "” from three different people. Each version somehow made it worse.",
+    (commenter, author, subject) => "Respectfully, “" + subject + "” deserves its own investigation, preferably with snacks.",
+    (commenter, author, subject) => "I was having a normal day until I read “" + subject + "”. Now I need the full timeline.",
+    (commenter, author, subject) => "The paperwork for “" + subject + "” is going to be absolutely unbearable. I volunteer nobody.",
+    (commenter, author, subject) => "Wait, so “" + subject + "” actually happened? I thought that was just a rumour from the break room.",
+    (commenter, author, subject) => "I have seen many things at " + author.place + ", but “" + subject + "” is a new personal record.",
+    (commenter, author, subject) => "Not to be dramatic, but “" + subject + "” has changed the way I look at this entire neighbourhood.",
+    (commenter, author, subject) => "I would like to submit the phrase “" + subject + "” as evidence that we need a new supervisor.",
+    (commenter, author, subject) => "The fact that “" + subject + "” is apparently today's normal update is deeply concerning.",
+    (commenter, author, subject) => "I read “" + subject + "” aloud and the nearest appliance switched itself off.",
+    (commenter, author, subject) => "Can someone make a diagram of “" + subject + "”? The explanation in the group chat is getting less reliable.",
+    (commenter, author, subject) => "I support your right to report “" + subject + "”, and my right to never be involved.",
+    (commenter, author, subject) => "Respectfully, the confidence involved in “" + subject + "” is doing unreasonable things to my standards. I am intrigued.",
+    (commenter, author, subject) => "I was not prepared to find “" + subject + "” attractive as a concept. Please do not make me explain this.",
+    (commenter, author, subject) => "This is a sponsored comment: need a witness, replacement part, or emotional support after “" + subject + "”? Our imaginary hotline is always busy.",
+    (commenter, author, subject) => "ADVERTISEMENT: Tired of “" + subject + "”? Try our premium solution: a clipboard, two biscuits, and absolutely no authority.",
+    (commenter, author, subject) => "Sponsored by Nobody™: we saw “" + subject + "” and decided not to get involved. Nobody™ — wisely unavailable.",
+    (commenter, author, subject) => "I can offer no solution to “" + subject + "”. I can, however, offer a very specific sandwich and a chair.",
+    (commenter, author, subject) => "Please pin this update about “" + subject + "”. The next shift will otherwise invent a completely different version.",
+    (commenter, author, subject) => "I have forwarded “" + subject + "” to the relevant department. They replied with a picture of a closed door.",
+    (commenter, author, subject) => "If “" + subject + "” has a part two, please post it. I have already cancelled my evening plans."
   ];
   const makeReplies = (person, postText) => {
     const locals = people.filter(p => p.world === person.world && p.name !== person.name);
     const pool = (locals.length ? locals : people).slice().sort(() => Math.random() - 0.5);
     const count = 3 + Math.floor(Math.random() * 10);
-    const subject = String(postText || "this situation").split(/[.!?]/)[0].slice(0, 90);
+    const subject = String(postText || "this update").replace(/\\s+/g," ").trim().slice(0, 105);
     return Array.from({length:Math.min(count, pool.length)}, (_, i) => {
       const commenter = pool[i];
-      const template = pick(replyTemplates);
-      const reply = template(commenter,person,subject);
-      const contextualReply = Math.random() < 0.48 && subject ? "Re: “" + subject + "” — " + reply : reply;
-      return {person:commenter,text:contextualReply,minutes:Math.floor(Math.random()*180)};
+      const reply = pick(replyTemplates)(commenter,person,subject);
+      return {person:commenter,text:reply,minutes:Math.floor(Math.random()*180)};
     });
   };
   const reactionOptions = [{emoji:"👍",name:"Like"},{emoji:"❤️",name:"Love"},{emoji:"😂",name:"Funny"},{emoji:"😮",name:"Wow"},{emoji:"😢",name:"Sad"},{emoji:"😡",name:"Angry"},{emoji:"🤯",name:"Mind blown"}];
