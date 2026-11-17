@@ -293,7 +293,31 @@
     while(state.receivedRequests.size<target&&candidates.length){const index=Math.floor(Math.random()*candidates.length);state.receivedRequests.add(candidates.splice(index,1)[0].name);}
     saveSocial();
   }
-  function generate(){const p=chooseUnseenNPC();const text=Math.random()<.58?pick(templates)(p)+" "+pick(endings):pick(openers)+" "+pick(endings);state.posts.unshift(makePost(p,text));state.generated++;if(Math.random()<.30 || (state.generated===1&&!state.receivedRequests.size)){const candidates=people.filter(x=>x.name!==p.name&&!state.friends.has(x.name)&&!state.sentRequests.has(x.name)&&!state.receivedRequests.has(x.name));if(candidates.length){const requester=pick(candidates);state.receivedRequests.add(requester.name);saveSocial();toast(requester.name+" sent you a friend request.");}}render();if(!state.receivedRequests.size)toast(p.name+" has entered the chat.");}
+  function resolveOutgoingRequests(){
+    const resolved=[];
+    for(const name of [...state.sentRequests]){
+      if(Math.random()<.28){
+        state.sentRequests.delete(name);
+        if(Math.random()<.76){state.friends.add(name);resolved.push(name+" accepted your request.");}
+        else resolved.push(name+" declined your request.");
+      }
+    }
+    if(resolved.length){saveSocial();toast(resolved.join(" "));}
+  }
+  function generate(){
+    const p=chooseUnseenNPC();
+    const text=Math.random()<.58?pick(templates)(p)+" "+pick(endings):pick(openers)+" "+pick(endings);
+    state.posts.unshift(makePost(p,text));state.generated++;
+    resolveOutgoingRequests();
+    const shouldReceive=Math.random()<.30 || (state.generated%3===0&&!state.receivedRequests.size);
+    if(shouldReceive){
+      const candidates=people.filter(x=>x.name!==p.name&&!state.friends.has(x.name)&&!state.sentRequests.has(x.name)&&!state.receivedRequests.has(x.name));
+      if(candidates.length){const requester=pick(candidates);state.receivedRequests.add(requester.name);saveSocial();toast(requester.name+" sent you a friend request.");}
+    }
+    if(state.generated%5===0)ensureIncomingRequests(2,4);
+    render();
+    if(!state.receivedRequests.size)toast(p.name+" has entered the chat.");
+  }
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   const observer={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
   const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);try{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));}catch(error){console.warn("BLINK could not persist friend data in this browser.",error);}const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
@@ -339,7 +363,7 @@
       if(action==="profile"){
         state.profile=name;state.view="profile";state.world="All";
       }else if(action==="add"){
-        if(!validSocialNames.has(name)||name===observer.name)return;
+        if(!validSocialNames.has(name)||name===observer.name||state.receivedRequests.has(name))return;
         if(state.friends.has(name)||state.sentRequests.has(name)){
           social.textContent=state.friends.has(name)?"✓ Friends":"✓ Request sent";
           social.disabled=true;
@@ -352,13 +376,14 @@
         social.classList.add("accepted");
         social.setAttribute("aria-label","Friend request sent to "+name);
       }else if(action==="accept"){
+        if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
         state.receivedRequests.delete(name);
         state.sentRequests.delete(name);
         state.friends.add(name);
         toast("You are now connected with "+name+".");
       }else if(action==="decline"){
+        if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
         state.receivedRequests.delete(name);
-        state.sentRequests.delete(name);
         toast("Friend request declined.");
       }else if(action==="cancel"){
         // Withdraw the outgoing request entirely; it must disappear from Sent Requests.
