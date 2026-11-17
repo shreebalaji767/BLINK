@@ -30,6 +30,6 @@ jobs:
           node --check app.js
           test -s index.html
           test -s styles.css
-          grep -Eq 'app(-[A-Za-z0-9-]+)?\\.js' index.html
+          grep -Eq 'app(-[A-Za-z0-9-]+)?\.js' index.html
           grep -q 'styles.css' index.html
           echo "BLINK static-site validation passed."
