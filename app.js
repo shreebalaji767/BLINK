@@ -232,7 +232,9 @@
     return Array.from({length:Math.min(count, pool.length)}, (_, i) => {
       const commenter = pool[i];
       const template = pick(replyTemplates);
-      return {person:commenter,text:template(commenter,person,subject),minutes:Math.floor(Math.random()*180)};
+      const reply = template(commenter,person,subject);
+      const contextualReply = Math.random() < 0.48 && subject ? "Re: “" + subject + "” — " + reply : reply;
+      return {person:commenter,text:contextualReply,minutes:Math.floor(Math.random()*180)};
     });
   };
   const state = {posts:[],view:"feed",world:"All",sort:"latest",visible:14,following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),generated:0,openComments:new Set(),seenNPCs:new Set(JSON.parse(localStorage.getItem("blinkSeenNPCs")||"[]"))};
