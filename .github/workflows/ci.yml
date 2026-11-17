@@ -30,6 +30,7 @@ jobs:
           node --check app-social-requests.js
           node --check app.js
           node tests/verify-static.mjs
+          node tests/verify-social-interactions.mjs
           test -s index.html
           test -s styles.css
           grep -Fq 'app-social-requests.js' index.html
