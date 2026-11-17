@@ -19,6 +19,39 @@
     ]},
     {name:"Cartoons",color:"#d4a4d0",emoji:"📺",people:[
       ["Bikini Bottom Fry-Cook Trainee","🍟","Bikini Bottom"],["Mystery Motel Receptionist","🛎️","Mystery Inc."],["Acme Prop Warehouse Clerk","📦","Looney Tunes"],["Interdimensional Customs Officer","🛂","Dimension C-137"],["Candy Kingdom Parcel Courier","📮","Land of Ooo"],["Lawndale School Hall Monitor","📋","Lawndale"],["Springfield Night-Shift Cashier","🥤","Springfield"],["Mystery Inc. Van Mechanic","🔩","Mystery Inc."]
+    ]},
+    {name:"C-Drama",color:"#bd8c65",emoji:"🏮",people:[
+      ["Jade Pavilion Tea Server","🫖","Immortal Cultivation Realm"],["Imperial Archive Copyist","📜","Ancient Capital"],["River Lantern Boatman","🏮","Jianghu"],["Royal Kitchen Apprentice","🥟","Imperial Palace"],["Herbal Shop Assistant","🌿","Wuxia Market"],["Palace Laundry Supervisor","🧺","Inner Court"],["Mountain Sect Gatekeeper","⛰️","Cultivation Sect"],["Caravan Ledger Keeper","🧾","Silk Road Fantasy"]
+    ]},
+    {name:"K-Drama",color:"#c58d9b",emoji:"🎬",people:[
+      ["Han River Convenience Clerk","🥤","Seoul"],["Rooftop Garden Caretaker","🪴","Seoul Rooftops"],["Hospital Night Receptionist","🏥","University Hospital"],["Agency Coffee Runner","☕","Entertainment District"],["Building Security Guard","🔑","Luxury Apartment Tower"],["Wedding Hall Coordinator","💐","Gangnam"],["Subway Lost-and-Found Worker","🚇","Seoul Metro"],["Market Side-Dish Seller","🥬","Traditional Market"]
+    ]},
+    {name:"J-Drama",color:"#8e9dba",emoji:"🎏",people:[
+      ["Kissaten Closing Barista","☕","Tokyo"],["Ryokan Front Desk Clerk","🛎️","Hakone"],["Shōtengai Bicycle Repairer","🚲","Local Shopping Street"],["School Broadcast Club Assistant","🎙️","Tokyo High School"],["Late-Night Bento Seller","🍱","Osaka"],["Train Platform Attendant","🚉","Yamanote Line"],["Small Town Post Office Clerk","📮","Rural Japan"],["Film Set Props Assistant","🎞️","Tokyo Studio"]
+    ]},
+    {name:"Light Novels",color:"#9a8bc1",emoji:"📖",people:[
+      ["Adventurers' Guild Receptionist","📋","Starter Town"],["Dungeon Drop Appraiser","💎","Labyrinth City"],["Magic Academy Dorm Warden","🗝️","Royal Academy"],["Beastfolk Innkeeper","🍵","Frontier Village"],["Summoned-Item Shopkeeper","🧰","Otherworld Market"],["Royal Correspondence Clerk","✉️","Capital"],["Airship Ticket Inspector","🎫","Sky Archipelago"],["Demon Realm Tax Collector","🧮","Demon Kingdom"]
+    ]},
+    {name:"Manhwa",color:"#7fa69b",emoji:"📱",people:[
+      ["Hunter Association Rank Clerk","🪪","Awakening Bureau"],["Dungeon Gate Cleanup Worker","🧹","Modern Seoul"],["Tower Floor Snack Vendor","🍙","The Tower"],["Murim Inn Stable Worker","🐎","Murim District"],["Regression Support Desk Agent","📞","Second-Chance Timeline"],["Guild Equipment Repairer","🔧","Hunter City"],["Academy Uniform Tailor","🧵","Noble Academy"],["Constellation Message Moderator","💬","Star Stream"]
+    ]},
+    {name:"Manhua",color:"#c18c74",emoji:"🐉",people:[
+      ["Spirit Stone Weighing Clerk","⚖️","Cultivation City"],["Flying Sword Courier","🗡️","Eastern Immortal Realm"],["Pill Furnace Assistant","⚗️","Alchemy Pavilion"],["Sect Library Night Keeper","📚","Cloud Mountain Sect"],["Jade Market Stallholder","🪷","Celestial Bazaar"],["Tribulation Weather Announcer","⛈️","Upper Realm"],["Formation Repair Apprentice","🧿","Outer Sect"],["Beast Stable Feeder","🐲","Spirit Beast Valley"]
+    ]},
+    {name:"Donghua",color:"#6d9eaa",emoji:"🎐",people:[
+      ["Heavenly Bureau Stamp Clerk","🔖","Celestial Court"],["Spirit Beast Clinic Assistant","🐾","Immortal City"],["Sword Pavilion Tea Maker","🍵","Cultivation Mountain"],["Underwater Palace Messenger","🐚","Dragon Palace"],["Artifact Auction Catalogue Writer","📑","Nine Realms"],["Flying Boat Dock Marshal","⛵","Sky Harbor"],["Demon Market Noodle Vendor","🍜","Demon City"],["Reincarnation Registry Assistant","🗃️","Netherworld Office"]
+    ]},
+    {name:"Marvel",color:"#bd6c62",emoji:"🦸",people:[
+      ["Damage Control Claims Adjuster","📋","New York"],["Xavier School Cafeteria Worker","🥪","Westchester"],["Wakandan Transit Engineer","🚄","Wakanda"],["Stark Tower Night Cleaner","🧽","Manhattan"],["Sanctum Mailroom Assistant","📬","Greenwich Village"],["Daily Bugle Photo Desk Intern","📷","New York"],["Knowhere Dock Scheduler","🛸","Knowhere"],["Asgardian Embassy Translator","🗣️","New Asgard"]
+    ]},
+    {name:"DC",color:"#6f8fb8",emoji:"🦇",people:[
+      ["Wayne Tower Elevator Operator","🛗","Gotham"],["Daily Planet Copy Editor","📰","Metropolis"],["Central City Evidence Technician","🧪","Central City"],["Themyscira Stable Groom","🐎","Themyscira"],["Hall of Justice Receptionist","🛎️","Washington D.C."],["Atlantis Aquarium Keeper","🐠","Atlantis"],["Gotham Bridge Maintenance Worker","🌉","Gotham"],["Smallville Farm Supply Clerk","🌽","Smallville"]
+    ]},
+    {name:"Image Comics",color:"#9b8b75",emoji:"🗯️",people:[
+      ["Invincible Universe Parcel Sorter","📦","Earth"],["Hellspawn Cemetery Groundskeeper","🪦","New York"],["Energon Depot Shift Worker","🔋","Cybertronian Outpost"],["Walking Dead Safe-Zone Water Clerk","🚰","Alexandria"],["Witchblade Evidence Archivist","🗂️","New York"],["Spawn's Alleyway Newspaper Seller","🗞️","Rat City"],["Saga Port Customs Officer","🛂","Landfall Border"],["Radiant Black Rooftop Repairer","🧰","Chicago"]
+    ]},
+    {name:"Web Novels",color:"#8b9c78",emoji:"🖋️",people:[
+      ["System Notification QA Tester","🧑‍💻","Infinite Tutorial"],["Apocalypse Shelter Quartermaster","🥫","Last Safe Zone"],["Time-Loop Café Owner","☕","Repeating Tuesday"],["Interworld Train Conductor","🚂","Worldline Station"],["Dungeon Stream Chat Moderator","🎧","Live Raid District"],["Cultivation Forum Moderator","🧑‍⚖️","DaoNet"],["Portal Immigration Officer","🛂","Crossworld Gate"],["Magic Item Warranty Agent","🧾","Adventurer Internet"]
     ]}
   ];
   const openers = [
@@ -125,21 +158,41 @@
   ];
   const pick = a => a[Math.floor(Math.random()*a.length)];
   const people = worlds.flatMap(w => w.people.map(([name,emoji,place])=>({name,emoji,place,world:w.name,color:w.color})));
-  const state = {posts:[],view:"feed",world:"All",sort:"latest",visible:14,following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),generated:0};
+  const replyLines = [
+    "I was there. That is not even the strangest part.",
+    "Can confirm. The paperwork is somehow worse.",
+    "Please stop posting about this. Management reads this feed.",
+    "This happened to me last week but with a different hat.",
+    "I have questions and unfortunately I know the answer.",
+    "We are still waiting for the official incident report.",
+    "Not to be dramatic, but I am moving to the next district.",
+    "The person responsible is pretending not to see this post.",
+    "I told the group chat this would happen.",
+    "Adding this to the list of things we are apparently not allowed to discuss."
+  ];
+  const makeReplies = person => {
+    const locals = people.filter(p => p.world === person.world && p.name !== person.name);
+    const count = 1 + Math.floor(Math.random()*3);
+    return Array.from({length:count},() => ({person:pick(locals.length?locals:people),text:pick(replyLines),minutes:Math.floor(Math.random()*90)}));
+  };
+  const state = {posts:[],view:"feed",world:"All",sort:"latest",visible:14,following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),generated:0,openComments:new Set()};
   const ago = n => n<1?"just now":n+"m ago";
-  const makePost = (person, customText) => ({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||pick(templates)(person)+" "+(Math.random()>.45?pick(endings):""),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),comments:Math.floor(Math.random()*240),origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast"])});
+  const makePost = (person, customText) => {
+    const replies=makeReplies(person);
+    return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||pick(templates)(person)+" "+(Math.random()>.45?pick(endings):""),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast"])};
+  };
   function seed(){for(let i=0;i<34;i++){const p=pick(people);const post=makePost(p,Math.random()<.24?pick(openers)+" "+pick(endings):null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post)}}
   function generate(){const p=pick(people);const text=Math.random()<.58?pick(templates)(p)+" "+pick(endings):pick(openers)+" "+pick(endings);state.posts.unshift(makePost(p,text));state.generated++;render();toast(p.name+" has entered the chat.");}
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   function render(){const q=$("#searchInput").value.trim().toLowerCase();let list=[...state.posts];if(state.view==="following")list=list.filter(p=>state.following.has(p.person.name));if(state.view==="saved")list=list.filter(p=>state.saved.has(p.id));if(state.view==="trending")list.sort((a,b)=>b.likes-a.likes);if(state.world!=="All")list=list.filter(p=>p.person.world===state.world);if(q)list=list.filter(p=>(p.text+" "+p.person.name+" "+p.person.world+" "+p.person.place).toLowerCase().includes(q));if(state.sort==="oldest")list.reverse();const shown=list.slice(0,state.visible);
-    $("#feed").innerHTML=shown.length?shown.map(p=>{const liked=state.liked.has(p.id),saved=state.saved.has(p.id);return `<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${p.person.color}22">${p.person.emoji}</div><div class="post-identity"><div class="post-name">${escapeHTML(p.person.name)} <span class="verified">✳</span></div><div class="post-meta">${escapeHTML(p.person.place)} · ${ago(p.minutes)}</div></div><span class="world-tag">${escapeHTML(p.person.world)}</span></div><p class="post-text">${escapeHTML(p.text)}</p><div class="post-actions"><button class="action ${liked?"liked":""}" data-action="like">♥ ${(p.likes+(liked?1:0)).toLocaleString()}</button><button class="action" data-action="comment">▢ ${p.comments} replies</button><button class="action ${saved?"saved":""}" data-action="save">${saved?"▣ Saved":"▱ Save"}</button><button class="action" data-action="follow">${state.following.has(p.person.name)?"Following":"＋ Follow"}</button><span class="post-origin">${p.origin}</span></div><div class="comment-box"><input maxlength="120" placeholder="Reply to this fictional disaster…"><button data-action="reply">Reply</button></div></article>`}).join(""):'<div class="empty">Nothing in this corner of the multiverse yet.<br>Generate some chaos or change your filters.</div>';
+    $("#feed").innerHTML=shown.length?shown.map(p=>{const liked=state.liked.has(p.id),saved=state.saved.has(p.id);return `<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${p.person.color}22">${p.person.emoji}</div><div class="post-identity"><div class="post-name">${escapeHTML(p.person.name)} <span class="verified">✳</span></div><div class="post-meta">${escapeHTML(p.person.place)} · ${ago(p.minutes)}</div></div><span class="world-tag">${escapeHTML(p.person.world)}</span></div><p class="post-text">${escapeHTML(p.text)}</p><div class="post-actions"><button class="action ${liked?"liked":""}" data-action="like">♥ ${(p.likes+(liked?1:0)).toLocaleString()}</button><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><button class="action ${saved?"saved":""}" data-action="save">${saved?"▣ Saved":"▱ Save"}</button><button class="action" data-action="follow">${state.following.has(p.person.name)?"Following":"＋ Follow"}</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar" style="background:${r.person.color}22">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><small>${escapeHTML(r.person.place)} · ${ago(r.minutes)}</small><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div><div class="comment-box"><input maxlength="180" placeholder="Add a reply to this fictional disaster…"><button data-action="reply">Reply</button></div></div></article>`}).join(""):'<div class="empty">Nothing in this corner of the multiverse yet.<br>Generate some chaos or change your filters.</div>';
     $("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;$("#loadMore").style.display=list.length>state.visible?"block":"none";$("#feedTitle").textContent=state.world!=="All"?state.world:({feed:"For You",following:"Following",trending:"Trending",saved:"Saved posts"}[state.view]||"For You");$("#feedSubtitle").textContent=state.view==="trending"?"The loudest nonsense across known realities.":state.view==="saved"?"Your carefully curated collection of fictional chaos.":"Unfiltered thoughts from across fictional reality.";
     $("#trendingTopics").innerHTML=["#ProphecyProblems","#VillainUnion","#DungeonRent","#MultiverseHR","#GooseIncident"].map((t,i)=>`<div class="topic" data-topic="${t.slice(1)}"><small>0${i+1} · MULTIVERSE</small><strong>${t}</strong><span>${(Math.floor(Math.random()*90)+12).toLocaleString()}k posts</span></div>`).join("");
     $("#onlineList").innerHTML=people.slice(0,5).map(p=>`<div class="online-person"><div class="online-avatar" style="background:${p.color}22">${p.emoji}</div><div><strong>${p.name}</strong><small>${p.world} · ONLINE</small></div></div>`).join("");
     $("#chaosLevel").textContent=state.generated>20?"CRITICAL":state.generated>8?"ELEVATED":"UNSTABLE";
   }
   let toastTimer;function toast(s){const t=$("#toast");t.textContent=s;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2100)}
-  $("#feed").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;const card=b.closest(".post"),id=card.dataset.id,p=state.posts.find(x=>x.id===id);switch(b.dataset.action){case"like":state.liked.has(id)?state.liked.delete(id):state.liked.add(id);render();break;case"save":state.saved.has(id)?state.saved.delete(id):state.saved.add(id);localStorage.setItem("blinkSaved",JSON.stringify([...state.saved]));render();toast("Saved locally.");break;case"follow":state.following.has(p.person.name)?state.following.delete(p.person.name):state.following.add(p.person.name);localStorage.setItem("blinkFollowing",JSON.stringify([...state.following]));render();break;case"comment":card.querySelector(".comment-box").classList.toggle("open");break;case"reply":{const input=card.querySelector("input");if(input.value.trim()){p.comments++;input.value="";render();toast("Reply sent into the void.");}}}});
+  $("#feed").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;const card=b.closest(".post"),id=card.dataset.id,p=state.posts.find(x=>x.id===id);switch(b.dataset.action){case"like":state.liked.has(id)?state.liked.delete(id):state.liked.add(id);render();break;case"save":state.saved.has(id)?state.saved.delete(id):state.saved.add(id);localStorage.setItem("blinkSaved",JSON.stringify([...state.saved]));render();toast("Saved locally.");break;case"follow":state.following.has(p.person.name)?state.following.delete(p.person.name):state.following.add(p.person.name);localStorage.setItem("blinkFollowing",JSON.stringify([...state.following]));render();break;case"comment":state.openComments.has(id)?state.openComments.delete(id):state.openComments.add(id);render();break;case"reply":{const input=card.querySelector(".comment-box input");if(input.value.trim()){p.replies.push({person:{name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",color:"#777"},text:input.value.trim(),minutes:0});p.comments=p.replies.length;state.openComments.add(id);render();toast("Reply added locally.");}}}});
   $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>`<button class="world-filter" data-world="${w.name}"><i class="world-dot" style="background:${w.color}"></i>${w.name}</button>`).join("");
   $("#worldFilters").addEventListener("click",e=>{const b=e.target.closest("[data-world]");if(!b)return;state.world=b.dataset.world;document.querySelectorAll(".world-filter").forEach(x=>x.classList.toggle("active",x===b));state.visible=14;render()});
   document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>{state.view=b.dataset.view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x===b));render()}));
