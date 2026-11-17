@@ -274,7 +274,7 @@
   const readLocalArray=key=>{try{const raw=localStorage.getItem(key);const value=raw?JSON.parse(raw):[];return Array.isArray(value)?value:[];}catch(error){console.warn("BLINK could not read local data:",key,error);return [];}};
   const writeLocalArray=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
   const loadSocialSet=key=>new Set(readLocalArray(key).filter(name=>typeof name==="string"&&validSocialNames.has(name)));
-  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,friends:loadSocialSet("blinkFriends"),sentRequests:loadSocialSet("blinkSentRequests"),receivedRequests:loadSocialSet("blinkReceivedRequests"),handledIncomingRequests:loadSocialSet("blinkHandledIncomingRequests"),following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string"))};
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,friends:loadSocialSet("blinkFriends"),sentRequests:loadSocialSet("blinkSentRequests"),receivedRequests:loadSocialSet("blinkReceivedRequests"),handledIncomingRequests:loadSocialSet("blinkHandledIncomingRequests"),following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string")),notifications:readLocalArray("blinkNotifications").filter(item=>item&&typeof item.message==="string").slice(0,40)};
   const ago = n => n<1?"just now":n+"m ago";
   const makePost = (person, customText) => {
     const text=customText||generatePostText(person);
@@ -304,16 +304,21 @@
   function ensureIncomingRequests(minimum=1,maximum=2){
     const candidates=people.filter(p=>!state.friends.has(p.name)&&!state.sentRequests.has(p.name)&&!state.receivedRequests.has(p.name)&&!state.handledIncomingRequests.has(p.name));
     const target=Math.min(candidates.length,Math.max(state.receivedRequests.size,minimum+Math.floor(Math.random()*(maximum-minimum+1))));
-    while(state.receivedRequests.size<target&&candidates.length){const index=Math.floor(Math.random()*candidates.length);state.receivedRequests.add(candidates.splice(index,1)[0].name);}
+    while(state.receivedRequests.size<target&&candidates.length){const index=Math.floor(Math.random()*candidates.length);const requester=candidates.splice(index,1)[0];state.receivedRequests.add(requester.name);addNotification(requester.name+" sent you a friend request.","received");}
     saveSocial();
+  }
+  function addNotification(message,type="info"){
+    state.notifications.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),message,type,time:Date.now()});
+    state.notifications=state.notifications.slice(0,40);
+    try{localStorage.setItem("blinkNotifications",JSON.stringify(state.notifications));}catch(error){console.warn("BLINK could not save notifications.",error);}
   }
   function resolveOutgoingRequests(){
     const resolved=[];
     for(const name of [...state.sentRequests]){
       if(Math.random()<.28){
         state.sentRequests.delete(name);
-        if(Math.random()<.76){state.friends.add(name);resolved.push(name+" accepted your request.");}
-        else resolved.push(name+" declined your request.");
+        if(Math.random()<.76){state.friends.add(name);resolved.push(name+" accepted your request.");addNotification(name+" accepted your friend request.","accepted");}
+        else{resolved.push(name+" declined your request.");addNotification(name+" declined your friend request.","declined");}
       }
     }
     if(resolved.length){saveSocial();toast(resolved.join(" "));}
@@ -326,7 +331,7 @@
     const shouldReceive=Math.random()<.30 || (state.generated%3===0&&!state.receivedRequests.size);
     if(shouldReceive){
       const candidates=people.filter(x=>x.name!==p.name&&!state.friends.has(x.name)&&!state.sentRequests.has(x.name)&&!state.receivedRequests.has(x.name)&&!state.handledIncomingRequests.has(x.name));
-      if(candidates.length){const requester=pick(candidates);state.receivedRequests.add(requester.name);saveSocial();toast(requester.name+" sent you a friend request.");}
+      if(candidates.length){const requester=pick(candidates);state.receivedRequests.add(requester.name);addNotification(requester.name+" sent you a friend request.","received");saveSocial();toast(requester.name+" sent you a friend request.");}
     }
     if(state.generated%5===0)ensureIncomingRequests(2,4);
     render();
@@ -334,7 +339,7 @@
   }
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   const observer={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
-  const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests,state.handledIncomingRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);try{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));localStorage.setItem("blinkHandledIncomingRequests",JSON.stringify([...state.handledIncomingRequests]));}catch(error){console.warn("BLINK could not persist friend data in this browser.",error);}const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
+  const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests,state.handledIncomingRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);try{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));localStorage.setItem("blinkHandledIncomingRequests",JSON.stringify([...state.handledIncomingRequests]));localStorage.setItem("blinkNotifications",JSON.stringify(state.notifications.slice(0,40)));}catch(error){console.warn("BLINK could not persist friend data in this browser.",error);}const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
   const personByName=name=>people.find(p=>p.name===name)||null;
   function profileMarkup(person){
     const own=person.name===observer.name;
@@ -403,6 +408,7 @@
         }
         // Update the clicked control immediately, before any re-render or storage work.
         state.sentRequests.add(name);
+        addNotification("Friend request sent to "+name+".","sent");
         social.textContent="✓ Request sent";
         social.disabled=true;
         social.classList.add("accepted");
@@ -413,16 +419,19 @@
         state.sentRequests.delete(name);
         state.handledIncomingRequests.add(name);
         state.friends.add(name);
+        addNotification("You accepted "+name+"’s friend request.","accepted");
         toast("You are now connected with "+name+".");
       }else if(action==="decline"){
         if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
         state.receivedRequests.delete(name);
         state.handledIncomingRequests.add(name);
+        addNotification("You declined "+name+"’s friend request.","declined");
         toast("Friend request declined.");
       }else if(action==="cancel"){
         // Withdraw the outgoing request entirely; it must disappear from Sent Requests.
         if(!state.sentRequests.has(name))return;
         state.sentRequests.delete(name);
+        addNotification("You cancelled your friend request to "+name+".","info");
       }else{return;}
       saveSocial();
       render();
