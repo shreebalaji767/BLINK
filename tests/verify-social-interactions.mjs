@@ -97,6 +97,9 @@ const clickSocial = (action, name, nested = false) => {
 
 const received = read("blinkReceivedRequests");
 assert.equal(received.length, 3, "first launch should seed incoming NPC requests");
+const firstSeen = read("blinkSeenNPCs");
+assert.equal(firstSeen.length, 34, "initial feed must save all 34 NPC authors");
+assert.equal(new Set(firstSeen).size, firstSeen.length, "initial feed must not repeat NPC authors");
 const feed = elements.get("feed").innerHTML;
 const authors = [...feed.matchAll(/data-person="([^"]+)"/g)].map((m) => m[1]);
 const outgoingName = authors.find((name) => !received.includes(name));
@@ -112,10 +115,12 @@ const acceptedName = received[0];
 clickSocial("accept", acceptedName);
 assert.ok(read("blinkFriends").includes(acceptedName), "accept must create a friend");
 assert.equal(read("blinkReceivedRequests").includes(acceptedName), false, "accept must clear incoming request");
+assert.ok(read("blinkHandledIncomingRequests").includes(acceptedName), "accepted NPC request must be remembered");
 
 const declinedName = received[1];
 clickSocial("decline", declinedName);
 assert.equal(read("blinkReceivedRequests").includes(declinedName), false, "decline must clear incoming request");
+assert.ok(read("blinkHandledIncomingRequests").includes(declinedName), "declined NPC request must be remembered and not repeated");
 
 clickSocial("cancel", outgoingName);
 assert.equal(read("blinkSentRequests").includes(outgoingName), false, "cancel must remove outgoing request");
