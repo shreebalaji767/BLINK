@@ -288,7 +288,17 @@
   const saveSocial=()=>{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));$("#requestCount").textContent=state.receivedRequests.size;};
   const personByName=name=>people.find(p=>p.name===name)||observer;
   function profileMarkup(person){
-    const own=person.name===observer.name, posts=state.posts.filter(p=>p.person.name===person.name);
+    const own=person.name===observer.name;
+    if(!own){
+      const existing=state.posts.filter(p=>p.person.name===person.name);
+      const target=5+Math.floor(Math.random()*5);
+      for(let i=existing.length;i<target;i++){
+        const post=makePost(person,generatePostText(person));
+        post.minutes=Math.floor(Math.random()*1440);
+        state.posts.push(post);
+      }
+    }
+    const posts=state.posts.filter(p=>p.person.name===person.name).sort(()=>Math.random()-.5);
     const isFriend=state.friends.has(person.name), sent=state.sentRequests.has(person.name), incoming=state.receivedRequests.has(person.name);
     return `<section class="profile-panel"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar" style="background:${person.color}22">${person.emoji}</div><div class="profile-heading"><div><h2>${escapeHTML(person.name)}</h2><p>${escapeHTML(person.world)} · ${escapeHTML(person.place)}</p><small>${escapeHTML(person.kind||"A resident of the multiverse")}</small></div><div class="profile-buttons">${own?'<span class="profile-self">YOUR PROFILE</span>':isFriend?'<button class="social-button accepted" disabled>✓ Friends</button>':incoming?'<button class="social-button" data-social="accept" data-person="${escapeHTML(person.name)}">Accept request</button><button class="social-button subtle" data-social="decline" data-person="${escapeHTML(person.name)}">Decline</button>':sent?'<button class="social-button subtle" disabled>Request sent</button>':'<button class="social-button" data-social="add" data-person="${escapeHTML(person.name)}">＋ Add friend</button>'}</div></div><div class="profile-stats"><span><b>${posts.length}</b> posts in this session</span><span><b>${isFriend?"Friend":sent?"Pending":incoming?"Wants to connect":"NPC"}</b> relationship</span></div></div></section><div class="profile-post-heading">POSTS BY ${own?"YOU":escapeHTML(person.name.toUpperCase())}</div>${posts.length?posts.map(p=>`<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${person.color}22">${person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(person.name)}" aria-label="View ${escapeHTML(person.name)} profile">${escapeHTML(person.name)}</button><div class="post-meta">${escapeHTML(person.place)} · ${ago(p.minutes)}</div></div></div><p class="post-text">${escapeHTML(p.text)}</p><div class="post-actions"><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div></div></article>`).join(""):'<div class="empty">No posts from this profile in the current session yet.</div>'}`;
   }
