@@ -100,6 +100,7 @@ assert.equal(received.length, 3, "first launch should seed incoming NPC requests
 const firstSeen = read("blinkSeenNPCs");
 assert.equal(firstSeen.length, 34, "initial feed must save all 34 NPC authors");
 assert.equal(new Set(firstSeen).size, firstSeen.length, "initial feed must not repeat NPC authors");
+assert.ok(firstSeen.every((name) => !name.includes("|")), "NPC history must use stable canonical names, not changing world/place keys");
 const feed = elements.get("feed").innerHTML;
 const authors = [...feed.matchAll(/data-person="([^"]+)"/g)].map((m) => m[1]);
 const outgoingName = authors.find((name) => !received.includes(name));
