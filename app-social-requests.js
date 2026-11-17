@@ -356,7 +356,8 @@
     // handles taps on nested spans/icons and browsers that report a text node.
     const path=typeof e.composedPath==="function"?e.composedPath():[];
     const target=e.target?.nodeType===1?e.target:e.target?.parentElement;
-    const social=path.find(node=>node?.nodeType===1&&node.matches?.("[data-social]"))||target?.closest?.("[data-social]");
+    // Prefer the clicked element's ancestor chain for mouse, touch and nested text targets.
+    const social=target?.closest?.("[data-social]")||path.find(node=>node?.nodeType===1&&node.matches?.("[data-social]"));
     if(social){
       e.preventDefault();
       e.stopPropagation();
