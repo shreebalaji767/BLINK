@@ -238,12 +238,36 @@
     });
   };
   const reactionOptions = [{emoji:"👍",name:"Like"},{emoji:"❤️",name:"Love"},{emoji:"😂",name:"Funny"},{emoji:"😮",name:"Wow"},{emoji:"😢",name:"Sad"},{emoji:"😡",name:"Angry"},{emoji:"🤯",name:"Mind blown"}];
+  // Shape each post's reaction mix around what was said and who is saying it.
+  const buildReactionCounts = (person, postText) => {
+    const text = (String(postText || "") + " " + [person.name,person.place,person.world].join(" ")).toLowerCase();
+    const signals = [
+      ["😂",/absurd|ridiculous|goose|duck|pigeon|kettle|chair|hat|biscuits|spoon|misunderstand|nobody|not again|complaint|wrong form|spreadsheet|committee|unofficial|lonely|briskly|funny|joke|embarrass|awkward|chaos|rumou?r|gossip|drama/g],
+      ["❤️",/help|thank|kind|care|friend|together|saved|rescue|gift|home|family|love|proud|apolog|support|welcome|reunion|sweet|beautiful|hope/g],
+      ["😢",/lost|missing|injur|hurt|death|dead|goodbye|farewell|lonely|sorry|regret|cry|grief|broken|evict|fired|failed|disaster|tragedy|abandon|ruin|sick/g],
+      ["😡",/banned|stolen|cheat|fraud|scam|unfair|angry|threat|blame|accus|illegal|corrupt|tax|fine|invoice|rule|policy|refus|complaint|demand|sabotage|betray/g],
+      ["😮",/breaking|secret|suddenly|unexpected|revealed|found|disappear|appeared|mystery|witness|evidence|portal|strange|unexplained|allegedly|apparently|actually|never|first time|emergency/g],
+      ["🤯",/magic|spell|prophecy|dragon|demon|alien|multiverse|time.?loop|dimension|quantum|impossible|timeline|immortal|cursed|enchant|reincarn|reality|system|glitch|ancient|cosmic|universe/g]
+    ];
+    const weights = Object.fromEntries(reactionOptions.map(r=>[r.emoji,1]));
+    signals.forEach(([emoji,re])=>{const matches=text.match(re);if(matches)weights[emoji]+=Math.min(matches.length,5)*1.35;});
+    if(/cook|baker|food|noodle|stew|tea|café|cafe|pastry|seller|vendor/.test(text))weights["❤️"]+=1.1;
+    if(/guard|inspector|clerk|official|supervisor|manager|security|administrator|tax collector/.test(text))weights["😡"]+=0.8;
+    if(/wizard|mage|cultivat|sorcer|demon|dragon|alien|android|robot|cosmic|time.?loop/.test(text))weights["🤯"]+=1.3;
+    if(/stablehand|caretaker|cleaner|assistant|trainee|intern|apprentice|courier|worker/.test(text))weights["👍"]+=0.8;
+    const peak=Math.max(...Object.values(weights));
+    return Object.fromEntries(reactionOptions.map(r=>{
+      const relative=weights[r.emoji]/peak;
+      const count=Math.round((2+Math.random()*13)*relative + Math.random()*4);
+      return [r.emoji,count];
+    }));
+  };
   const state = {posts:[],view:"feed",world:"All",sort:"latest",visible:14,following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(JSON.parse(localStorage.getItem("blinkSeenNPCs")||"[]"))};
   const ago = n => n<1?"just now":n+"m ago";
   const makePost = (person, customText) => {
     const text=customText||generatePostText(person);
     const replies=makeReplies(person,text);
-    const reactions=Object.fromEntries(reactionOptions.map(r=>[r.emoji,Math.floor(Math.random()*36)]));
+    const reactions=buildReactionCounts(person,text);
     return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text,minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),reactions,replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
   };
   const npcKey=p=>p.world+"|"+p.place+"|"+p.name;
