@@ -11,7 +11,8 @@ The site is designed to run as a static website. Its browser experience does not
 
 ## Features
 
-- **Multiverse feed:** fictional NPCs from fantasy, science fiction, anime, comics, games, and cartoons.
+- **Multiverse feed:** a growing roster across 17 fiction categories, including C-/K-/J-drama, comics, Marvel, DC, Image Comics, light novels, manhwa, manhua, donghua, anime, fantasy, sci-fi, games, cartoons and web novels.
+- **NPC directory:** 2,176 locally generated original supporting residents, searchable by name, role, setting and category. This is an expandable generated cast, not an exhaustive database of every character ever published.
 - **Procedural chaos:** JavaScript combines character voices, situations, reactions, and punchlines to generate varied posts in the browser.
 - **Feed controls:** search, world filters, trending, following, saved posts, sorting, shuffling, and load-more behavior.
 - **Social interactions:** like posts, follow characters, save posts, and view simulated replies.
