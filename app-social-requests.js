@@ -361,14 +361,20 @@
     if(social){
       e.preventDefault();
       e.stopPropagation();
-      const name=social.dataset?.person||social.getAttribute?.("data-person");
+      const rawName=social.dataset?.person||social.getAttribute?.("data-person");
       const action=social.dataset?.social||social.getAttribute?.("data-social");
-      if(!name||!action)return;
+      if(!rawName||!action)return;
+      // Resolve names against the canonical directory. HTML escaping, Unicode
+      // normalization, or harmless whitespace/case differences must not make
+      // a real directory NPC appear missing.
+      const normalizeNPCName=value=>String(value??"").normalize("NFKC").trim().replace(/\\s+/g," ").toLocaleLowerCase();
+      const matchedPerson=personByName(rawName)||people.find(person=>normalizeNPCName(person.name)===normalizeNPCName(rawName));
+      const name=matchedPerson?.name||rawName;
       if(action==="profile"){
         state.profile=name;state.view="profile";state.world="All";
       }else if(action==="add"){
-        if(!validSocialNames.has(name)||name===observer.name){
-          toast("That NPC could not be found. Refresh the directory and try again.");
+        if(!matchedPerson||!validSocialNames.has(name)||name===observer.name){
+          toast("That NPC is no longer in the directory. Reopen the NPC Directory and try again.");
           return;
         }
         if(state.receivedRequests.has(name)){
