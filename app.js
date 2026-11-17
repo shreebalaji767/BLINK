@@ -9,20 +9,75 @@
     {name:"Games",color:"#75a47b",emoji:"🎮",people:[["Mario","🍄","Mushroom Kingdom"],["Link","🗡️","Hyrule"],["Kirby","🌸","Dream Land"],["Lara Croft","🧭","Tomb Raider"],["Sonic","💨","Green Hill"],["Kiryu","🐉","Kamurocho"],["Chell","🟠","Aperture"],["Sans","💀","Underground"]]},
     {name:"Cartoons",color:"#d4a4d0",emoji:"📺",people:[["SpongeBob","🧽","Bikini Bottom"],["Shaggy","🥪","Mystery Inc."],["Bugs Bunny","🥕","Looney Tunes"],["Rick Sanchez","🧪","Dimension C-137"],["Finn","🗡️","Land of Ooo"],["Daria","👓","Lawndale"],["Homer Simpson","🍩","Springfield"],["Scooby-Doo","🐕","Mystery Inc."]]}
   ];
-  const openers = ["I have made a decision and the council has asked me to stop making decisions.","Why is there a suspiciously confident goose outside my residence.","Just found out the prophecy was a group project. I did ALL the work.","I regret to announce that I was right. This is devastating for everyone.","Can someone explain taxes. I have defeated three ancient evils but this is different.","The local bakery knows what I did. The sourdough was a warning.","I put my problems in a little basket. The basket is now on fire.","Reminder: do NOT accept side quests from people standing near suspicious barrels.","I would like to apologise to absolutely nobody. Especially the wizard.","My therapist says I need boundaries. Anyway I have adopted another cursed object.","I have been banned from the town square for reasons that are frankly political.","The moon looked at me weird today. We have history.","I tried meditation. A tiny version of my enemy appeared and started narrating.","I accidentally became mayor. The election was a spelling test.","If the ancient evil wanted me dead it could at least send a calendar invite.","I have discovered a new emotion. It is called Tuesday.","I am once again asking the universe to stop adding lore to my backstory.","The vibes in this dungeon are rancid. One star.","I saw my own wiki page. The inaccuracies are personal.","Whoever keeps moving the plot forward: please stop. I am eating."];
-  const endings = ["Anyway, thoughts?","This is not a joke. (It is a little bit a joke.)","I will be taking no questions.","Please respect my privacy during this difficult side quest.","The group chat is going to hear about this.","I am choosing to interpret this as a threat.","Do not perceive me.","Anyway I have to go save reality again.","This has been a public service announcement.","I said what I said."];
+  const openers = [
+    "Quick update: the tiny problem I ignored yesterday has formed a committee.",
+    "I went out for one normal errand and came back with a receipt, a minor curse and somebody else's lunch.",
+    "Not to alarm anyone, but the town noticeboard has started replying to the notices.",
+    "I have now heard three different versions of what happened and all three were told by me.",
+    "Does anyone know why the palace lift stops at a floor that is not on the buttons?",
+    "The person behind me in the queue knew my full government name. I was buying onions.",
+    "I was promised a quiet afternoon. There are currently six witnesses and a damp horse.",
+    "Small administrative issue: the emergency plan has become sentient and is asking for weekends off.",
+    "I tried to return a library book and the librarian asked me to return the year 1842 as well.",
+    "Someone has put a tiny hat on the warning statue. The statue looks happier. This is making the warning less effective.",
+    "I am not saying the map is lying. I am saying it has moved the river since breakfast.",
+    "The group chat has gone quiet in the exact way a kitchen goes quiet when something is burning.",
+    "I have spent forty minutes looking for my keys. They were in the dragon. The dragon says we never discussed this.",
+    "The new neighbour is very polite, but their mailbox is full of teeth.",
+    "I have received a formal complaint about my tone from a person who communicates exclusively through thunder.",
+    "Today's forecast: light rain, heavy omens, and a chance of somebody bringing up the incident at dinner.",
+    "I only asked one question at the meeting. Somehow I am now responsible for the moon.",
+    "There is a handwritten sign on the tavern door that says 'please stop testing the floor'. I have questions.",
+    "I think the prophecy has been edited. The handwriting is definitely mine, but I don't remember owning that pen.",
+    "I bought the cheap version and now the artifact keeps asking me to upgrade."
+  ];
+  const endings = [
+    "Anyway, I have screenshots but they make it look worse.",
+    "I am going to leave this here before it becomes a meeting.",
+    "Please do not tag the person involved. They are already in the room.",
+    "The official report will say 'weather-related'.",
+    "I would explain further but the kettle is making the noise again.",
+    "If anyone needs me, I will be somewhere with a door that locks.",
+    "This is a normal amount of paperwork. I have checked.",
+    "I am choosing not to learn what the wet footprints mean.",
+    "No follow-up questions until everyone has eaten.",
+    "I stand by the first half of this statement."
+  ];
+  const characterNotes = {
+    "Gandalf":["the inn charged me extra for the room with the least prophecy in it","I have misplaced my pipe and suspect the eagles know more than they admit"],
+    "Batman":["the cave's new motion sensor keeps alerting me to my own dramatic entrances","Alfred labelled the leftovers. I have ignored the label and regret it"],
+    "Spider-Man":["the landlord has emailed again about the ceiling. I cannot keep saying 'weather event'","the train was delayed by a man in a cape arguing with a pigeon"],
+    "Darth Vader":["the helmet fogged up during a budget meeting and nobody offered assistance","someone changed the conference room booking to 'dark side karaoke'"],
+    "Yoda":["the kettle, I have descaled. Proud, I am. The instructions, ignored, I have","a parking ticket, I received. In this economy, difficult the Force is"],
+    "SpongeBob":["Squidward has put a tiny cone around my desk and called it a boundary","the Krusty Krab ran out of napkins and somehow this is now a leadership issue"],
+    "Shrek":["someone has left a wellness pamphlet outside my swamp. It is soggy now","the council wants me to attend a 'community listening circle'. I live in a swamp"],
+    "Loki":["I was asked to sign for a parcel addressed to 'the other Loki'. There are four of us on this street","the palace has introduced a rota for dramatic entrances. I was not consulted"],
+    "Mario":["the plumbing inspection was mostly questions about the pipes. Suspiciously specific questions","someone keeps leaving mushrooms in the staff fridge with no labels"],
+    "Dumbledore":["the staff meeting could have been an owl","I have once again lost a very important object in a room that was not there yesterday"]
+  };
+  const details = [
+    "the receipt was itemised, which somehow made it more insulting",
+    "there were two witnesses and one of them was taking notes on a napkin",
+    "the notice said 9:00, but nobody specified which calendar",
+    "I have a photo, but in the background the same thing is happening again",
+    "the person responsible said 'that's not usually attached' and walked away",
+    "it was resolved in the group chat, then immediately un-resolved in person",
+    "I am still waiting for the promised follow-up email"
+  ];
   const templates = [
-    p => p.name+" just posted a 47-part thread explaining why "+pick(["the timeline is fake","the council is a pyramid scheme","soup is a beverage","the prophecy has bad UX","the villain has a point"])+" and honestly the evidence is upsetting.",
-    p => "BREAKING: "+p.name+" has been caught "+pick(["arguing with a vending machine","trying to unionise the dungeon","putting googly eyes on the sacred relic","selling suspiciously warm ice","starting a podcast"])+" in "+p.place+".",
-    p => p.name+": "+pick(["I can fix him.","I am him.","I have never been more tired.","This is why we cannot have nice things.","The group chat is NOT ready for this."]),
-    p => "POV: you're "+p.name+" and "+pick(["the tutorial NPC has more lore than you","your nemesis liked your post from 400 years ago","the final boss asks you to fill out a feedback form","the chosen one has called in sick","your horse knows your search history"])+".",
-    p => p.name+" has announced a new policy: "+pick(["no prophecies before noon","all swords must be named","mandatory nap time","taxes payable in emotional support rocks","the villain gets one free monologue per week"])+"."
+    p => p.name+": "+pick(characterNotes[p.name]||["I went to do one ordinary thing and somehow became the person in charge","the local office has my name spelled three different ways and all of them are legally binding"])+". "+pick(details)+".",
+    p => "At "+p.place+" today, "+p.name+" "+pick(["waited 25 minutes for a form that turned out to be a person","politely asked who approved the new staircase; nobody made eye contact","watched a minor disagreement become an official calendar event","found a handwritten apology addressed to 'whoever keeps doing that'"])+". "+pick(endings),
+    p => "Has anyone else noticed that "+pick(["the same three people keep arriving just before something breaks","the public noticeboard is using increasingly personal examples","the staff teapot is always warm even when nobody has been in the room","every official form has a box for 'unusual animal involvement'"])+ "? Asking because "+p.name+" has now had to explain it twice.",
+    p => "I was standing behind "+p.name+" in "+p.place+" and heard them say, very calmly: '"+pick(["I don't think that door was there yesterday","we agreed not to feed it after midnight","please put the sword back before the inspection","that is not my emergency pigeon"])+"'. Nobody in the queue reacted. That is the worrying part.",
+    p => "A completely ordinary update from "+p.name+": "+pick(["the appointment has moved to the abandoned lighthouse","the spare key is now considered a diplomatic object","the meeting minutes have been classified as a weather system","the local bakery is asking customers to declare magical side effects"])+". "+pick(details)+".",
+    p => p.name+" posted a photo of "+pick(["a very normal sandwich with a tiny official seal on it","a cracked paving stone shaped exactly like the mayor","three identical lost-property tickets","a suspiciously familiar hat on an unfamiliar statue"])+ " with the caption: '"+pick(["not getting involved again","this feels like a trap but it is a nice hat","I have asked twice and nobody will explain","please tell me this belongs to someone"])+"'.",
+    p => "Update from "+p.place+": "+p.name+" has "+pick(["apologised to the entire queue, including a decorative fern","been asked to stop using the emergency bell for routine announcements","returned the borrowed ladder but not the small moon","started a spreadsheet to track who keeps moving the chairs"])+". The spreadsheet already has 11 tabs."
   ];
   const pick = a => a[Math.floor(Math.random()*a.length)];
   const people = worlds.flatMap(w => w.people.map(([name,emoji,place])=>({name,emoji,place,world:w.name,color:w.color})));
   const state = {posts:[],view:"feed",world:"All",sort:"latest",visible:14,following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),generated:0};
   const ago = n => n<1?"just now":n+"m ago";
-  const makePost = (person, customText) => ({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||pick(templates)(person)+" "+(Math.random()>.45?pick(endings):""),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),comments:Math.floor(Math.random()*240),origin:pick(["📡 direct transmission","🌀 timeline leak","💬 group chat","🛸 public broadcast"])});
+  const makePost = (person, customText) => ({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||pick(templates)(person)+" "+(Math.random()>.45?pick(endings):""),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),comments:Math.floor(Math.random()*240),origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast"])});
   function seed(){for(let i=0;i<34;i++){const p=pick(people);const post=makePost(p,Math.random()<.24?pick(openers)+" "+pick(endings):null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post)}}
   function generate(){const p=pick(people);const text=Math.random()<.58?pick(templates)(p)+" "+pick(endings):pick(openers)+" "+pick(endings);state.posts.unshift(makePost(p,text));state.generated++;render();toast(p.name+" has entered the chat.");}
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
