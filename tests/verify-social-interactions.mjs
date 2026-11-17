@@ -102,7 +102,7 @@ const authors = [...feed.matchAll(/data-person="([^"]+)"/g)].map((m) => m[1]);
 const outgoingName = authors.find((name) => !received.includes(name));
 assert.ok(outgoingName, "feed should expose an NPC profile that can receive a request");
 
-const sentButton = clickSocial("add", outgoingName, true);
+const sentButton = clickSocial("add", "  "+outgoingName.toLocaleLowerCase()+"  ", true);
 assert.equal(sentButton.textContent, "✓ Request sent", "clicked button must immediately show sent state");
 assert.equal(sentButton.disabled, true, "clicked button must prevent duplicate requests");
 assert.ok(read("blinkSentRequests").includes(outgoingName), "send request must persist");
