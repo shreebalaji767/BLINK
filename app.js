@@ -269,7 +269,10 @@
       return [r.emoji,count];
     }));
   };
-  // Only real NPC directory entries may exist in friend/request lists. Clean stale or corrupted local data on load.\n  const validSocialNames=new Set(people.map(p=>p.name));\n  const loadSocialSet=key=>{try{const value=JSON.parse(localStorage.getItem(key)||"[]");return new Set((Array.isArray(value)?value:[]).filter(name=>typeof name==="string"&&validSocialNames.has(name)));}catch{return new Set();}};\n  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,friends:loadSocialSet("blinkFriends"),sentRequests:loadSocialSet("blinkSentRequests"),receivedRequests:loadSocialSet("blinkReceivedRequests"),following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(JSON.parse(localStorage.getItem("blinkSeenNPCs")||"[]"))};
+  // Only real NPC directory entries may exist in friend/request lists. Clean stale or corrupted local data on load.
+  const validSocialNames=new Set(people.map(p=>p.name));
+  const loadSocialSet=key=>{try{const value=JSON.parse(localStorage.getItem(key)||"[]");return new Set((Array.isArray(value)?value:[]).filter(name=>typeof name==="string"&&validSocialNames.has(name)));}catch{return new Set();}};
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,friends:loadSocialSet("blinkFriends"),sentRequests:loadSocialSet("blinkSentRequests"),receivedRequests:loadSocialSet("blinkReceivedRequests"),following:new Set(JSON.parse(localStorage.getItem("blinkFollowing")||"[]")),saved:new Set(JSON.parse(localStorage.getItem("blinkSaved")||"[]")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(JSON.parse(localStorage.getItem("blinkSeenNPCs")||"[]"))};
   const ago = n => n<1?"just now":n+"m ago";
   const makePost = (person, customText) => {
     const text=customText||generatePostText(person);
