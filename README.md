@@ -1,56 +1,76 @@
 # BLINK — NPC Social
 
 **A text-only social network for fictional characters across the multiverse.**  
-Expect dramatic status updates, impossible arguments, suspiciously specific complaints, and absolutely no moderation.
+Expect dramatic status updates, impossible arguments, suspiciously specific complaints, rumours, parody ads, and absolutely no moderation.
+
+**Live site:** https://shreebalaji767.github.io/BLINK/
 
 ## What it is
 
-BLINK turns fictional-world characters into a chaotic NPC social feed. Characters post automatically generated, absurd updates as if they all share one very strange internet.
+BLINK is a fictional-character social-network simulation. NPCs publish locally generated posts, react to one another, argue in comment threads, and occasionally send the Observer friend requests. The experience runs entirely in the visitor's browser.
 
-The site is designed to run as a static website. Its browser experience does not need a server, database, account system, paid service, or external API.
+It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScript. It does not require a backend, database, account system, paid service, subscription, or external API.
 
 ## Features
 
-- **Multiverse feed:** a growing roster across 17 fiction categories, including C-/K-/J-drama, comics, Marvel, DC, Image Comics, light novels, manhwa, manhua, donghua, anime, fantasy, sci-fi, games, cartoons and web novels.
-- **NPC directory:** 2,176 locally generated original supporting residents, searchable by name, role, setting and category. This is an expandable generated cast, not an exhaustive database of every character ever published.
-- **Procedural chaos:** JavaScript combines character voices, situations, reactions, and punchlines to generate varied posts in the browser.
-- **Feed controls:** search, world filters, trending, following, saved posts, sorting, shuffling, and load-more behavior.
-- **Social interactions:** like posts, follow characters, save posts, and view simulated replies.
-- **Observer posts:** add your own text to the feed.
-- **Responsive layout:** works on desktop and mobile screens.
-- **No media uploads:** the experience stays text-only.
+- **Multiverse feed:** fictional settings spanning anime, manga/manhwa/manhua, donghua, C-/K-/J-drama, light novels, web novels, comics (including Marvel, DC, and Image Comics), fantasy, science fiction, games, and cartoons.
+- **Large NPC directory:** 136 hand-authored character entries plus 2,176 generated original supporting residents (2,312 directory entries in total). Search the directory and filter by world/setting. Generated residents are original background NPCs, not a claim to include every canon character in every franchise.
+- **Procedural posts:** JavaScript assembles varied, character- and setting-aware updates, rumours, gossip, complaints, and absurd everyday incidents.
+- **Post-specific comment threads:** NPC replies are generated in relation to the post, with chaotic conversations, arguments, jokes, occasional thirst-comment parody, and parody advertisements.
+- **Contextual reactions:** posts display varied emoji reactions and simulated counts.
+- **NPC profiles:** open a profile from the directory or by selecting a post author's username. NPC profiles show randomized timelines of 5–15 generated posts during the current session.
+- **Observer profile:** view your own profile and the posts you have written during the current session.
+- **Friend requests:** send requests to NPCs, receive simulated NPC requests, accept or decline incoming requests, cancel outgoing requests, and view your friends list.
+- **Local social state:** friend connections, sent/received requests, follows, and saved posts are stored in this browser using `localStorage`.
+- **Feed controls:** search, world filters, following, trending, saved posts, sorting, shuffling, and load-more behavior.
+- **Observer posts:** write a short text post (up to 280 characters) into the local feed.
+- **Responsive interface:** desktop sidebar layout adapts to smaller screens and touch devices.
+
+## Friend requests: how they work
+
+1. Open an NPC profile or the NPC Directory and choose **Send friend request**.
+2. The control changes to **Request sent** and the NPC appears under **Sent requests**.
+3. NPCs can also generate incoming requests. On startup, BLINK fills the incoming list to 3–5 requests when there are not already that many eligible requests.
+4. Open **Friends & Requests** to accept or decline incoming requests, cancel outgoing requests, and view accepted friends.
+
+This is a single-browser simulation, not a real network connection. NPC requests are simulated by the local JavaScript; requests are not delivered to another person or synchronized across browsers/devices.
 
 ## Run it locally
 
 1. Download or clone this repository.
 2. Open `index.html` in a modern browser.
 
-There is no dependency installation or build command for the static site.
+No dependency installation or build step is required for the static site.
 
 ## Publish with GitHub Pages
 
 The workflow at `.github/workflows/pages.yml` publishes the repository root when changes are pushed to `main`.
 
 1. Open the repository's **Settings → Pages**.
-2. Under **Build and deployment**, choose **GitHub Actions** as the source.
-3. Push to `main`, or manually run the **Deploy static site to GitHub Pages** workflow from the Actions tab.
+2. Under **Build and deployment**, select **GitHub Actions** as the source.
+3. Push changes to `main`, or manually run the deployment workflow from the Actions tab.
 4. Open the Pages URL shown in the repository's Pages settings.
+
+The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 
 ## Data and privacy
 
-- NPCs and their posts are generated or simulated in the browser.
-- Follows and saved posts are stored in the browser's `localStorage`.
-- Likes, replies, and newly generated activity are local simulation state; they are not synchronized between visitors.
-- Clearing this site's browser storage can remove locally saved follows and posts.
-- The static site does not send feed activity to a BLINK server because there is no BLINK backend.
+- Feed content and NPC activity are generated or simulated in the browser.
+- Friend lists, sent/received friend requests, follows, and saved posts use this browser's `localStorage`.
+- Likes, reactions, comments, generated posts, and profile timelines are local simulation state; they are not shared with other visitors.
+- Clearing this site's browser storage can remove locally saved social data.
+- There is no BLINK backend and no cross-device synchronization.
 
 ## Project structure
 
-- `index.html` — page structure and application entry point
-- `styles.css` — responsive visual styling
-- `app.js` — NPC data, post generation, feed rendering, and browser-side interactions
-- `.github/workflows/pages.yml` — GitHub Pages deployment workflow
+- `index.html` — page structure, navigation, and application entry point
+- `styles.css` — responsive interface styling
+- `app-social-requests.js` — active browser application: NPC data, feed/profile rendering, post and comment generation, reactions, and friend-request interactions
+- `app.js` — retained earlier/legacy application script; it is not the script loaded by the current `index.html`
+- `public/favicon.svg` — site icon
+- `.github/workflows/pages.yml` — GitHub Pages deployment
+- `.github/workflows/ci.yml` — static-site validation
 
-## Scope
+## Scope and limitations
 
-BLINK is a fictional-character social-network parody, not a real messaging platform. It has no real user accounts, cross-device sync, shared live feed, or server-side persistence. NPC activity is generated by ordinary JavaScript; no AI service is used.
+BLINK is a fictional-character social-network parody, not a real messaging platform. It has no real user accounts, server-side persistence, live multiplayer/social graph, or cross-device sync. The NPCs and their interactions are simulated with ordinary client-side JavaScript; no AI service is used.
