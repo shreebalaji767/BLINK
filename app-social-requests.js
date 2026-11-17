@@ -403,6 +403,7 @@
       }else if(action==="decline"){
         if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
         state.receivedRequests.delete(name);
+        state.handledIncomingRequests.add(name);
         toast("Friend request declined.");
       }else if(action==="cancel"){
         // Withdraw the outgoing request entirely; it must disappear from Sent Requests.
