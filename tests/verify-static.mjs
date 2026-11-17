@@ -13,6 +13,15 @@ for (const action of ["like", "react", "save", "follow", "comment", "reply"]) as
 for (const action of ["profile", "add", "accept", "decline", "cancel"]) assert.ok(app.includes('action==="' + action + '"'), "missing social action: " + action);
 for (const view of ["feed", "following", "trending", "saved", "directory", "profile", "friends"]) assert.ok(html.includes('data-view="' + view + '"'), "missing navigation view: " + view);
 assert.ok(app.includes("ensureIncomingRequests(3,5)"), "incoming NPC requests should be seeded");
+assert.ok(app.includes('state.sentRequests.add(name)'), "sending a request must update outgoing state");
+assert.ok(app.includes('state.receivedRequests.add(requester.name)'), "NPCs must be able to send incoming requests");
+assert.ok(app.includes('state.friends.add(name)'), "accepting a request must create a friendship");
+assert.ok(app.includes('state.receivedRequests.delete(name)'), "declining/accepting must clear incoming requests");
+assert.ok(app.includes('state.sentRequests.delete(name)'), "cancelling/resolving must clear outgoing requests");
+assert.ok(app.includes("function resolveOutgoingRequests()"), "NPC responses to outgoing requests must be simulated");
+assert.ok(app.includes("resolveOutgoingRequests();"), "NPC request responses must run during simulation");
+assert.ok(app.includes('localStorage.setItem("blinkFriends"') && app.includes('localStorage.setItem("blinkSentRequests"') && app.includes('localStorage.setItem("blinkReceivedRequests"'), "all relationship lists must persist locally");
+assert.ok(app.includes('badge.textContent=state.receivedRequests.size+state.sentRequests.size'), "request badge must reflect both directions");
 assert.ok(app.includes("const readLocalArray=") && app.includes("const writeLocalArray="), "safe local storage helpers must exist");
 assert.ok(!/JSON\.parse\(localStorage\.getItem/.test(app), "unguarded localStorage JSON parsing found");
 assert.ok(css.length > 1000, "responsive stylesheet missing");
