@@ -1,165 +1,20 @@
-# BLSSNVJ21 · BLINK
+# BLINK — NPC Social
 
-BLINK is a lightweight social communication web application for chat, snaps, stories, friends, profiles, and temporary sharing.
+A text-only, fictional-character social feed: the multiverse's least moderated timeline.
 
-## Version 1.4.0
+## Static architecture
+- Plain HTML, CSS and vanilla JavaScript
+- No backend, database, Supabase, authentication, external API or build step
+- Random NPC posts generated in the browser
+- Likes, follows and saved posts are local to the current browser; follows and saved posts use localStorage
+- Search, world filters, trending view, custom observer posts and responsive layout
+- Text-only by design: no image or media uploads
 
-This release hardens the application foundation while preserving the existing BLINK social features.
+## Run locally
+Open `index.html` in a browser. No install or server is required.
 
-### Production upgrades
+## GitHub Pages
+The `.github/workflows/pages.yml` workflow publishes the repository root on every push to `main`. In GitHub, set **Settings → Pages → Source → GitHub Actions** if Pages is not already configured to use Actions.
 
-- Next.js 16 App Router foundation
-- React 19 + TypeScript
-- Supabase SSR authentication with cookie-based sessions
-- Verified server-side auth using `auth.getClaims()`
-- Next.js `proxy.ts` session refresh flow
-- Installable PWA manifest
-- Dedicated BLSSNVJ21 · BLINK app icon
-- Mobile-safe viewport and standalone app metadata
-- Canonical URL and Open Graph/Twitter metadata
-- Robots rules that keep authenticated/private routes out of indexing
-- Sitemap for public routes
-- Runtime environment validation for Supabase configuration
-- Safer private/no-store caching for authenticated pages
-- Production HSTS and baseline security headers
-- Route-level error recovery
-- Global error fallback
-- Loading UI
-- Custom 404 page
-- Responsive desktop/mobile interface
-- Browser favicon fallback at `/favicon.ico`
-- Service-worker cache versioning and safe update prompts
-- `/health` deployment health endpoint with no-store responses
-- `.well-known/security.txt` responsible-disclosure contact
-- Additional response-security headers and no-store API caching
-
-## Current stack
-
-- Next.js 16.3.8
-- React 19
-- TypeScript
-- Supabase Auth + database access
-- Responsive mobile/desktop UI
-- PWA manifest and installable app metadata
-- Security headers and production-oriented configuration
-
-## Features
-
-- Email/password authentication
-- Username-based people search
-- Friend requests and relationships
-- Private conversations
-- Temporary/disappearing messages
-- Snaps and temporary media
-- Stories
-- Profile and account settings
-- Privacy options such as Ghost Mode
-- Dark/light appearance support
-- Responsive mobile navigation
-- PWA install metadata with BLSSNVJ21 branding
-- SEO metadata, robots and sitemap support
-
-## Development
-
-### Requirements
-
-Use a current Node.js LTS release.
-
-### Setup
-
-```bash
-npm install
-```
-
-Create `.env.local` from `.env.example` and provide:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `NEXT_PUBLIC_SITE_URL`
-
-### Run
-
-```bash
-npm run dev
-```
-
-### Validate
-
-Run the full local validation before deployment:
-
-```bash
-npm run check
-```
-
-This runs ESLint, TypeScript validation, and a production build.
-
-For deployment monitoring, `GET /health` returns a small no-store JSON health response.
-
-## Deployment
-
-BLINK is a server-rendered Next.js application because authentication/session handling uses Supabase server utilities. It can be deployed to a Next.js-capable runtime such as Render or Vercel.
-
-**GitHub Pages is not used for the application runtime.**
-
-Before deploying:
-
-1. Configure the three required public environment variables.
-2. Use HTTPS in production.
-3. Confirm Supabase Row Level Security policies for every user-facing table.
-4. Confirm storage policies for temporary media.
-5. Run `npm run check`.
-6. Verify sign-in, session refresh, logout, private routes, and media permissions on a production build.
-
-## Environment and security
-
-Never commit passwords, service-role keys, private API tokens, or other secrets.
-
-The public Supabase publishable key may be present in browser configuration. Database access must still be protected by correct Supabase Row Level Security policies.
-
-BLINK uses verified Supabase claims for server-side access checks and keeps authenticated page responses private/non-cacheable.
-
-Temporary or disappearing content is not a guarantee against screenshots, screen recordings, photography, copying, or other preservation.
-
-## Responsive UI
-
-BLINK is designed as a responsive application rather than a fixed desktop page:
-
-- Small phones: 320px+ layouts with compact navigation
-- Phones: touch-friendly controls and camera-first layouts
-- Tablets: adaptive two-column/chat layouts
-- Laptops and desktops: centered content with wider working areas
-- Large displays: constrained content width for readability
-- Touch devices: larger interaction targets
-- Reduced-motion preference is respected
-- Safe viewport units are used for modern mobile browsers
-- Images and video scale without overflowing their containers
-
-## PWA / app metadata
-
-BLINK includes:
-
-- Web app manifest generated by Next.js
-- Dedicated BLINK SVG app icon
-- Browser favicon fallback
-- Theme color
-- Mobile viewport configuration
-- Standalone display mode
-- Open Graph metadata
-- Twitter metadata
-- Canonical URL
-- Robots metadata
-- Sitemap metadata
-
-## Project structure
-
-- `app/` — Next.js routes, metadata, loading/error boundaries, and global styling
-- `components/blink/` — BLINK UI components
-- `lib/` — authentication, environment, and Supabase helpers
-- `supabase/` — database/project files
-- `.github/workflows/` — CI automation
-
-## Privacy note
-
-Temporary or disappearing content cannot guarantee that another person will not copy, screenshot, screen-record, photograph, or otherwise preserve it before expiry.
-
-Review authentication, permissions, storage, retention, and Row Level Security policies before using a deployment with real users.
+## Important
+NPCs, posts, likes, replies and activity are simulated. There are no real accounts and no shared server-side feed. Each browser session generates its own timeline. This is a static social-network parody, not a real messaging service.

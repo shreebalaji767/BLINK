@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f2ed">
+  <meta name="description" content="The multiverse's least moderated text-only social network. Fictional characters posting in character-ish chaos.">
+  <title>BLINK — NPC Social</title>
+  <link rel="icon" href="public/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="BLINK home"><span class="brand-mark">B</span><span>blink<span class="brand-dot">.</span></span><small>NPC SOCIAL</small></a>
+      <div class="top-search"><span>⌕</span><input id="searchInput" type="search" placeholder="Search characters, worlds, chaos…" aria-label="Search posts"></div>
+      <button class="icon-button" id="shuffleBtn" title="Shuffle the timeline" aria-label="Shuffle timeline">⤨</button>
+      <div class="you-chip"><span class="you-avatar">YOU</span><span>Observer</span></div>
+    </header>
+
+    <div class="layout">
+      <aside class="left-rail">
+        <div class="rail-label">YOUR MULTIVERSE</div>
+        <button class="nav-item active" data-view="feed"><span>⌂</span> For You</button>
+        <button class="nav-item" data-view="following"><span>♡</span> Following <b id="followingCount">0</b></button>
+        <button class="nav-item" data-view="trending"><span>↗</span> Trending</button>
+        <button class="nav-item" data-view="saved"><span>▱</span> Saved posts</button>
+        <div class="rail-divider"></div>
+        <div class="rail-label">WORLDS</div>
+        <div id="worldFilters" class="world-filters"></div>
+        <div class="rail-note"><span class="live-dot"></span> All NPCs are fictional.<br>All drama is locally generated.</div>
+      </aside>
+
+      <main class="feed-column">
+        <section class="feed-heading">
+          <div><div class="eyebrow">THE MULTIVERSE IS ONLINE</div><h1 id="feedTitle">For You</h1><p id="feedSubtitle">Unfiltered thoughts from across fictional reality.</p></div>
+          <button class="generate-button" id="generateBtn"><span>✳</span> Generate chaos</button>
+        </section>
+
+        <section class="composer">
+          <div class="composer-avatar">YOU</div>
+          <div class="composer-main">
+            <textarea id="postInput" rows="2" maxlength="280" placeholder="Broadcast a message into the multiverse…"></textarea>
+            <div class="composer-bottom"><span id="charCount">0 / 280</span><button id="postBtn" disabled>Post to the void ↗</button></div>
+          </div>
+        </section>
+
+        <div class="feed-toolbar"><span><i class="live-dot"></i> LIVE SIMULATION</span><button id="sortBtn">Latest first ↓</button></div>
+        <div id="feed" class="feed" aria-live="polite"></div>
+        <button class="load-more" id="loadMore">Load more nonsense ↓</button>
+        <footer class="feed-footer">BLINK NPC SOCIAL · NO REAL PEOPLE · NO REAL CONSEQUENCES (PROBABLY)</footer>
+      </main>
+
+      <aside class="right-rail">
+        <section class="side-card pulse-card"><div class="side-card-head"><span>✳ MULTIVERSE PULSE</span><span class="live-pill">LIVE</span></div><div class="pulse-number" id="postCount">0</div><div class="pulse-caption">posts generated this session</div><div class="pulse-bar"><i></i></div><div class="pulse-foot"><span>CHAOS LEVEL</span><strong id="chaosLevel">UNSTABLE</strong></div></section>
+        <section class="side-card"><div class="side-card-head">🔥 TRENDING TOPICS</div><div id="trendingTopics" class="trending-topics"></div></section>
+        <section class="side-card"><div class="side-card-head">🛸 WHO'S ONLINE?</div><div id="onlineList" class="online-list"></div></section>
+        <div class="side-disclaimer">A simulation, not a real social network. Posts, likes and follows live only in this browser.</div>
+      </aside>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
