@@ -291,7 +291,7 @@
     const own=person.name===observer.name;
     if(!own){
       const existing=state.posts.filter(p=>p.person.name===person.name);
-      const target=5+Math.floor(Math.random()*5);
+      const target=Math.random()<0.75?5+Math.floor(Math.random()*5):10+Math.floor(Math.random()*6);
       for(let i=existing.length;i<target;i++){
         const post=makePost(person,generatePostText(person));
         post.minutes=Math.floor(Math.random()*1440);
