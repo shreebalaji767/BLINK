@@ -37,7 +37,11 @@ const navItems = Array.from({ length: 7 }, () => new FakeElement());
 const documentListeners = {};
 const document = {
   querySelector(selector) {
-    if (selector.startsWith("#")) return elements.get(selector.slice(1)) || null;
+    if (selector.startsWith("#")) {
+      const id = selector.slice(1);
+      if (!elements.has(id)) elements.set(id, new FakeElement(id));
+      return elements.get(id);
+    }
     return null;
   },
   querySelectorAll(selector) {
