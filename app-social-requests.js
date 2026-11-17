@@ -284,11 +284,17 @@
   function saveSeenNPCs(){localStorage.setItem("blinkSeenNPCs",JSON.stringify([...state.seenNPCs]));}
   function unseenNPCs(){return people.filter(p=>!state.seenNPCs.has(npcKey(p)));}
   function chooseUnseenNPC(){let pool=unseenNPCs();if(!pool.length){state.seenNPCs.clear();saveSeenNPCs();pool=[...people];toast("You've met the whole current roster. Starting a fresh cycle.");}const person=pick(pool);state.seenNPCs.add(npcKey(person));saveSeenNPCs();return person;}
-  function seed(){const pool=unseenNPCs().sort(()=>Math.random()-.5);const batch=pool.slice(0,34);batch.forEach((p,i)=>{state.seenNPCs.add(npcKey(p));const post=makePost(p,Math.random()<.24?pick(openers)+" "+pick(endings):null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post);});saveSeenNPCs();if(!state.receivedRequests.size){const candidates=people.filter(p=>!state.friends.has(p.name)&&!state.sentRequests.has(p.name));const count=Math.min(candidates.length,1+Math.floor(Math.random()*2));for(let i=0;i<count;i++){const index=Math.floor(Math.random()*candidates.length);const [requester]=candidates.splice(index,1);state.receivedRequests.add(requester.name);}saveSocial();}}
+  function seed(){const pool=unseenNPCs().sort(()=>Math.random()-.5);const batch=pool.slice(0,34);batch.forEach((p,i)=>{state.seenNPCs.add(npcKey(p));const post=makePost(p,Math.random()<.24?pick(openers)+" "+pick(endings):null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post);});saveSeenNPCs();ensureIncomingRequests(3,5);}
+  function ensureIncomingRequests(minimum=1,maximum=2){
+    const candidates=people.filter(p=>!state.friends.has(p.name)&&!state.sentRequests.has(p.name)&&!state.receivedRequests.has(p.name));
+    const target=Math.min(candidates.length,Math.max(state.receivedRequests.size,minimum+Math.floor(Math.random()*(maximum-minimum+1))));
+    while(state.receivedRequests.size<target&&candidates.length){const index=Math.floor(Math.random()*candidates.length);state.receivedRequests.add(candidates.splice(index,1)[0].name);}
+    saveSocial();
+  }
   function generate(){const p=chooseUnseenNPC();const text=Math.random()<.58?pick(templates)(p)+" "+pick(endings):pick(openers)+" "+pick(endings);state.posts.unshift(makePost(p,text));state.generated++;if(Math.random()<.30 || (state.generated===1&&!state.receivedRequests.size)){const candidates=people.filter(x=>x.name!==p.name&&!state.friends.has(x.name)&&!state.sentRequests.has(x.name)&&!state.receivedRequests.has(x.name));if(candidates.length){const requester=pick(candidates);state.receivedRequests.add(requester.name);saveSocial();toast(requester.name+" sent you a friend request.");}}render();if(!state.receivedRequests.size)toast(p.name+" has entered the chat.");}
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   const observer={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
-  const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
+  const saveSocial=()=>{for(const set of [state.friends,state.sentRequests,state.receivedRequests])for(const name of set)if(!validSocialNames.has(name))set.delete(name);try{localStorage.setItem("blinkFriends",JSON.stringify([...state.friends]));localStorage.setItem("blinkSentRequests",JSON.stringify([...state.sentRequests]));localStorage.setItem("blinkReceivedRequests",JSON.stringify([...state.receivedRequests]));}catch(error){console.warn("BLINK could not persist friend data in this browser.",error);}const badge=$("#requestCount");if(badge)badge.textContent=state.receivedRequests.size+state.sentRequests.size;};
   const personByName=name=>people.find(p=>p.name===name)||null;
   function profileMarkup(person){
     const own=person.name===observer.name;
@@ -320,9 +326,9 @@
   // One document-level delegate keeps social actions working after every feed re-render.
   // Capture phase ensures social buttons work even if another handler stops bubbling.
   document.addEventListener("click",e=>{
-    const target=e.target?.closest?e.target:e.target?.parentElement;
+    const target=e.target instanceof Element?e.target:e.target?.parentElement;
     if(!target)return;
-    const social=target.closest("[data-social]");
+    const social=target.closest("button[data-social]");
     if(social){
       e.preventDefault();
       e.stopPropagation();
@@ -396,5 +402,5 @@
   $("#postInput").addEventListener("input",e=>{$("#charCount").textContent=e.target.value.length+" / 280";$("#postBtn").disabled=!e.target.value.trim()});
   $("#postBtn").addEventListener("click",()=>{const text=$("#postInput").value.trim();if(!text)return;const person=observer;state.posts.unshift(makePost(person,text));state.generated++;$("#postInput").value="";$("#charCount").textContent="0 / 280";$("#postBtn").disabled=true;state.view="feed";state.profile=null;state.world="All";render();toast("Broadcast delivered to absolutely nobody.");});
   $("#trendingTopics").addEventListener("click",e=>{const t=e.target.closest("[data-topic]");if(t){$("#searchInput").value=t.dataset.topic.replace(/([A-Z])/g," $1");render()}});
-  saveSocial();seed();render();
+  seed();saveSocial();render();
 })();
