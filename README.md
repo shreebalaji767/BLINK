@@ -74,3 +74,12 @@ The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 ## Scope and limitations
 
 BLINK is a fictional-character social-network parody, not a real messaging platform. It has no real user accounts, server-side persistence, live multiplayer/social graph, or cross-device sync. The NPCs and their interactions are simulated with ordinary client-side JavaScript; no AI service is used.
+
+
+### Local autosave and NPC request history
+
+- NPCs already shown in the feed are recorded in `localStorage` and are not selected again until the current directory roster has been exhausted; a fresh cycle then begins.
+- Sent friend requests, received requests, and accepted friendships are saved locally and restored on refresh.
+- Accepted or declined incoming NPC requests are remembered so the same NPC does not send the same request again.
+- NPCs can accept outgoing requests during feed generation; the resulting friendship is saved locally.
+- This is a browser-local simulation: data remains in the same browser profile and is not synced across devices or browsers.
