@@ -328,9 +328,18 @@
       if(action==="profile"){
         state.profile=name;state.view="profile";state.world="All";
       }else if(action==="add"){
-        if(name===observer.name||state.friends.has(name)||state.sentRequests.has(name))return;
+        if(name===observer.name)return;
+        if(state.friends.has(name)||state.sentRequests.has(name)){
+          social.textContent=state.friends.has(name)?"✓ Friends":"✓ Request sent";
+          social.disabled=true;
+          return;
+        }
+        // Update the clicked control immediately, before any re-render or storage work.
         state.sentRequests.add(name);
-        toast("Friend request sent to "+name+".");
+        social.textContent="✓ Request sent";
+        social.disabled=true;
+        social.classList.add("accepted");
+        social.setAttribute("aria-label","Friend request sent to "+name);
       }else if(action==="accept"){
         state.receivedRequests.delete(name);
         state.sentRequests.delete(name);
@@ -343,6 +352,9 @@
       }else{return;}
       saveSocial();
       render();
+      if(action==="add")toast("Friend request sent to "+name+".");
+      else if(action==="accept")toast("You are now connected with "+name+".");
+      else if(action==="decline")toast("Friend request declined.");
       return;
     }
     const profile=target.closest("[data-open-profile]");
