@@ -167,6 +167,22 @@
     "Springfield Night-Shift Cashier":["the self-checkout has started asking customers how their marriage is","a man tried to pay for milk with arcade tokens and a weather forecast"],
     "Mystery Inc. Van Mechanic":["the van has one extra seat whenever it rains","I found a sandwich in the engine compartment and it was still warm"]
   };
+  const rumorTemplates = [
+    p => "HEARD AT "+p.place.toUpperCase()+": apparently "+pick(["the night shift has a second key nobody has logged","someone has been quietly replacing the town notices with older versions","the new caretaker is related to a very inconvenient person","the supply room is being used for meetings after closing","a regular customer knows the exact time the lights go out","the official map leaves out one door on purpose","the same anonymous person keeps paying other people's overdue fees","the manager has been seen practising an apology in an empty corridor"])+". Source: "+pick(["a cousin who works two floors up","someone who heard it from the delivery driver","a note left under the tea tin","a person who insists they are not involved"]). " + pick(["Could be nonsense. It has been repeated four times already.","Nobody can confirm it, but the spare keys have gone missing.","Please do not confront anyone. Especially not the pigeon.","The story changes slightly every time it reaches the front desk."]),
+    p => "UNCONFIRMED — "+p.name+" says people at "+p.place+" are whispering that "+pick(["the next inspection is actually a surprise party for the building","two departments have been swapping shifts without telling the rota clerk","the missing parcel was delivered, just to the wrong version of the address","someone is keeping a private list of who takes the good biscuits","the old noticeboard has been receiving anonymous compliments","a senior official has been using a fake name to join the queue"])+". "+pick(["No evidence yet, only three identical stories and one very nervous witness.","The person named in the rumour has declined to comment and asked for a pen.","It might be true. The details are suspiciously specific."]),
+    p => "A whisper going around "+p.place+": "+pick(["the landlord is planning to rename the building after a minor inconvenience","the staff meeting was moved because the meeting room is allegedly haunted by a former treasurer","someone has been leaving apology gifts before complaints are even filed","the new rule was introduced after one very specific incident involving soup","a familiar face has been visiting after hours with a suspiciously official clipboard"])+". "+p.name+" heard it from "+pick(["the person who waters the plants","a courier who refuses to give their name","the queue at the tea counter","someone's aunt's neighbour"]).". Take it with a grain of salt."
+  ];
+  const gossipTemplates = [
+    p => { const others=people.filter(x=>x.world===p.world&&x.name!==p.name); const a=pick(others),b=pick(others.filter(x=>x.name!==a.name)); return "OVERHEARD AT "+p.place+": "+a.name+" apparently told "+b.name+" that "+pick(["they are only covering the shift until the paperwork catches up","the new uniform makes everyone look like a substitute teacher","they know who keeps taking lunch from the shared fridge","the manager's 'quick chat' lasted longer than the actual workday","they are thinking of transferring, but only if the rumour is true","the mysterious late delivery is definitely not their responsibility"])+". "+p.name+" says the conversation got quiet when the kettle clicked off."; },
+    p => { const others=people.filter(x=>x.world===p.world&&x.name!==p.name); const a=pick(others); return "LOCAL GOSSIP (UNVERIFIED): "+a.name+" was seen leaving "+p.place+" with "+pick(["two takeaway bags and no explanation","the spare key ring","a stack of forms marked CONFIDENTIAL","the office plant that everyone thought was dead","someone else's umbrella and a very rehearsed smile"])+". "+p.name+" says it is probably innocent. Nobody believes that is the whole story."; },
+    p => { const others=people.filter(x=>x.world===p.world&&x.name!==p.name); const a=pick(others); return "Apparently "+a.name+" has been "+pick(["bringing their own mug to meetings so nobody can read the slogan","taking the long route to avoid one particular corridor","asking unusually detailed questions about the staff rota","calling the new supervisor by a nickname nobody else knows","claiming not to like gossip while knowing everyone's business"])+". "+p.name+" would like it noted that this is an observation, not gossip. It is absolutely gossip."; }
+  ];
+  const generatePostText = person => {
+    const roll=Math.random();
+    if(roll<0.23)return pick(rumorTemplates)(person);
+    if(roll<0.46)return pick(gossipTemplates)(person);
+    return pick(templates)(person)+(Math.random()>.45?" "+pick(endings):"");
+  };
   const pick = a => a[Math.floor(Math.random()*a.length)];
   const people = worlds.flatMap(w => w.people.map(([name,emoji,place])=>({name,emoji,place,world:w.name,color:w.color})));
   // Expand each existing setting into original supporting residents, generated locally.
@@ -203,7 +219,7 @@
   const ago = n => n<1?"just now":n+"m ago";
   const makePost = (person, customText) => {
     const replies=makeReplies(person);
-    return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||pick(templates)(person)+" "+(Math.random()>.45?pick(endings):""),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast"])};
+    return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text:customText||generatePostText(person),minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),replies,comments:replies.length,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
   };
   const npcKey=p=>p.world+"|"+p.place+"|"+p.name;
   function saveSeenNPCs(){localStorage.setItem("blinkSeenNPCs",JSON.stringify([...state.seenNPCs]));}
