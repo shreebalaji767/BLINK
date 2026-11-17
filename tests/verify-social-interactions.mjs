@@ -25,10 +25,18 @@ class FakeElement {
   }
   addEventListener(type, callback) { this.listeners[type] = callback; }
   setAttribute(name, value) { this.attributes[name] = value; }
+  matches(selector) {
+    return selector === "[data-social]" && Boolean(this.dataset.social);
+  }
   closest(selector) {
-    if (selector === "button[data-social]" && this.dataset.social) return this;
+    let node = this;
+    while (node) {
+      if (selector === "[data-social]" && node.dataset?.social) return node;
+      node = node.parentElement || null;
+    }
     return null;
   }
+  getAttribute(name) { return this.attributes[name] ?? null; }
   querySelector() { return new FakeElement(); }
 }
 
@@ -71,11 +79,15 @@ const context = {
 vm.runInNewContext(app, context, { timeout: 5000 });
 
 const read = (key) => JSON.parse(localStorage.getItem(key) || "[]");
-const clickSocial = (action, name) => {
+const clickSocial = (action, name, nested = false) => {
   const button = new FakeElement();
   button.dataset = { social: action, person: name };
+  const child = new FakeElement();
+  child.parentElement = button;
+  const target = nested ? child : button;
   documentListeners.click({
-    target: button,
+    target,
+    composedPath: () => nested ? [child, button, elements.get("feed"), document] : [button, elements.get("feed"), document],
     preventDefault() {},
     stopPropagation() {},
   });
@@ -88,7 +100,7 @@ const authors = [...feed.matchAll(/data-person="([^"]+)"/g)].map((m) => m[1]);
 const outgoingName = authors.find((name) => !received.includes(name));
 assert.ok(outgoingName, "feed should expose an NPC profile that can receive a request");
 
-clickSocial("add", outgoingName);
+clickSocial("add", outgoingName, true);
 assert.ok(read("blinkSentRequests").includes(outgoingName), "send request must persist");
 assert.equal(read("blinkFriends").includes(outgoingName), false, "sending must not instantly create a friend");
 
