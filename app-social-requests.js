@@ -274,7 +274,10 @@
   const readLocalArray=key=>{try{const raw=localStorage.getItem(key);const value=raw?JSON.parse(raw):[];return Array.isArray(value)?value:[];}catch(error){console.warn("BLINK could not read local data:",key,error);return [];}};
   const writeLocalArray=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
   const loadSocialSet=key=>new Set(readLocalArray(key).filter(name=>typeof name==="string"&&validSocialNames.has(name)));
-  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string")),postSignatures:new Set(readLocalArray("blinkPostSignatures").filter(value=>typeof value==="string"))};
+  const readLocalValue=key=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}catch(error){console.warn("BLINK could not read local data:",key,error);return null;}};
+  const writeLocalValue=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
+  const savedRelationships=readLocalValue("blinkRelationships");
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string")),postSignatures:new Set(readLocalArray("blinkPostSignatures").filter(value=>typeof value==="string")),relationships:savedRelationships&&typeof savedRelationships==="object"&&!Array.isArray(savedRelationships)?savedRelationships:{}};
   const FEED_STORAGE_KEY="blinkFeedV2";
   const FEED_STORAGE_LIMIT=180;
   const POST_SIGNATURE_LIMIT=500;
@@ -284,7 +287,8 @@
     const posts=state.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>({id:post.id,person:post.person.name,text:post.text,minutes:post.minutes,likes:post.likes,reactions:post.reactions||{},comments:post.comments,origin:post.origin,context:post.context||null,replies:(post.replies||[]).slice(0,16).map(reply=>({person:reply.person.name,text:reply.text,minutes:reply.minutes||0}))}));
     const signatures=[...state.postSignatures].slice(-POST_SIGNATURE_LIMIT);
     writeLocalArray("blinkPostSignatures",signatures);
-    writeLocalArray(FEED_STORAGE_KEY,{version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures});
+    writeLocalArray(FEED_STORAGE_KEY,{version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures,relationships:state.relationships});
+    writeLocalValue("blinkRelationships",state.relationships);
   }
   const ago = n => n<1?"just now":n+"m ago";
   function uniquePostText(person,candidate){
@@ -331,7 +335,7 @@
   function seed(){const pool=unseenNPCs().sort(()=>Math.random()-.5);const batch=pool.slice(0,34);batch.forEach((p,i)=>{state.seenNPCs.add(npcKey(p));const previous=state.posts.length&&Math.random()<.22?pick(state.posts.filter(x=>x.person.name!==p.name)):null;const connected=previous?buildConnectedUpdate(p,previous):null;const post=makePost(p,connected?.text||(Math.random()<.24?pick(openers)+" "+pick(endings):null),connected?.context||null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post);});saveSeenNPCs();}
   function generate(){
     const p=chooseUnseenNPC();
-    const candidates=state.posts.filter(post=>post.person.name!==p.name&&(post.person.world===p.world||post.person.place===p.place)).slice(0,24);
+    const candidates=state.posts.filter(post=>post.person.name!==p.name&&(post.person.world===p.world||post.person.place===p.place||state.relationships[relationshipKey(p.name,post.person.name)])).slice(0,24);
     const previous=candidates.length&&Math.random()<.68?pick(candidates):null;
     const connected=previous?buildConnectedUpdate(p,previous):null;
     const text=connected?.text||(Math.random()<.58?pick(templates)(p)+" "+pick(endings):pick(openers)+" "+pick(endings));
@@ -363,11 +367,23 @@
     state.reactions=saved.reactions&&typeof saved.reactions==="object"?saved.reactions:{};
     return true;
   }
+  const relationshipKey=(a,b)=>JSON.stringify([a,b].sort());
+  function relationshipStatus(score){return score>=3?"ALLY":score<=-3?"RIVAL":"ACQUAINTANCE";}
+  function recordRelationship(a,b,relation){
+    const key=relationshipKey(a,b),entry=state.relationships[key]||{people:[a,b].sort(),score:0,interactions:0,lastRelation:""};
+    const change=relation==="disputing"?-2:relation==="backing up"?2:1;
+    entry.score=Math.max(-12,Math.min(12,entry.score+change));entry.interactions++;entry.lastRelation=relation;state.relationships[key]=entry;
+    return relationshipStatus(entry.score);
+  }
+  function relationshipSummary(person){
+    return Object.values(state.relationships).filter(entry=>Array.isArray(entry.people)&&entry.people.includes(person.name)).sort((a,b)=>b.interactions-a.interactions).slice(0,5).map(entry=>({name:entry.people.find(name=>name!==person.name),status:relationshipStatus(entry.score),interactions:entry.interactions}));
+  }
   function buildConnectedUpdate(person,previous){
     const excerpt=previous.text.replace(/\s+/g," ").slice(0,104);
     const relation=pick(["backing up","disputing","adding context to","following up on","apologising for","asking about"]);
+    const status=recordRelationship(person.name,previous.person.name,relation);
     const opener=relation==="disputing"?"I was there, and that is not quite how it happened.":relation==="apologising for"?"I owe everyone a clarification about this.":"I did not expect to be pulled into this, but here we are.";
-    return {text:opener+" "+person.name+" is "+relation+" "+previous.person.name+"’s post: “"+excerpt+(previous.text.length>104?"…":"")+"” "+pick(["The missing detail is that nobody checked the second notice.","We have now had three separate meetings about the same five minutes.","Please stop forwarding the screenshot without the timestamp.","I am only adding this because the group chat has become a witness statement."]),context:{postId:previous.id,person:previous.person.name,relation,excerpt}};
+    return {text:opener+" "+person.name+" is "+relation+" "+previous.person.name+"’s post: “"+excerpt+(previous.text.length>104?"…":"")+"” "+pick(["The missing detail is that nobody checked the second notice.","We have now had three separate meetings about the same five minutes.","Please stop forwarding the screenshot without the timestamp.","I am only adding this because the group chat has become a witness statement."]),context:{postId:previous.id,person:previous.person.name,relation,excerpt,relationship:status}};
   }
   function profileMarkup(person){
     const own=person.name===observer.name;
@@ -381,8 +397,9 @@
       }
     }
     const posts=state.posts.filter(p=>p.person.name===person.name).sort(()=>Math.random()-.5);
+    const relationships=relationshipSummary(person);
     saveFeed();
-    return `<section class="profile-panel"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar" style="background:${person.color}22">${person.emoji}</div><div class="profile-heading"><div><h2>${escapeHTML(person.name)}</h2><p>${escapeHTML(person.world)} · ${escapeHTML(person.place)}</p><small>${escapeHTML(person.kind||"A resident of the multiverse")}</small></div></div><div class="profile-stats"><span><b>${posts.length}</b> posts in this session</span><span><b>NPC</b> relationship</span></div></div></section><div class="profile-post-heading">POSTS BY ${own?"YOU":escapeHTML(person.name.toUpperCase())}</div>${posts.length?posts.map(p=>`<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${person.color}22">${person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(person.name)}" aria-label="View ${escapeHTML(person.name)} profile">${escapeHTML(person.name)}</button><div class="post-meta">${escapeHTML(person.place)} · ${ago(p.minutes)}</div></div></div><p class="post-text">${escapeHTML(p.text)}</p>${p.context?`<div class="post-context">↳ ${escapeHTML(p.context.relation||"following up on")} <strong>${escapeHTML(p.context.person||"another resident")}</strong>’s earlier post</div>`:""}<div class="post-actions"><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div></div></article>`).join(""):'<div class="empty">No posts from this profile in the current session yet.</div>'}`;
+    return `<section class="profile-panel"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar" style="background:${person.color}22">${person.emoji}</div><div class="profile-heading"><div><h2>${escapeHTML(person.name)}</h2><p>${escapeHTML(person.world)} · ${escapeHTML(person.place)}</p><small>${escapeHTML(person.kind||"A resident of the multiverse")}</small></div></div><div class="profile-stats"><span><b>${posts.length}</b> posts in this session</span><span><b>${relationships.length}</b> known connections</span></div>${relationships.length?`<div class="relationship-list"><strong>KNOWN CONNECTIONS</strong>${relationships.map(link=>`<span><b>${escapeHTML(link.status)}</b> · ${escapeHTML(link.name)} <small>${link.interactions} interactions</small></span>`).join("")}</div>`:""}</div></section><div class="profile-post-heading">POSTS BY ${own?"YOU":escapeHTML(person.name.toUpperCase())}</div>${posts.length?posts.map(p=>`<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${person.color}22">${person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(person.name)}" aria-label="View ${escapeHTML(person.name)} profile">${escapeHTML(person.name)}</button><div class="post-meta">${escapeHTML(person.place)} · ${ago(p.minutes)}</div></div></div><p class="post-text">${escapeHTML(p.text)}</p>${p.context?`<div class="post-context">↳ ${escapeHTML(p.context.relation||"following up on")} <strong>${escapeHTML(p.context.person||"another resident")}</strong>’s earlier post${p.context.relationship?` · <b class="relationship-tag">${escapeHTML(p.context.relationship)}</b>`:""}</div>`:""}<div class="post-actions"><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div></div></article>`).join(""):'<div class="empty">No posts from this profile in the current session yet.</div>'}`;
   }
   function render(){const q=$("#searchInput").value.trim().toLowerCase();
     if(state.view==="profile"){let person=state.profile==="self"?observer:personByName(state.profile);if(!person){person=observer;state.profile="self";}$("#feed").innerHTML=profileMarkup(person);$("#loadMore").style.display="none";$("#feedTitle").textContent=person.name==="You (Observer)"?"My Profile":"NPC Profile";$("#feedSubtitle").textContent="Profile and posts from this corner of the multiverse.";$("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;return;}
