@@ -27,12 +27,14 @@ class FakeElement {
   addEventListener(type, callback) { this.listeners[type] = callback; }
   setAttribute(name, value) { this.attributes[name] = value; }
   matches(selector) {
-    return selector === "[data-social]" && Boolean(this.dataset.social);
+    return (selector === "[data-social]" && Boolean(this.dataset.social))
+      || (selector === "[data-news-action]" && Boolean(this.dataset.newsAction));
   }
   closest(selector) {
     let node = this;
     while (node) {
       if (selector === "[data-social]" && node.dataset?.social) return node;
+      if (selector === "[data-news-action]" && node.dataset?.newsAction) return node;
       node = node.parentElement || null;
     }
     return null;
@@ -116,6 +118,12 @@ assert.ok(Array.isArray(worldNews) && worldNews.length >= 4, "cross-world news d
 assert.ok(worldNews.every(item => item.sources.length >= 2 && item.worlds.length >= 2 && item.updates.length >= 1), "news stories must connect multiple NPC sources and worlds");
 assert.ok(html.includes('data-view="news"'), "navigation must expose the World News desk");
 assert.ok(app.includes('data-news-action="advance"') && app.includes('INVESTIGATING'), "news stories must support persistent follow-up stages");
+const newsButton = new FakeElement();
+newsButton.dataset = { newsAction: "advance", newsId: worldNews[0].id };
+documentListeners.click({ target: newsButton, preventDefault() {}, stopPropagation() {} });
+const advancedNews = JSON.parse(localStorage.getItem("blinkWorldNewsV1") || "[]");
+assert.equal(advancedNews[0].stage, 1, "advancing coverage must move the story into investigation");
+assert.equal(advancedNews[0].updates.length, 2, "each story advancement must append a new report");
 const firstPersistedText = savedFeed.posts[0].text;
 const reloadedElements = new Map(ids.map((id) => [id, new FakeElement(id)]));
 const reloadedNavItems = Array.from({ length: 7 }, () => new FakeElement());
