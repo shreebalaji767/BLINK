@@ -549,6 +549,6 @@
   render();
   // Flush a verified snapshot when the page is backgrounded or closed.
   const flushLocalState=()=>{saveFeed();saveWorldNews();saveSeenNPCs();writeLocalArray("blinkFollowing",[...state.following]);writeLocalArray("blinkSaved",[...state.saved]);};
-  window.addEventListener("pagehide",flushLocalState);
+  if(typeof window!=="undefined")window.addEventListener("pagehide",flushLocalState);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushLocalState();});
 })();
