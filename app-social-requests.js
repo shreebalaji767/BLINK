@@ -279,7 +279,7 @@
   const readDurableValue=(key,valid)=>{const primary=readLocalValue(key);if(valid(primary))return primary;const backup=readLocalValue(key+"Backup");if(valid(backup)){console.warn("BLINK restored "+key+" from its local backup.");return backup;}return null;};
   const writeDurableValue=(key,value)=>{const backupOk=writeLocalValue(key+"Backup",value);const primaryOk=writeLocalValue(key,value);if(!primaryOk&&!backupOk)toast("Browser storage could not save this change. Check site storage permissions or available space.");return primaryOk||backupOk;};
   const savedRelationships=readLocalValue("blinkRelationships");
-  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string")),postSignatures:new Set(readLocalArray("blinkPostSignatures").filter(value=>typeof value==="string")),relationships:savedRelationships&&typeof savedRelationships==="object"&&!Array.isArray(savedRelationships)?savedRelationships:{},worldNews:[]};
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set((readDurableValue("blinkFollowing",Array.isArray)||[]).filter(name=>typeof name==="string")),saved:new Set((readDurableValue("blinkSaved",Array.isArray)||[]).filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set((readDurableValue("blinkSeenNPCs",Array.isArray)||[]).filter(name=>typeof name==="string")),postSignatures:new Set((readDurableValue("blinkPostSignatures",Array.isArray)||[]).filter(value=>typeof value==="string")),relationships:savedRelationships&&typeof savedRelationships==="object"&&!Array.isArray(savedRelationships)?savedRelationships:{},worldNews:[]};
   const FEED_STORAGE_KEY="blinkFeedV2";
   const FEED_STORAGE_LIMIT=180;
   const POST_SIGNATURE_LIMIT=500;
@@ -287,7 +287,7 @@
   function saveFeed(){
     const posts=state.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>({id:post.id,person:post.person.name,text:post.text,minutes:post.minutes,likes:post.likes,reactions:post.reactions||{},comments:post.comments,origin:post.origin,context:post.context||null,replies:(post.replies||[]).slice(0,16).map(reply=>({person:reply.person.name,text:reply.text,minutes:reply.minutes||0}))}));
     const signatures=[...state.postSignatures].slice(-POST_SIGNATURE_LIMIT);
-    writeLocalArray("blinkPostSignatures",signatures);
+    writeDurableValue("blinkPostSignatures",signatures);
     const snapshot={version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures,relationships:state.relationships,savedAt:Date.now()};
     writeDurableValue(FEED_STORAGE_KEY,snapshot);
     writeLocalValue("blinkRelationships",state.relationships);
@@ -331,7 +331,7 @@
     writeLocalArray("blinkSeenNPCs",[...migrated]);
   }
   migrateSeenNPCHistory();
-  function saveSeenNPCs(){writeLocalArray("blinkSeenNPCs",[...state.seenNPCs]);}
+  function saveSeenNPCs(){writeDurableValue("blinkSeenNPCs",[...state.seenNPCs]);}
   function unseenNPCs(){return people.filter(p=>!state.seenNPCs.has(npcKey(p)));}
   function chooseUnseenNPC(){let pool=unseenNPCs();if(!pool.length){state.seenNPCs.clear();saveSeenNPCs();pool=[...people];toast("You've met the whole current roster. Starting a fresh cycle.");}const person=pick(pool);state.seenNPCs.add(npcKey(person));saveSeenNPCs();return person;}
   function seed(){const pool=unseenNPCs().sort(()=>Math.random()-.5);const batch=pool.slice(0,34);batch.forEach((p,i)=>{state.seenNPCs.add(npcKey(p));const previous=state.posts.length&&Math.random()<.22?pick(state.posts.filter(x=>x.person.name!==p.name)):null;const connected=previous?buildConnectedUpdate(p,previous):null;const post=makePost(p,connected?.text||(Math.random()<.24?pick(openers)+" "+pick(endings):null),connected?.context||null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post);});saveSeenNPCs();}
@@ -526,8 +526,8 @@
     switch(b.dataset.action){
       case"like":state.liked.has(id)?state.liked.delete(id):state.liked.add(id);saveFeed();render();break;
       case"react":{const emoji=b.dataset.reaction;if(state.reactions[id]===emoji)delete state.reactions[id];else state.reactions[id]=emoji;saveFeed();render();break;}
-      case"save":state.saved.has(id)?state.saved.delete(id):state.saved.add(id);writeLocalArray("blinkSaved",[...state.saved]);render();toast("Saved locally.");break;
-      case"follow":state.following.has(p.person.name)?state.following.delete(p.person.name):state.following.add(p.person.name);writeLocalArray("blinkFollowing",[...state.following]);render();break;
+      case"save":state.saved.has(id)?state.saved.delete(id):state.saved.add(id);writeDurableValue("blinkSaved",[...state.saved]);render();toast("Saved locally.");break;
+      case"follow":state.following.has(p.person.name)?state.following.delete(p.person.name):state.following.add(p.person.name);writeDurableValue("blinkFollowing",[...state.following]);render();break;
       case"comment":state.openComments.has(id)?state.openComments.delete(id):state.openComments.add(id);render();break;
       case"reply":{const input=card.querySelector(".comment-box input");if(input?.value.trim()){p.replies.push({person:{name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",color:"#777"},text:input.value.trim(),minutes:0});p.comments=p.replies.length;state.openComments.add(id);saveFeed();render();toast("Reply added locally.");}}
     }
@@ -545,6 +545,7 @@
   if(Array.isArray(storedNews)){state.worldNews=storedNews.filter(item=>item&&typeof item.id==="string"&&typeof item.headline==="string"&&Array.isArray(item.sources)&&Array.isArray(item.worlds)&&Array.isArray(item.updates)).slice(0,30);}
   if(!restoreFeed())seed();
   if(!state.worldNews.length){for(let i=0;i<4;i++)createWorldNews();}
+  saveWorldNews();
   saveFeed();
   render();
   // Flush a verified snapshot when the page is backgrounded or closed.
