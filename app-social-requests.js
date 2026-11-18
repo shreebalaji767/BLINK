@@ -279,7 +279,8 @@
   const readDurableValue=(key,valid)=>{const primary=readLocalValue(key);if(valid(primary))return primary;const backup=readLocalValue(key+"Backup");if(valid(backup)){console.warn("BLINK restored "+key+" from its local backup.");return backup;}return null;};
   const writeDurableValue=(key,value)=>{const backupOk=writeLocalValue(key+"Backup",value);const primaryOk=writeLocalValue(key,value);if(!primaryOk&&!backupOk)toast("Browser storage could not save this change. Check site storage permissions or available space.");return primaryOk||backupOk;};
   const savedRelationships=readLocalValue("blinkRelationships");
-  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set((readDurableValue("blinkFollowing",Array.isArray)||[]).filter(name=>typeof name==="string")),saved:new Set((readDurableValue("blinkSaved",Array.isArray)||[]).filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set((readDurableValue("blinkSeenNPCs",Array.isArray)||[]).filter(name=>typeof name==="string")),postSignatures:new Set((readDurableValue("blinkPostSignatures",Array.isArray)||[]).filter(value=>typeof value==="string")),relationships:savedRelationships&&typeof savedRelationships==="object"&&!Array.isArray(savedRelationships)?savedRelationships:{},worldNews:[]};
+  const restoredSavedWorlds=readDurableValue("blinkSavedWorlds",Array.isArray)||[];
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,savedWorlds:restoredSavedWorlds.filter(item=>item&&typeof item.name==="string").slice(0,worlds.length),following:new Set((readDurableValue("blinkFollowing",Array.isArray)||[]).filter(name=>typeof name==="string")),saved:new Set((readDurableValue("blinkSaved",Array.isArray)||[]).filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set((readDurableValue("blinkSeenNPCs",Array.isArray)||[]).filter(name=>typeof name==="string")),postSignatures:new Set((readDurableValue("blinkPostSignatures",Array.isArray)||[]).filter(value=>typeof value==="string")),relationships:savedRelationships&&typeof savedRelationships==="object"&&!Array.isArray(savedRelationships)?savedRelationships:{},worldNews:[]};
   const FEED_STORAGE_KEY="blinkFeedV2";
   const FEED_STORAGE_LIMIT=180;
   const POST_SIGNATURE_LIMIT=500;
@@ -394,6 +395,56 @@
     {status:"AFTERMATH",label:"Aftermath",text:"The immediate disruption has eased. Residents are still arguing about who should file the paperwork."}
   ];
   function saveWorldNews(){writeDurableValue(NEWS_STORAGE_KEY,state.worldNews.slice(0,30));}
+  function saveSavedWorlds(){writeDurableValue("blinkSavedWorlds",state.savedWorlds.slice(0,worlds.length));}
+  function savedWorldRecord(name){return state.savedWorlds.find(item=>item.name===name)||null;}
+  function toggleSavedWorld(name){
+    const existing=savedWorldRecord(name);
+    if(existing){state.savedWorlds=state.savedWorlds.filter(item=>item.name!==name);saveSavedWorlds();renderWorldFilters();toast(name+" removed from Saved Worlds.");return;}
+    state.savedWorlds.unshift({name,savedAt:Date.now(),lastVisited:Date.now(),updates:[]});
+    state.savedWorlds=state.savedWorlds.slice(0,worlds.length);saveSavedWorlds();renderWorldFilters();toast(name+" saved. Its world activity will build while you are away.");
+  }
+  function elapsedLabel(ms){
+    const minutes=Math.max(1,Math.floor(ms/60000));
+    if(minutes<60)return minutes+" minute"+(minutes===1?"":"s");
+    const hours=Math.floor(minutes/60);
+    if(hours<24)return hours+" hour"+(hours===1?"":"s");
+    const days=Math.floor(hours/24);
+    return days+" day"+(days===1?"":"s");
+  }
+  function processWorldCatchups(){
+    const now=Date.now();let changed=false;
+    state.savedWorlds.forEach(record=>{
+      const elapsed=now-(Number(record.lastVisited)||Number(record.savedAt)||now);
+      if(elapsed<60000)return;
+      const count=Math.min(4,Math.max(1,Math.floor(elapsed/(30*60000))));
+      const residents=people.filter(person=>person.world===record.name);
+      if(!residents.length){record.lastVisited=now;changed=true;return;}
+      for(let i=0;i<count;i++){
+        const person=pick(residents);
+        const text=generatePostText(person);
+        const post=makePost(person,text,{relation:"world activity",person:"World Watch",relationship:"WORLD UPDATE",worldWatchId:record.name});
+        post.minutes=0;state.posts.unshift(post);state.generated++;
+        const update={id:post.id,at:now-i*60000,npc:person.name,text:post.text,postId:post.id};
+        record.updates=Array.isArray(record.updates)?record.updates:[];
+        record.updates.unshift(update);record.updates=record.updates.slice(0,40);
+      }
+      record.lastVisited=now;record.lastAway=elapsed;record.lastUpdateCount=count;changed=true;
+    });
+    if(changed){state.posts=state.posts.slice(0,FEED_STORAGE_LIMIT);saveSavedWorlds();saveFeed();}
+  }
+  function savedWorldsMarkup(){
+    processWorldCatchups();
+    if(!state.savedWorlds.length)return '<section class="news-intro"><div><span class="eyebrow">YOUR MULTIVERSE WATCHLIST</span><h2>No saved worlds yet</h2><p>Save a world using the ☆ beside any world filter. When you return later, BLINK will generate local NPC activity and a catch-up log for the time you were away.</p></div></section><div class="empty">Your watchlist is empty. Choose a world from the left-hand filters and tap ☆ Save.</div>';
+    return '<section class="news-intro"><div><span class="eyebrow">YOUR MULTIVERSE WATCHLIST</span><h2>Worlds kept under observation</h2><p>Revisit a saved world to see what changed while you were away. Catch-up events also appear as NPC posts in your main feed. This is a local simulation, not live network activity.</p></div></section>'+state.savedWorlds.map(record=>{
+      const residents=people.filter(person=>person.world===record.name);
+      const updates=Array.isArray(record.updates)?record.updates:[];
+      const since=Number(record.lastAway)>0?"Last visit was "+elapsedLabel(record.lastAway)+" ago":"Recently saved";
+      return '<article class="saved-world-card"><div class="saved-world-head"><div><span class="eyebrow">WORLD WATCH</span><h2>'+escapeHTML(record.name)+'</h2><p>'+residents.length.toLocaleString()+' NPC residents · '+since+'</p></div><button class="social-button subtle" data-world-action="remove" data-world-name="'+escapeHTML(record.name)+'">Remove</button></div><div class="saved-world-stats"><span><b>'+updates.length+'</b> recorded changes</span><span><b>'+residents.length+'</b> residents</span><span>Saved '+new Date(record.savedAt||Date.now()).toLocaleString()+'</span></div><div class="saved-world-updates">'+(updates.length?updates.slice(0,12).map(update=>'<div class="saved-world-update"><time>'+new Date(update.at||Date.now()).toLocaleString()+'</time><strong>'+escapeHTML(update.npc||"Local resident")+'</strong><p>'+escapeHTML(update.text||"A new development was reported.")+'</p></div>').join(""):'<div class="empty">No changes recorded yet. Return after some time to receive the first catch-up report.</div>')+'</div><button class="social-button" data-world-action="explore" data-world-name="'+escapeHTML(record.name)+'">Explore '+escapeHTML(record.name)+' →</button></article>';
+    }).join('');
+  }
+  function renderWorldFilters(){
+    $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>'<div class="world-filter-row"><button class="world-filter" data-world="'+escapeHTML(w.name)+'"><i class="world-dot" style="background:'+w.color+'"></i>'+escapeHTML(w.name)+'</button><button class="world-save-toggle" data-save-world="'+escapeHTML(w.name)+'" title="'+(savedWorldRecord(w.name)?"Remove from":"Save to")+' Saved Worlds" aria-label="'+(savedWorldRecord(w.name)?"Remove "+escapeHTML(w.name)+" from":"Save "+escapeHTML(w.name)+" to")+' Saved Worlds">'+(savedWorldRecord(w.name)?"★":"☆")+'</button></div>').join('');
+  }
   function publishNewsPost(event,sourceName,text,status){
     const person=personByName(sourceName);if(!person)return null;
     const post=makePost(person,text,{relation:"reporting on",person:"World News Desk",relationship:"NEWS · "+status,newsEventId:event.id});
@@ -475,7 +526,8 @@
     return `<section class="profile-panel"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar" style="background:${person.color}22">${person.emoji}</div><div class="profile-heading"><div><h2>${escapeHTML(person.name)}</h2><p>${escapeHTML(person.world)} · ${escapeHTML(person.place)}</p><small>${escapeHTML(person.kind||"A resident of the multiverse")}</small></div></div><div class="profile-stats"><span><b>${posts.length}</b> posts in this session</span><span><b>${relationships.length}</b> known connections</span></div>${relationships.length?`<div class="relationship-list"><strong>KNOWN CONNECTIONS</strong>${relationships.map(link=>`<span><b>${escapeHTML(link.status)}</b> · ${escapeHTML(link.name)} <small>${link.interactions} interactions</small></span>`).join("")}</div>`:""}</div></section><div class="profile-post-heading">POSTS BY ${own?"YOU":escapeHTML(person.name.toUpperCase())}</div>${posts.length?posts.map(p=>`<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${person.color}22">${person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(person.name)}" aria-label="View ${escapeHTML(person.name)} profile">${escapeHTML(person.name)}</button><div class="post-meta">${escapeHTML(person.place)} · ${ago(p.minutes)}</div></div></div><p class="post-text">${escapeHTML(p.text)}</p>${p.context?`<div class="post-context">↳ ${escapeHTML(p.context.relation||"following up on")} <strong>${escapeHTML(p.context.person||"another resident")}</strong>’s earlier post${p.context.relationship?` · <b class="relationship-tag">${escapeHTML(p.context.relationship)}</b>`:""}</div>`:""}<div class="post-actions"><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div></div></article>`).join(""):'<div class="empty">No posts from this profile in the current session yet.</div>'}`;
   }
   function render(){const q=$("#searchInput").value.trim().toLowerCase();
-    if(state.view==="news"){$("#feed").innerHTML=worldNewsMarkup();$("#loadMore").style.display="none";$("#feedTitle").textContent="World News";$("#feedSubtitle").textContent="A rolling cross-world news desk, powered by NPC reports.";$(" #postCount".trim()).textContent=state.worldNews.length.toLocaleString();$("#followingCount").textContent=state.following.size;return;}
+    if(state.view==="news"){$("#feed").innerHTML=worldNewsMarkup();$("#loadMore").style.display="none";$("#feedTitle").textContent="World News";$("#feedSubtitle").textContent="A rolling cross-world news desk, powered by NPC reports.";$("#postCount").textContent=state.worldNews.length.toLocaleString();$("#followingCount").textContent=state.following.size;return;}
+    if(state.view==="saved-worlds"){$("#feed").innerHTML=savedWorldsMarkup();$("#loadMore").style.display="none";$("#feedTitle").textContent="Saved Worlds";$("#feedSubtitle").textContent="A watchlist of places that keep changing while you are away.";$("#postCount").textContent=state.savedWorlds.length.toLocaleString();$("#followingCount").textContent=state.following.size;return;}
     if(state.view==="profile"){let person=state.profile==="self"?observer:personByName(state.profile);if(!person){person=observer;state.profile="self";}$("#feed").innerHTML=profileMarkup(person);$("#loadMore").style.display="none";$("#feedTitle").textContent=person.name==="You (Observer)"?"My Profile":"NPC Profile";$("#feedSubtitle").textContent="Profile and posts from this corner of the multiverse.";$("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;return;}
     if(state.view==="directory"){let directory=people.filter(p=>(state.world==="All"||p.world===state.world)&&(!q||(p.name+" "+p.world+" "+p.place+" "+(p.kind||"Named background NPC")).toLowerCase().includes(q)));const shownPeople=directory.slice(0,state.visible);$("#feed").innerHTML=shownPeople.length?shownPeople.map(p=>`<article class="npc-card"><div class="avatar" style="background:${p.color}22">${p.emoji}</div><div class="npc-card-main"><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.world)} · ${escapeHTML(p.place)}</small><span>${escapeHTML(p.kind||"Named background NPC")}</span></div><div class="npc-card-actions"><button class="social-button subtle" data-social="profile" data-person="${escapeHTML(p.name)}">View profile</button></div></article>`).join(""):'<div class="empty">No NPCs match this search. Try another name, setting or world.</div>';$("#loadMore").style.display=directory.length>state.visible?"block":"none";$("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;$("#feedTitle").textContent="NPC Directory";$("#feedSubtitle").textContent=people.length.toLocaleString()+" background residents across "+worlds.length+" fiction categories. Search by name, role, world or location.";$("#trendingTopics").innerHTML=["#NPCShiftProblems","#BackgroundCharacterEnergy","#MultiversePaperwork","#SideQuestUnion","#PortalCommute"].map((t,i)=>`<div class="topic"><small>0${i+1} · DIRECTORY</small><strong>${t}</strong><span>Resident chatter</span></div>`).join("");$("#onlineList").innerHTML=people.slice(0,5).map(p=>`<div class="online-person"><div class="online-avatar" style="background:${p.color}22">${p.emoji}</div><div><strong>${escapeHTML(p.name)}</strong><small>${p.world} · ONLINE</small></div></div>`).join("");$("#chaosLevel").textContent=state.generated>20?"CRITICAL":state.generated>8?"ELEVATED":"UNSTABLE";return;}
     let list=[...state.posts];if(state.view==="following")list=list.filter(p=>state.following.has(p.person.name));if(state.view==="saved")list=list.filter(p=>state.saved.has(p.id));if(state.view==="trending")list.sort((a,b)=>b.likes-a.likes);if(state.world!=="All")list=list.filter(p=>p.person.world===state.world);if(q)list=list.filter(p=>(p.text+" "+p.person.name+" "+p.person.world+" "+p.person.place).toLowerCase().includes(q));if(state.sort==="oldest")list.reverse();const shown=list.slice(0,state.visible);
@@ -508,6 +560,13 @@
       return;
     }
     if(!target)return;
+    const worldAction=target.closest("[data-world-action]");
+    if(worldAction){
+      const name=worldAction.dataset.worldName,action=worldAction.dataset.worldAction;
+      if(action==="remove"){state.savedWorlds=state.savedWorlds.filter(item=>item.name!==name);saveSavedWorlds();renderWorldFilters();render();toast(name+" removed from Saved Worlds.");}
+      else if(action==="explore"){state.world=name;state.view="directory";state.visible=14;render();}
+      return;
+    }
     const newsAction=target.closest("[data-news-action]");
     if(newsAction){const action=newsAction.dataset.newsAction,id=newsAction.dataset.newsId,event=state.worldNews.find(item=>item.id===id);if(action==="new"){createWorldNews();render();toast("A new multiverse story has broken.");}else if(action==="advance")advanceWorldNews(id);else if(action==="bookmark"&&event){event.bookmarked=!event.bookmarked;saveWorldNews();render();toast(event.bookmarked?"Dossier bookmarked.":"Dossier bookmark removed.");}else if(action==="note-save"&&event){const field=$("#news-note-"+id);event.note=String(field?.value||"").slice(0,1200);saveWorldNews();render();toast("Private case note saved on this device.");}return;}
     const profile=target.closest("[data-open-profile]");
@@ -532,8 +591,8 @@
       case"reply":{const input=card.querySelector(".comment-box input");if(input?.value.trim()){p.replies.push({person:{name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",color:"#777"},text:input.value.trim(),minutes:0});p.comments=p.replies.length;state.openComments.add(id);saveFeed();render();toast("Reply added locally.");}}
     }
   },true);
-  $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>`<button class="world-filter" data-world="${w.name}"><i class="world-dot" style="background:${w.color}"></i>${w.name}</button>`).join("");
-  $("#worldFilters").addEventListener("click",e=>{const b=e.target.closest("[data-world]");if(!b)return;state.world=b.dataset.world;document.querySelectorAll(".world-filter").forEach(x=>x.classList.toggle("active",x===b));state.visible=14;render()});
+  renderWorldFilters();
+  $("#worldFilters").addEventListener("click",e=>{const save=e.target.closest("[data-save-world]");if(save){e.preventDefault();e.stopPropagation();toggleSavedWorld(save.dataset.saveWorld);return;}const b=e.target.closest("[data-world]");if(!b)return;state.world=b.dataset.world;document.querySelectorAll(".world-filter").forEach(x=>x.classList.toggle("active",x===b));state.visible=14;render()});
   document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>{state.view=b.dataset.view;if(state.view==="profile")state.profile="self";document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x===b));render()}));
   $("#generateBtn").addEventListener("click",generate);$("#shuffleBtn").addEventListener("click",()=>{state.posts.sort(()=>Math.random()-.5);state.sort="latest";render();toast("Timeline scrambled.")});
   $("#searchInput").addEventListener("input",()=>{state.visible=14;render()});$("#loadMore").addEventListener("click",()=>{state.visible+=12;render()});
