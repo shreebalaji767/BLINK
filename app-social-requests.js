@@ -399,12 +399,31 @@
     event.postIds.unshift(post.id);event.postIds=event.postIds.slice(0,20);
     saveFeed();return post;
   }
+  function publishNewsDiscussion(event,person,status){
+    if(!person)return null;
+    const angles=[
+      "I have questions about the official explanation, especially the part nobody has explained.",
+      "People in my district are already sharing three versions of this story. Only one includes a timestamp.",
+      "I am not an expert, but I did attend the meeting where the warning sign was spelled incorrectly.",
+      "Can confirm the disruption reached our world. The local committee has responded by forming another committee.",
+      "This sounds familiar. We had a nearly identical incident, except ours involved a very upset delivery pigeon.",
+      "Please remember the residents doing the actual cleanup while everyone else argues over the headline."
+    ];
+    const post=makePost(person,person.name+" weighs in on “"+event.headline+"”: "+pick(angles),{relation:"reacting to",person:"World News Desk",relationship:"NEWS · DISCUSSION",newsEventId:event.id});
+    post.minutes=0;state.posts.unshift(post);state.posts=state.posts.slice(0,FEED_STORAGE_LIMIT);
+    state.generated++;event.postIds=Array.isArray(event.postIds)?event.postIds:[];
+    event.postIds.unshift(post.id);event.postIds=event.postIds.slice(0,20);
+    event.discussants=Array.isArray(event.discussants)?event.discussants:[];
+    if(!event.discussants.includes(person.name))event.discussants.push(person.name);
+    saveFeed();return post;
+  }
   function createWorldNews(){
     const brief=pick(newsBriefs),pool=[...people].sort(()=>Math.random()-.5),sources=[];
     for(const person of pool){if(!sources.some(source=>source.world===person.world))sources.push(person);if(sources.length===3)break;}
-    const event={id:"news-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),category:brief.category,headline:brief.headline,summary:brief.summary,worlds:sources.map(person=>person.world),sources:sources.map(person=>person.name),stage:0,updates:[{source:sources[0].name,text:"Initial report filed from "+sources[0].place+". "+brief.summary,minutes:0}],postIds:[]};
+    const event={id:"news-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),category:brief.category,headline:brief.headline,summary:brief.summary,worlds:sources.map(person=>person.world),sources:sources.map(person=>person.name),stage:0,updates:[{source:sources[0].name,text:"Initial report filed from "+sources[0].place+". "+brief.summary,minutes:0}],postIds:[],discussants:[]};
     state.worldNews.unshift(event);state.worldNews=state.worldNews.slice(0,30);
     sources.slice(0,2).forEach((person,index)=>publishNewsPost(event,person.name,index===0?"First report: "+event.headline+". "+event.summary:"A second witness in "+person.place+" has independently posted about "+event.headline.toLowerCase()+". The details are not lining up neatly.",newsStages[0].status));
+    publishNewsDiscussion(event,sources[2],newsStages[0].status);
     saveWorldNews();return event;
   }
   function advanceWorldNews(id){
@@ -416,7 +435,10 @@
     const updateText=stage.text+" "+pick(variations);
     event.updates.unshift({source:sourceName,text:updateText,minutes:0});
     publishNewsPost(event,sourceName,stage.label+": "+event.headline+". "+updateText,stage.status);
-    saveWorldNews();render();toast("Story updated: "+stage.label+". A new NPC report reached the feed.");
+    const discussionPool=people.filter(person=>!event.sources.includes(person.name)&&!event.discussants.includes(person.name));
+    const outsideWorld=discussionPool.filter(person=>!event.worlds.includes(person.world));
+    publishNewsDiscussion(event,pick(outsideWorld.length?outsideWorld:discussionPool),stage.status);
+    saveWorldNews();render();toast("Story updated: "+stage.label+". NPC reports and reactions reached the feed.");
   }
   function worldNewsMarkup(){
     const q=$("#searchInput").value.trim().toLowerCase();
