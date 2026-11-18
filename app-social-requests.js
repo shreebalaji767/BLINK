@@ -323,12 +323,11 @@
       }
     }
     const posts=state.posts.filter(p=>p.person.name===person.name).sort(()=>Math.random()-.5);
-    const isFriend=state.friends.has(person.name), sent=state.sentRequests.has(person.name), incoming=state.receivedRequests.has(person.name);
-    return `<section class="profile-panel"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar" style="background:${person.color}22">${person.emoji}</div><div class="profile-heading"><div><h2>${escapeHTML(person.name)}</h2><p>${escapeHTML(person.world)} · ${escapeHTML(person.place)}</p><small>${escapeHTML(person.kind||"A resident of the multiverse")}</small></div><div class="profile-buttons">${own?'<span class="profile-self">YOUR PROFILE</span>':isFriend?'<button class="social-button accepted" disabled>✓ Friends</button>':incoming?'<button class="social-button" data-social="accept" data-person="${escapeHTML(person.name)}">Accept request</button><button class="social-button subtle" data-social="decline" data-person="${escapeHTML(person.name)}">Decline</button>':sent?'<button class="social-button subtle" disabled>Request sent</button>':'<button class="social-button" data-social="add" data-person="${escapeHTML(person.name)}">＋ Send friend request</button>'}</div></div><div class="profile-stats"><span><b>${posts.length}</b> posts in this session</span><span><b>${isFriend?"Friend":sent?"Pending":incoming?"Wants to connect":"NPC"}</b> relationship</span></div></div></section><div class="profile-post-heading">POSTS BY ${own?"YOU":escapeHTML(person.name.toUpperCase())}</div>${posts.length?posts.map(p=>`<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${person.color}22">${person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(person.name)}" aria-label="View ${escapeHTML(person.name)} profile">${escapeHTML(person.name)}</button><div class="post-meta">${escapeHTML(person.place)} · ${ago(p.minutes)}</div></div></div><p class="post-text">${escapeHTML(p.text)}</p><div class="post-actions"><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div></div></article>`).join(""):'<div class="empty">No posts from this profile in the current session yet.</div>'}`;
+    return `<section class="profile-panel"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar" style="background:${person.color}22">${person.emoji}</div><div class="profile-heading"><div><h2>${escapeHTML(person.name)}</h2><p>${escapeHTML(person.world)} · ${escapeHTML(person.place)}</p><small>${escapeHTML(person.kind||"A resident of the multiverse")}</small></div></div><div class="profile-stats"><span><b>${posts.length}</b> posts in this session</span><span><b>${isFriend?"Friend":sent?"Pending":incoming?"Wants to connect":"NPC"}</b> relationship</span></div></div></section><div class="profile-post-heading">POSTS BY ${own?"YOU":escapeHTML(person.name.toUpperCase())}</div>${posts.length?posts.map(p=>`<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${person.color}22">${person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(person.name)}" aria-label="View ${escapeHTML(person.name)} profile">${escapeHTML(person.name)}</button><div class="post-meta">${escapeHTML(person.place)} · ${ago(p.minutes)}</div></div></div><p class="post-text">${escapeHTML(p.text)}</p><div class="post-actions"><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><span class="post-origin">${p.origin}</span></div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div></div></article>`).join(""):'<div class="empty">No posts from this profile in the current session yet.</div>'}`;
   }
   function render(){const q=$("#searchInput").value.trim().toLowerCase();
     if(state.view==="profile"){let person=state.profile==="self"?observer:personByName(state.profile);if(!person){person=observer;state.profile="self";}$("#feed").innerHTML=profileMarkup(person);$("#loadMore").style.display="none";$("#feedTitle").textContent=person.name==="You (Observer)"?"My Profile":"NPC Profile";$("#feedSubtitle").textContent="Profile and posts from this corner of the multiverse.";$("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;saveSocial();return;}
-    if(state.view==="directory"){let directory=people.filter(p=>(state.world==="All"||p.world===state.world)&&(!q||(p.name+" "+p.world+" "+p.place+" "+(p.kind||"Named background NPC")).toLowerCase().includes(q)));const shownPeople=directory.slice(0,state.visible);$("#feed").innerHTML=shownPeople.length?shownPeople.map(p=>`<article class="npc-card"><div class="avatar" style="background:${p.color}22">${p.emoji}</div><div class="npc-card-main"><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.world)} · ${escapeHTML(p.place)}</small><span>${escapeHTML(p.kind||"Named background NPC")}</span></div><div class="npc-card-actions"><button class="social-button subtle" data-social="profile" data-person="${escapeHTML(p.name)}">View profile</button>${state.friends.has(p.name)?'<button class="social-button accepted" disabled>✓ Friends</button>':state.sentRequests.has(p.name)?'<button class="social-button subtle" disabled>Request sent</button>':state.receivedRequests.has(p.name)?'<button class="social-button" data-social="accept" data-person="${escapeHTML(p.name)}">Accept request</button>':'<button class="social-button" data-social="add" data-person="${escapeHTML(p.name)}">＋ Send friend request</button>'}</div></article>`).join(""):'<div class="empty">No NPCs match this search. Try another name, setting or world.</div>';$("#loadMore").style.display=directory.length>state.visible?"block":"none";$("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;$("#feedTitle").textContent="NPC Directory";$("#feedSubtitle").textContent=people.length.toLocaleString()+" background residents across "+worlds.length+" fiction categories. Search by name, role, world or location.";$("#trendingTopics").innerHTML=["#NPCShiftProblems","#BackgroundCharacterEnergy","#MultiversePaperwork","#SideQuestUnion","#PortalCommute"].map((t,i)=>`<div class="topic"><small>0${i+1} · DIRECTORY</small><strong>${t}</strong><span>Resident chatter</span></div>`).join("");$("#onlineList").innerHTML=people.slice(0,5).map(p=>`<div class="online-person"><div class="online-avatar" style="background:${p.color}22">${p.emoji}</div><div><strong>${escapeHTML(p.name)}</strong><small>${p.world} · ONLINE</small></div></div>`).join("");$("#chaosLevel").textContent=state.generated>20?"CRITICAL":state.generated>8?"ELEVATED":"UNSTABLE";return;}
+    if(state.view==="directory"){let directory=people.filter(p=>(state.world==="All"||p.world===state.world)&&(!q||(p.name+" "+p.world+" "+p.place+" "+(p.kind||"Named background NPC")).toLowerCase().includes(q)));const shownPeople=directory.slice(0,state.visible);$("#feed").innerHTML=shownPeople.length?shownPeople.map(p=>`<article class="npc-card"><div class="avatar" style="background:${p.color}22">${p.emoji}</div><div class="npc-card-main"><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.world)} · ${escapeHTML(p.place)}</small><span>${escapeHTML(p.kind||"Named background NPC")}</span></div><div class="npc-card-actions"><button class="social-button subtle" data-social="profile" data-person="${escapeHTML(p.name)}">View profile</button></article>`).join(""):'<div class="empty">No NPCs match this search. Try another name, setting or world.</div>';$("#loadMore").style.display=directory.length>state.visible?"block":"none";$("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;$("#feedTitle").textContent="NPC Directory";$("#feedSubtitle").textContent=people.length.toLocaleString()+" background residents across "+worlds.length+" fiction categories. Search by name, role, world or location.";$("#trendingTopics").innerHTML=["#NPCShiftProblems","#BackgroundCharacterEnergy","#MultiversePaperwork","#SideQuestUnion","#PortalCommute"].map((t,i)=>`<div class="topic"><small>0${i+1} · DIRECTORY</small><strong>${t}</strong><span>Resident chatter</span></div>`).join("");$("#onlineList").innerHTML=people.slice(0,5).map(p=>`<div class="online-person"><div class="online-avatar" style="background:${p.color}22">${p.emoji}</div><div><strong>${escapeHTML(p.name)}</strong><small>${p.world} · ONLINE</small></div></div>`).join("");$("#chaosLevel").textContent=state.generated>20?"CRITICAL":state.generated>8?"ELEVATED":"UNSTABLE";return;}
     let list=[...state.posts];if(state.view==="following")list=list.filter(p=>state.following.has(p.person.name));if(state.view==="saved")list=list.filter(p=>state.saved.has(p.id));if(state.view==="trending")list.sort((a,b)=>b.likes-a.likes);if(state.world!=="All")list=list.filter(p=>p.person.world===state.world);if(q)list=list.filter(p=>(p.text+" "+p.person.name+" "+p.person.world+" "+p.person.place).toLowerCase().includes(q));if(state.sort==="oldest")list.reverse();const shown=list.slice(0,state.visible);
     $("#feed").innerHTML=shown.length?shown.map(p=>{const liked=state.liked.has(p.id),saved=state.saved.has(p.id);return `<article class="post" data-id="${p.id}"><div class="post-top"><div class="avatar" style="background:${p.person.color}22">${p.person.emoji}</div><div class="post-identity"><button type="button" class="post-name profile-link" data-social="profile" data-person="${escapeHTML(p.person.name)}" aria-label="View ${escapeHTML(p.person.name)} profile">${escapeHTML(p.person.name)} <span class="verified">✳</span></button><div class="post-meta">${escapeHTML(p.person.place)} · ${ago(p.minutes)}</div></div><span class="world-tag">${escapeHTML(p.person.world)}</span></div><p class="post-text">${escapeHTML(p.text)}</p><div class="post-actions"><button class="action ${liked?"liked":""}" data-action="like">♥ ${(p.likes+(liked?1:0)).toLocaleString()}</button><button class="action" data-action="comment">▢ View comments (${p.replies.length})</button><button class="action ${saved?"saved":""}" data-action="save">${saved?"▣ Saved":"▱ Save"}</button><button class="action" data-action="follow">${state.following.has(p.person.name)?"Following":"＋ Follow"}</button><span class="post-origin">${p.origin}</span></div><div class="reaction-bar" aria-label="Post reactions">${reactionOptions.map(r=>{const selected=state.reactions[p.id]===r.emoji;return `<button class="reaction-button ${selected?"selected":""}" data-action="react" data-reaction="${r.emoji}" aria-label="${r.name}" title="${r.name}">${r.emoji}<span>${((p.reactions&&p.reactions[r.emoji])||0)+(selected?1:0)}</span></button>`}).join("")}</div><div class="comments-panel ${state.openComments.has(p.id)?"open":""}"><div class="reply-list">${p.replies.map(r=>`<div class="reply-item"><div class="reply-avatar" style="background:${r.person.color}22">${r.person.emoji}</div><div class="reply-content"><strong>${escapeHTML(r.person.name)}</strong><small>${escapeHTML(r.person.place)} · ${ago(r.minutes)}</small><p>${escapeHTML(r.text)}</p></div></div>`).join("")}</div><div class="comment-box"><input maxlength="180" placeholder="Add a reply to this fictional disaster…"><button data-action="reply">Reply</button></div></div></article>`}).join(""):'<div class="empty">Nothing in this corner of the multiverse yet.<br>Generate some chaos or change your filters.</div>';
     $("#postCount").textContent=state.posts.length.toLocaleString();$("#followingCount").textContent=state.following.size;$("#loadMore").style.display=list.length>state.visible?"block":"none";$("#feedTitle").textContent=state.world!=="All"?state.world:({feed:"For You",following:"Following",trending:"Trending",saved:"Saved posts",directory:"NPC Directory"}[state.view]||"For You");$("#feedSubtitle").textContent=state.view==="trending"?"The loudest nonsense across known realities.":state.view==="saved"?"Your carefully curated collection of fictional chaos.":"Unfiltered thoughts from across fictional reality.";
@@ -351,63 +350,11 @@
       e.stopPropagation();
       const rawName=social.dataset?.person||social.getAttribute?.("data-person");
       const action=social.dataset?.social||social.getAttribute?.("data-social");
-      if(!rawName||!action)return;
-      // Resolve names against the canonical directory. HTML escaping, Unicode
-      // normalization, or harmless whitespace/case differences must not make
-      // a real directory NPC appear missing.
-      const normalizeNPCName=value=>String(value??"").normalize("NFKC").trim().replace(/\\s+/g," ").toLocaleLowerCase();
-      const matchedPerson=personByName(rawName)||people.find(person=>normalizeNPCName(person.name)===normalizeNPCName(rawName));
-      const name=matchedPerson?.name||rawName;
-      if(action==="profile"){
-        state.profile=name;state.view="profile";state.world="All";
-      }else if(action==="add"){
-        if(!matchedPerson||!validSocialNames.has(name)||name===observer.name){
-          toast("That NPC is no longer in the directory. Reopen the NPC Directory and try again.");
-          return;
-        }
-        if(state.receivedRequests.has(name)){
-          render();
-          toast(name+" has already sent you a request. Accept it in Friends & Requests.");
-          return;
-        }
-        if(state.friends.has(name)||state.sentRequests.has(name)){
-          render();
-          toast(state.friends.has(name)?"You are already friends with "+name+".":"Your request to "+name+" is already pending.");
-          return;
-        }
-        // Update the clicked control immediately, before any re-render or storage work.
-        state.sentRequests.add(name);
-        addNotification("Friend request sent to "+name+".","sent");
-        social.textContent="✓ Request sent";
-        social.disabled=true;
-        social.classList.add("accepted");
-        social.setAttribute("aria-label","Friend request sent to "+name);
-      }else if(action==="accept"){
-        if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
-        state.receivedRequests.delete(name);
-        state.sentRequests.delete(name);
-        state.handledIncomingRequests.add(name);
-        state.friends.add(name);
-        addNotification("You accepted "+name+"’s friend request.","accepted");
-        toast("You are now connected with "+name+".");
-      }else if(action==="decline"){
-        if(!validSocialNames.has(name)||!state.receivedRequests.has(name))return;
-        state.receivedRequests.delete(name);
-        state.handledIncomingRequests.add(name);
-        addNotification("You declined "+name+"’s friend request.","declined");
-        toast("Friend request declined.");
-      }else if(action==="cancel"){
-        // Withdraw the outgoing request entirely; it must disappear from Sent Requests.
-        if(!state.sentRequests.has(name))return;
-        state.sentRequests.delete(name);
-        addNotification("You cancelled your friend request to "+name+".","info");
-      }else{return;}
-      saveSocial();
-      render();
-      if(action==="add")toast("Friend request sent to "+name+".");
-      else if(action==="accept")toast("You are now connected with "+name+".");
-      else if(action==="decline")toast("Friend request declined.");
-      else if(action==="cancel")toast("Request to "+name+" cancelled and removed from Sent Requests.");
+      if(action==="profile"&&rawName){
+        const normalizeNPCName=value=>String(value??"").normalize("NFKC").trim().replace(/\\s+/g," ").toLocaleLowerCase();
+        const person=personByName(rawName)||people.find(candidate=>normalizeNPCName(candidate.name)===normalizeNPCName(rawName));
+        if(person){state.profile=person.name;state.view="profile";state.world="All";render();}
+      }
       return;
     }
     if(!target)return;
