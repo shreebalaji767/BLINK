@@ -72,12 +72,14 @@ const localStorage = {
 };
 const math = Object.create(Math);
 math.random = () => 0;
+let testClock = Date.now();
+class TestDate extends Date { static now() { return testClock; } }
 const context = {
   document,
   Element: FakeElement,
   localStorage,
   Math: math,
-  Date,
+  Date: TestDate,
   console,
   setTimeout: () => 1,
   clearTimeout: () => {},
@@ -185,13 +187,13 @@ const reloadedDocument = {
   },
   addEventListener(type, callback) { reloadedListeners[type] = callback; },
 };
+testClock += 2 * 60 * 60 * 1000;
 vm.runInNewContext(app, {
   document: reloadedDocument,
   Element: FakeElement,
   localStorage,
   Math: math,
-  Date,
-  console,
+  Date: TestDate,  console,
   setTimeout: () => 1,
   clearTimeout: () => {},
 }, { timeout: 5000 });
@@ -206,8 +208,12 @@ assert.ok(reloadedElements.get("feed").innerHTML.includes("Bookmarked"), "news b
 assert.ok(reloadedElements.get("feed").innerHTML.includes("Check the second witness timestamp."), "private dossier notes must survive a refresh");
 reloadedNavItems[4].dataset.view = "saved-worlds";
 reloadedNavItems[4].listeners.click();
-assert.ok(reloadedElements.get("feed").innerHTML.includes("Saved Worlds"), "saved worlds page must render after navigation");
+assert.equal(reloadedElements.get("feedTitle").textContent, "Saved Worlds", "saved worlds page must render after navigation");
 assert.ok(reloadedElements.get("feed").innerHTML.includes("Fantasy"), "saved world must remain visible after reload");
+const savedWorldRecords = JSON.parse(localStorage.getItem("blinkSavedWorlds"));
+assert.ok(savedWorldRecords[0].updates.length > 0, "revisiting after elapsed time must generate a saved-world catch-up history");
+const feedWithWorldUpdates = JSON.parse(localStorage.getItem("blinkFeedV2"));
+assert.ok(feedWithWorldUpdates.posts.some(post => post.context && post.context.worldWatchId === "Fantasy"), "world changes must also appear as NPC posts in the main feed");
 
 console.log("BLINK persistence and connected-conversation regression tests passed.");
 console.log("BLINK no-friend-request regression tests passed.");
