@@ -275,7 +275,9 @@
   const writeLocalArray=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
   const loadSocialSet=key=>new Set(readLocalArray(key).filter(name=>typeof name==="string"&&validSocialNames.has(name)));
   const readLocalValue=key=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}catch(error){console.warn("BLINK could not read local data:",key,error);return null;}};
-  const writeLocalValue=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
+  const writeLocalValue=(key,value)=>{try{const serialized=JSON.stringify(value);localStorage.setItem(key,serialized);if(localStorage.getItem(key)!==serialized)throw new Error("Local storage read-back verification failed");return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
+  const readDurableValue=(key,valid)=>{const primary=readLocalValue(key);if(valid(primary))return primary;const backup=readLocalValue(key+"Backup");if(valid(backup)){console.warn("BLINK restored "+key+" from its local backup.");return backup;}return null;};
+  const writeDurableValue=(key,value)=>{const backupOk=writeLocalValue(key+"Backup",value);const primaryOk=writeLocalValue(key,value);if(!primaryOk&&!backupOk)toast("Browser storage could not save this change. Check site storage permissions or available space.");return primaryOk||backupOk;};
   const savedRelationships=readLocalValue("blinkRelationships");
   const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string")),postSignatures:new Set(readLocalArray("blinkPostSignatures").filter(value=>typeof value==="string")),relationships:savedRelationships&&typeof savedRelationships==="object"&&!Array.isArray(savedRelationships)?savedRelationships:{},worldNews:[]};
   const FEED_STORAGE_KEY="blinkFeedV2";
@@ -286,7 +288,8 @@
     const posts=state.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>({id:post.id,person:post.person.name,text:post.text,minutes:post.minutes,likes:post.likes,reactions:post.reactions||{},comments:post.comments,origin:post.origin,context:post.context||null,replies:(post.replies||[]).slice(0,16).map(reply=>({person:reply.person.name,text:reply.text,minutes:reply.minutes||0}))}));
     const signatures=[...state.postSignatures].slice(-POST_SIGNATURE_LIMIT);
     writeLocalArray("blinkPostSignatures",signatures);
-    writeLocalArray(FEED_STORAGE_KEY,{version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures,relationships:state.relationships});
+    const snapshot={version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures,relationships:state.relationships,savedAt:Date.now()};
+    writeDurableValue(FEED_STORAGE_KEY,snapshot);
     writeLocalValue("blinkRelationships",state.relationships);
   }
   const ago = n => n<1?"just now":n+"m ago";
@@ -347,7 +350,7 @@
   const observer={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
   const personByName=name=>people.find(p=>p.name===name)||null;
   function restoreFeed(){
-    const saved=readLocalValue(FEED_STORAGE_KEY);
+    const saved=readDurableValue(FEED_STORAGE_KEY,value=>Boolean(value&&value.version===1&&Array.isArray(value.posts)));
     if(!saved||saved.version!==1||!Array.isArray(saved.posts))return false;
     if(saved.relationships&&typeof saved.relationships==="object"&&!Array.isArray(saved.relationships)){state.relationships=saved.relationships;writeLocalValue("blinkRelationships",state.relationships);}
     const observerPerson={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
@@ -390,7 +393,7 @@
     {status:"CONFIRMED",label:"Incident confirmed",text:"Independent reports now match on the central detail, although the explanation remains disputed."},
     {status:"AFTERMATH",label:"Aftermath",text:"The immediate disruption has eased. Residents are still arguing about who should file the paperwork."}
   ];
-  function saveWorldNews(){writeLocalValue(NEWS_STORAGE_KEY,state.worldNews.slice(0,30));}
+  function saveWorldNews(){writeDurableValue(NEWS_STORAGE_KEY,state.worldNews.slice(0,30));}
   function publishNewsPost(event,sourceName,text,status){
     const person=personByName(sourceName);if(!person)return null;
     const post=makePost(person,text,{relation:"reporting on",person:"World News Desk",relationship:"NEWS · "+status,newsEventId:event.id});
@@ -538,10 +541,14 @@
   $("#postInput").addEventListener("input",e=>{$("#charCount").textContent=e.target.value.length+" / 280";$("#postBtn").disabled=!e.target.value.trim()});
   $("#postBtn").addEventListener("click",()=>{const text=$("#postInput").value.trim();if(!text)return;const person=observer;state.posts.unshift(makePost(person,text));state.generated++;saveFeed();$("#postInput").value="";$("#charCount").textContent="0 / 280";$("#postBtn").disabled=true;state.view="feed";state.profile=null;state.world="All";render();toast("Broadcast delivered to absolutely nobody.");});
   $("#trendingTopics").addEventListener("click",e=>{const t=e.target.closest("[data-topic]");if(t){$("#searchInput").value=t.dataset.topic.replace(/([A-Z])/g," $1");render()}});
-  const storedNews=readLocalValue(NEWS_STORAGE_KEY);
+  const storedNews=readDurableValue(NEWS_STORAGE_KEY,value=>Array.isArray(value));
   if(Array.isArray(storedNews)){state.worldNews=storedNews.filter(item=>item&&typeof item.id==="string"&&typeof item.headline==="string"&&Array.isArray(item.sources)&&Array.isArray(item.worlds)&&Array.isArray(item.updates)).slice(0,30);}
   if(!restoreFeed())seed();
   if(!state.worldNews.length){for(let i=0;i<4;i++)createWorldNews();}
   saveFeed();
   render();
+  // Flush a verified snapshot when the page is backgrounded or closed.
+  const flushLocalState=()=>{saveFeed();saveWorldNews();saveSeenNPCs();writeLocalArray("blinkFollowing",[...state.following]);writeLocalArray("blinkSaved",[...state.saved]);};
+  window.addEventListener("pagehide",flushLocalState);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushLocalState();});
 })();
