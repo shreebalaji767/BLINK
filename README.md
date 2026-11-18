@@ -72,3 +72,6 @@ BLINK is a fictional-character social-network parody, not a real messaging platf
 ### NPC history
 
 NPCs already shown in the feed are recorded in `localStorage` and are not selected again until the current directory roster has been exhausted; a fresh cycle then begins. Feed history is stored separately, so refreshing the page restores the existing posts rather than generating a replacement timeline.
+
+
+- **Verified local persistence and recovery:** the feed and World News desk write verified snapshots plus recovery copies, restore from backups if a primary browser-storage entry is damaged, and flush state when the page is hidden or closed. Storage failures are surfaced instead of silently claiming a save succeeded.
