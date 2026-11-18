@@ -288,10 +288,11 @@
   function saveFeed(){
     const posts=state.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>({id:post.id,person:post.person.name,text:post.text,minutes:post.minutes,likes:post.likes,reactions:post.reactions||{},comments:post.comments,origin:post.origin,context:post.context||null,replies:(post.replies||[]).slice(0,16).map(reply=>({person:reply.person.name,text:reply.text,minutes:reply.minutes||0}))}));
     const signatures=[...state.postSignatures].slice(-POST_SIGNATURE_LIMIT);
-    writeDurableValue("blinkPostSignatures",signatures);
+    const signaturesSaved=writeDurableValue("blinkPostSignatures",signatures);
     const snapshot={version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures,relationships:state.relationships,savedAt:Date.now()};
-    writeDurableValue(FEED_STORAGE_KEY,snapshot);
-    writeLocalValue("blinkRelationships",state.relationships);
+    const feedSaved=writeDurableValue(FEED_STORAGE_KEY,snapshot);
+    const relationshipsSaved=writeDurableValue("blinkRelationships",state.relationships);
+    return signaturesSaved&&feedSaved&&relationshipsSaved;
   }
   const ago = n => n<1?"just now":n+"m ago";
   function uniquePostText(person,candidate){
@@ -332,7 +333,26 @@
     writeDurableValue("blinkSeenNPCs",[...migrated]);
   }
   migrateSeenNPCHistory();
-  function saveSeenNPCs(){writeDurableValue("blinkSeenNPCs",[...state.seenNPCs]);}
+  function saveSeenNPCs(){return writeDurableValue("blinkSeenNPCs",[...state.seenNPCs]);}
+  function saveEverything(){
+    const results=[
+      saveFeed(),
+      saveWorldNews(),
+      saveSavedWorlds(),
+      saveSeenNPCs(),
+      writeDurableValue("blinkFollowing",[...state.following]),
+      writeDurableValue("blinkSaved",[...state.saved])
+    ];
+    const button=$("#saveEverythingBtn");
+    if(results.every(Boolean)){
+      if(button){button.textContent="✓ Saved";button.setAttribute("aria-label","Everything saved and verified");}
+      toast("Everything saved and verified in this browser.");
+      return true;
+    }
+    if(button){button.textContent="Save Failed";button.setAttribute("aria-label","Some data could not be saved");}
+    toast("Some data could not be saved. Check this site's browser storage and available space.");
+    return false;
+  }
   function unseenNPCs(){return people.filter(p=>!state.seenNPCs.has(npcKey(p)));}
   function chooseUnseenNPC(){let pool=unseenNPCs();if(!pool.length){state.seenNPCs.clear();saveSeenNPCs();pool=[...people];toast("You've met the whole current roster. Starting a fresh cycle.");}const person=pick(pool);state.seenNPCs.add(npcKey(person));saveSeenNPCs();return person;}
   function seed(){const pool=unseenNPCs().sort(()=>Math.random()-.5);const batch=pool.slice(0,34);batch.forEach((p,i)=>{state.seenNPCs.add(npcKey(p));const previous=state.posts.length&&Math.random()<.22?pick(state.posts.filter(x=>x.person.name!==p.name)):null;const connected=previous?buildConnectedUpdate(p,previous):null;const post=makePost(p,connected?.text||(Math.random()<.24?pick(openers)+" "+pick(endings):null),connected?.context||null);post.minutes=i*3+Math.floor(Math.random()*3);state.posts.push(post);});saveSeenNPCs();}
@@ -394,8 +414,8 @@
     {status:"CONFIRMED",label:"Incident confirmed",text:"Independent reports now match on the central detail, although the explanation remains disputed."},
     {status:"AFTERMATH",label:"Aftermath",text:"The immediate disruption has eased. Residents are still arguing about who should file the paperwork."}
   ];
-  function saveWorldNews(){writeDurableValue(NEWS_STORAGE_KEY,state.worldNews.slice(0,30));}
-  function saveSavedWorlds(){writeDurableValue("blinkSavedWorlds",state.savedWorlds.slice(0,worlds.length));}
+  function saveWorldNews(){return writeDurableValue(NEWS_STORAGE_KEY,state.worldNews.slice(0,30));}
+  function saveSavedWorlds(){return writeDurableValue("blinkSavedWorlds",state.savedWorlds.slice(0,worlds.length));}
   function savedWorldRecord(name){return state.savedWorlds.find(item=>item.name===name)||null;}
   function toggleSavedWorld(name){
     const existing=savedWorldRecord(name);
@@ -597,7 +617,7 @@
   renderWorldFilters();
   $("#worldFilters").addEventListener("click",e=>{const save=e.target.closest("[data-save-world]");if(save){e.preventDefault();e.stopPropagation();toggleSavedWorld(save.dataset.saveWorld);return;}const b=e.target.closest("[data-world]");if(!b)return;state.world=b.dataset.world;document.querySelectorAll(".world-filter").forEach(x=>x.classList.toggle("active",x===b));state.visible=14;render()});
   document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>{state.view=b.dataset.view;if(state.view==="profile")state.profile="self";document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x===b));render()}));
-  $("#generateBtn").addEventListener("click",generate);$("#shuffleBtn").addEventListener("click",()=>{state.posts.sort(()=>Math.random()-.5);state.sort="latest";render();toast("Timeline scrambled.")});
+  $("#generateBtn").addEventListener("click",generate);$("#shuffleBtn").addEventListener("click",()=>{state.posts.sort(()=>Math.random()-.5);state.sort="latest";render();toast("Timeline scrambled.")});$("#saveEverythingBtn").addEventListener("click",saveEverything);
   $("#searchInput").addEventListener("input",()=>{state.visible=14;render()});$("#loadMore").addEventListener("click",()=>{state.visible+=12;render()});
   $("#sortBtn").addEventListener("click",()=>{state.sort=state.sort==="latest"?"oldest":"latest";$("#sortBtn").textContent=state.sort==="latest"?"Latest first ↓":"Oldest first ↑";render()});
   $("#postInput").addEventListener("input",e=>{$("#charCount").textContent=e.target.value.length+" / 280";$("#postBtn").disabled=!e.target.value.trim()});
