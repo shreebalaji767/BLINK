@@ -127,3 +127,10 @@ button,input,textarea{max-width:100%}
 /* Connected NPC conversation context */
 .post-context{margin:8px 0 2px;padding:7px 10px;border-left:3px solid var(--teal);background:#e9eee8;color:var(--muted);font:10px/1.55 var(--mono);overflow-wrap:anywhere}
 .post-context strong{color:var(--ink);font-weight:700}
+.relationship-tag{display:inline-block;margin-left:4px;padding:2px 5px;border:1px solid var(--line);border-radius:2px;background:#f2ead6;color:var(--ink);font-size:9px;letter-spacing:.5px}
+.relationship-list{display:grid;gap:6px;margin-top:12px;padding:10px;border:1px dashed var(--line);background:#f3f0e7}
+.relationship-list>strong{font:700 9px var(--mono);letter-spacing:1px;color:var(--muted)}
+.relationship-list>span{font:10px/1.5 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+.relationship-list>span>b{color:var(--teal-ink,var(--ink));font-size:9px}
+.relationship-list small{color:var(--muted);font-size:9px}
+
