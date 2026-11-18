@@ -350,6 +350,7 @@
   function restoreFeed(){
     const saved=readLocalValue(FEED_STORAGE_KEY);
     if(!saved||saved.version!==1||!Array.isArray(saved.posts))return false;
+    if(saved.relationships&&typeof saved.relationships==="object"&&!Array.isArray(saved.relationships)){state.relationships=saved.relationships;writeLocalValue("blinkRelationships",state.relationships);}
     const observerPerson={name:"You (Observer)",emoji:"👁️",place:"Outside the simulation",world:"Observer",color:"#5c9b91",kind:"The person watching the multiverse."};
     const resolvePerson=name=>name===observerPerson.name?observerPerson:personByName(name);
     const restored=saved.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>{
