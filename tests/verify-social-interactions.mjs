@@ -163,7 +163,7 @@ vm.runInNewContext(app, {
   clearTimeout: () => {},
 }, { timeout: 5000 });
 assert.equal(reloadedElements.get("feed").innerHTML.includes(firstPersistedText), true, "refresh must restore the same saved feed content");
-assert.equal(JSON.parse(localStorage.getItem("blinkFeedV2")).posts.length, savedFeed.posts.length, "refresh must not replace or duplicate the saved feed");
+assert.equal(JSON.parse(localStorage.getItem("blinkFeedV2")).posts.length, feedAfterNewsUpdate.posts.length, "refresh must not replace or duplicate the saved feed after a news update");
 assert.equal(JSON.parse(localStorage.getItem("blinkSeenNPCs")).length, 34, "refresh must preserve the NPC no-repeat history");
 console.log("BLINK persistence and connected-conversation regression tests passed.");
 console.log("BLINK no-friend-request regression tests passed.");
