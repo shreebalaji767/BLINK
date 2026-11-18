@@ -25,6 +25,7 @@ It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScrip
 - **Observer profile:** view your own profile and the posts you have written.
 - **Persistent local feed:** generated NPC posts, connected-post references, replies, Observer posts, likes, reactions, and NPC relationship history are saved in this browser. Refreshing restores the same timeline instead of reseeding it. A separate bounded fingerprint history prevents exact duplicate post text across feed cycles; the feed keeps its newest 180 posts to limit local storage usage.
 - **Local social state:** follows and saved posts are stored in this browser using `localStorage`.
+- **Saved Worlds watchlist:** save any world category from the world filters. When you return to Saved Worlds after time away, BLINK simulates new resident activity, records a dated catch-up history, and publishes those developments as NPC posts in the main feed. The watchlist and its history persist locally.
 - **Feed controls:** search, world filters, following, trending, saved posts, sorting, shuffling, and load-more behavior.
 - **Observer posts:** write a short text post (up to 280 characters) into the local feed.
 - **Responsive interface:** desktop sidebar layout adapts to smaller screens and touch devices.
@@ -50,7 +51,7 @@ The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 ## Data and privacy
 
 - Feed content, cross-world news stories and NPC activity are generated or simulated in the browser.
-- Posts, comments, likes, reactions, follows, saved posts, and NPC history remain in the same browser profile.
+- Posts, comments, likes, reactions, follows, saved posts, Saved Worlds, world catch-up history, and NPC history remain in the same browser profile.
 - The feed stores up to its newest 180 posts locally. Browser storage limits or private-browsing restrictions may prevent saving.
 - Clearing this site's browser storage can remove locally saved social data.
 - There is no BLINK backend and no cross-device synchronization.
@@ -59,7 +60,7 @@ The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 
 - `index.html` — page structure, navigation, and application entry point
 - `styles.css` — responsive interface styling
-- `app-social-requests.js` — active browser application: NPC data, persistent feed and news cycles, connected conversations, profiles, post and comment generation, and reactions
+- `app-social-requests.js` — active browser application: NPC data, persistent feed and news cycles, saved-world watchlist and catch-up simulation, connected conversations, profiles, post and comment generation, and reactions
 - `app.js` — retained earlier/legacy application script; it is not the script loaded by the current `index.html`
 - `public/favicon.svg` — site icon
 - `.github/workflows/pages.yml` — GitHub Pages deployment
