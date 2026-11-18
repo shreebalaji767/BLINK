@@ -35,6 +35,9 @@ class FakeElement {
     while (node) {
       if (selector === "[data-social]" && node.dataset?.social) return node;
       if (selector === "[data-news-action]" && node.dataset?.newsAction) return node;
+      if (selector === "[data-save-world]" && node.dataset?.saveWorld) return node;
+      if (selector === "[data-world]" && node.dataset?.world) return node;
+      if (selector === "[data-world-action]" && node.dataset?.worldAction) return node;
       node = node.parentElement || null;
     }
     return null;
@@ -44,7 +47,7 @@ class FakeElement {
 }
 
 const elements = new Map(ids.map((id) => [id, new FakeElement(id)]));
-const navItems = Array.from({ length: 7 }, () => new FakeElement());
+const navItems = Array.from({ length: 8 }, () => new FakeElement());
 const documentListeners = {};
 const document = {
   querySelector(selector) {
@@ -126,6 +129,13 @@ assert.ok(html.includes('data-view="news"'), "navigation must expose the World N
 assert.ok(app.includes('data-news-action="advance"') && app.includes('INVESTIGATING'), "news stories must support persistent follow-up stages");
 assert.ok(app.includes('data-news-action="bookmark"') && app.includes('data-news-action="note-save"'), "news desk must provide dossier bookmarks and private notes");
 assert.ok(app.includes("item.bookmarked") && app.includes("item.note"), "dossier metadata must be rendered from persistent story fields");
+assert.ok(html.includes('data-view="saved-worlds"'), "navigation must expose Saved Worlds");
+assert.ok(app.includes('data-save-world="') && app.includes('blinkSavedWorlds'), "world filters must expose persistent save controls");
+assert.ok(app.includes("processWorldCatchups") && app.includes('relationship:"WORLD UPDATE"'), "saved worlds must generate catch-up changes and NPC posts when revisited");
+const saveWorldButton = new FakeElement();
+saveWorldButton.dataset = { saveWorld: "Fantasy" };
+elements.get("worldFilters").listeners.click({ target: saveWorldButton, preventDefault() {}, stopPropagation() {} });
+assert.ok(JSON.parse(localStorage.getItem("blinkSavedWorlds")).some(item => item.name === "Fantasy"), "saving a world filter must persist it in the watchlist");
 const bookmarkButton = new FakeElement();
 bookmarkButton.dataset = { newsAction: "bookmark", newsId: worldNews[0].id };
 documentListeners.click({ target: bookmarkButton, preventDefault() {}, stopPropagation() {} });
@@ -157,7 +167,7 @@ const firstPersistedText = savedFeed.posts[0].text;
 localStorage.setItem("blinkFeedV2", "{damaged");
 localStorage.setItem("blinkWorldNewsV1", "{damaged");
 const reloadedElements = new Map(ids.map((id) => [id, new FakeElement(id)]));
-const reloadedNavItems = Array.from({ length: 7 }, () => new FakeElement());
+const reloadedNavItems = Array.from({ length: 8 }, () => new FakeElement());
 const reloadedListeners = {};
 const reloadedDocument = {
   querySelector(selector) {
@@ -194,6 +204,10 @@ reloadedNavItems[3].dataset.view = "news";
 reloadedNavItems[3].listeners.click();
 assert.ok(reloadedElements.get("feed").innerHTML.includes("Bookmarked"), "news bookmarks must survive a refresh");
 assert.ok(reloadedElements.get("feed").innerHTML.includes("Check the second witness timestamp."), "private dossier notes must survive a refresh");
+reloadedNavItems[4].dataset.view = "saved-worlds";
+reloadedNavItems[4].listeners.click();
+assert.ok(reloadedElements.get("feed").innerHTML.includes("Saved Worlds"), "saved worlds page must render after navigation");
+assert.ok(reloadedElements.get("feed").innerHTML.includes("Fantasy"), "saved world must remain visible after reload");
 
 console.log("BLINK persistence and connected-conversation regression tests passed.");
 console.log("BLINK no-friend-request regression tests passed.");
