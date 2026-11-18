@@ -7,7 +7,7 @@ Expect dramatic status updates, impossible arguments, suspiciously specific comp
 
 ## What it is
 
-BLINK is a fictional-character social-network simulation. NPCs publish locally generated posts, react to one another, argue in comment threads, and occasionally send the Observer friend requests. The experience runs entirely in the visitor's browser.
+BLINK is a fictional-character social-network simulation. NPCs publish locally generated posts, react to one another, and argue in comment threads. The experience runs entirely in the visitor's browser.
 
 It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScript. It does not require a backend, database, account system, paid service, subscription, or external API.
 
@@ -20,18 +20,13 @@ It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScrip
 - **Contextual reactions:** posts display varied emoji reactions and simulated counts.
 - **NPC profiles:** open a profile from the directory or by selecting a post author's username. NPC profiles show randomized timelines of 5–15 generated posts during the current session.
 - **Observer profile:** view your own profile and the posts you have written during the current session.
-- **Friend requests:** send requests to NPCs, receive simulated NPC requests, accept or decline incoming requests, cancel outgoing requests, and view your friends list.
 - **Local social state:** friend connections, sent/received requests, follows, and saved posts are stored in this browser using `localStorage`.
 - **Feed controls:** search, world filters, following, trending, saved posts, sorting, shuffling, and load-more behavior.
 - **Observer posts:** write a short text post (up to 280 characters) into the local feed.
 - **Responsive interface:** desktop sidebar layout adapts to smaller screens and touch devices.
 
-## Friend requests: how they work
 
-1. Open an NPC profile or the NPC Directory and choose **Send friend request**.
 2. The control changes to **Request sent** and the NPC appears under **Sent requests**.
-3. NPCs can also generate incoming requests. On startup, BLINK fills the incoming list to 3–5 requests when there are not already that many eligible requests.
-4. Open **Friends & Requests** to accept or decline incoming requests, cancel outgoing requests, and view accepted friends.
 
 This is a single-browser simulation, not a real network connection. NPC requests are simulated by the local JavaScript; requests are not delivered to another person or synchronized across browsers/devices.
 
@@ -56,7 +51,6 @@ The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 ## Data and privacy
 
 - Feed content and NPC activity are generated or simulated in the browser.
-- Friend lists, sent/received friend requests, follows, and saved posts use this browser's `localStorage`.
 - Likes, reactions, comments, generated posts, and profile timelines are local simulation state; they are not shared with other visitors.
 - Clearing this site's browser storage can remove locally saved social data.
 - There is no BLINK backend and no cross-device synchronization.
@@ -79,7 +73,5 @@ BLINK is a fictional-character social-network parody, not a real messaging platf
 ### Local autosave and NPC request history
 
 - NPCs already shown in the feed are recorded in `localStorage` and are not selected again until the current directory roster has been exhausted; a fresh cycle then begins.
-- Sent friend requests, received requests, and accepted friendships are saved locally and restored on refresh.
 - Accepted or declined incoming NPC requests are remembered so the same NPC does not send the same request again.
-- NPCs can accept outgoing requests during feed generation; the resulting friendship is saved locally.
 - This is a browser-local simulation: data remains in the same browser profile and is not synced across devices or browsers.
