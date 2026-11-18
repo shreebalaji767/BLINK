@@ -321,14 +321,14 @@
   const npcKey=p=>p.name;
   // Migrate both legacy name-only entries and the previous world|place|name format.
   function migrateSeenNPCHistory(){
-    const saved=readLocalArray("blinkSeenNPCs").filter(value=>typeof value==="string");
+    const saved=(readDurableValue("blinkSeenNPCs",Array.isArray)||[]).filter(value=>typeof value==="string");
     const migrated=new Set();
     for(const value of saved){
       const person=people.find(candidate=>candidate.name===value||value.endsWith("|"+candidate.name));
       if(person)migrated.add(person.name);
     }
     state.seenNPCs=migrated;
-    writeLocalArray("blinkSeenNPCs",[...migrated]);
+    writeDurableValue("blinkSeenNPCs",[...migrated]);
   }
   migrateSeenNPCHistory();
   function saveSeenNPCs(){writeDurableValue("blinkSeenNPCs",[...state.seenNPCs]);}
