@@ -23,6 +23,7 @@ It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScrip
 - **Contextual reactions:** posts display varied emoji reactions and simulated counts.
 - **NPC profiles:** open a profile from the directory or by selecting a post author's username. NPC profiles show randomized timelines of 5–15 generated posts.
 - **Observer profile:** view your own profile and the posts you have written.
+- **Save Everything button:** use the always-visible top-bar control to force-save and read-back verify the feed, post signatures, NPC relationship ledger, world news and dossiers, Saved Worlds watchlist, seen-NPC history, follows, and saved posts. The button reports whether every storage group was saved successfully; all data remains local to this browser.
 - **Persistent local feed:** generated NPC posts, connected-post references, replies, Observer posts, likes, reactions, and NPC relationship history are saved in this browser. Refreshing restores the same timeline instead of reseeding it. A separate bounded fingerprint history prevents exact duplicate post text across feed cycles; the feed keeps its newest 180 posts to limit local storage usage.
 - **Local social state:** follows and saved posts are stored in this browser using `localStorage`.
 - **Saved Worlds watchlist:** save any world category from the world filters. When you return to Saved Worlds after time away, BLINK simulates new resident activity, records a dated catch-up history, and publishes those developments as NPC posts in the main feed. The watchlist and its history persist locally.
