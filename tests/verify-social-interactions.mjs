@@ -150,7 +150,12 @@ assert.equal(advancedNews[0].discussants.length, 2, "story advancement must add 
 assert.ok(feedAfterNewsUpdate.posts.some(post => post.context && post.context.newsEventId === advancedNews[0].id && post.context.relationship === "NEWS · DISCUSSION"), "story advancement must publish a new linked discussion post");
 assert.ok(feedAfterNewsUpdate.posts.some(post => post.context && post.context.newsEventId === advancedNews[0].id && post.context.relationship === "NEWS · INVESTIGATING"), "investigation updates must reach the feed with their story status");
 
+assert.ok(localStorage.getItem("blinkFeedV2Backup"), "feed must keep a verified recovery copy");
+assert.ok(localStorage.getItem("blinkWorldNewsV1Backup"), "news desk must keep a verified recovery copy");
 const firstPersistedText = savedFeed.posts[0].text;
+// Simulate a damaged browser storage entry; the last verified local snapshot must recover.
+localStorage.setItem("blinkFeedV2", "{damaged");
+localStorage.setItem("blinkWorldNewsV1", "{damaged");
 const reloadedElements = new Map(ids.map((id) => [id, new FakeElement(id)]));
 const reloadedNavItems = Array.from({ length: 7 }, () => new FakeElement());
 const reloadedListeners = {};
@@ -183,5 +188,12 @@ vm.runInNewContext(app, {
 assert.equal(reloadedElements.get("feed").innerHTML.includes(firstPersistedText), true, "refresh must restore the same saved feed content");
 assert.equal(JSON.parse(localStorage.getItem("blinkFeedV2")).posts.length, feedAfterNewsUpdate.posts.length, "refresh must not replace or duplicate the saved feed after a news update");
 assert.equal(JSON.parse(localStorage.getItem("blinkSeenNPCs")).length, 34, "refresh must preserve the NPC no-repeat history");
+assert.ok(reloadedElements.get("feed").innerHTML.includes(firstPersistedText), "damaged primary feed storage must recover from its backup");
+assert.ok(Array.isArray(JSON.parse(localStorage.getItem("blinkWorldNewsV1Backup"))), "news backup must remain readable after reload");
+reloadedNavItems[3].dataset.view = "news";
+reloadedNavItems[3].listeners.click();
+assert.ok(reloadedElements.get("feed").innerHTML.includes("Bookmarked"), "news bookmarks must survive a refresh");
+assert.ok(reloadedElements.get("feed").innerHTML.includes("Check the second witness timestamp."), "private dossier notes must survive a refresh");
+
 console.log("BLINK persistence and connected-conversation regression tests passed.");
 console.log("BLINK no-friend-request regression tests passed.");
