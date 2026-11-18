@@ -274,17 +274,36 @@
   const readLocalArray=key=>{try{const raw=localStorage.getItem(key);const value=raw?JSON.parse(raw):[];return Array.isArray(value)?value:[];}catch(error){console.warn("BLINK could not read local data:",key,error);return [];}};
   const writeLocalArray=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){console.warn("BLINK could not save local data:",key,error);return false;}};
   const loadSocialSet=key=>new Set(readLocalArray(key).filter(name=>typeof name==="string"&&validSocialNames.has(name)));
-  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string"))};
+  const state = {posts:[],view:"feed",profile:null,world:"All",sort:"latest",visible:14,following:new Set(readLocalArray("blinkFollowing").filter(name=>typeof name==="string")),saved:new Set(readLocalArray("blinkSaved").filter(name=>typeof name==="string")),liked:new Set(),reactions:{},generated:0,openComments:new Set(),seenNPCs:new Set(readLocalArray("blinkSeenNPCs").filter(name=>typeof name==="string")),postSignatures:new Set(readLocalArray("blinkPostSignatures").filter(value=>typeof value==="string"))};
   const FEED_STORAGE_KEY="blinkFeedV2";
   const FEED_STORAGE_LIMIT=180;
+  const POST_SIGNATURE_LIMIT=500;
+  const postFingerprint=value=>String(value||"").normalize("NFKC").toLocaleLowerCase().replace(/[^\\p{L}\\p{N}]+/gu," ").trim().slice(0,500);
   const readLocalValue=key=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}catch(error){console.warn("BLINK could not read local data:",key,error);return null;}};
   function saveFeed(){
     const posts=state.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>({id:post.id,person:post.person.name,text:post.text,minutes:post.minutes,likes:post.likes,reactions:post.reactions||{},comments:post.comments,origin:post.origin,context:post.context||null,replies:(post.replies||[]).slice(0,16).map(reply=>({person:reply.person.name,text:reply.text,minutes:reply.minutes||0}))}));
-    writeLocalArray(FEED_STORAGE_KEY,{version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions});
+    const signatures=[...state.postSignatures].slice(-POST_SIGNATURE_LIMIT);\n    writeLocalArray("blinkPostSignatures",signatures);\n    writeLocalArray(FEED_STORAGE_KEY,{version:1,generated:state.generated,posts,liked:[...state.liked],reactions:state.reactions,signatures});
   }
   const ago = n => n<1?"just now":n+"m ago";
+  function uniquePostText(person,candidate){
+    let text=String(candidate||generatePostText(person));
+    let fingerprint=postFingerprint(text);
+    if(fingerprint&&state.postSignatures.has(fingerprint)){
+      for(let attempt=0;attempt<12;attempt++){
+        const alternate=generatePostText(person),alternateFingerprint=postFingerprint(alternate);
+        if(alternateFingerprint&&!state.postSignatures.has(alternateFingerprint)){text=alternate;fingerprint=alternateFingerprint;break;}
+      }
+      if(fingerprint&&state.postSignatures.has(fingerprint)){
+        const sequence=state.postSignatures.size+1;
+        text=person.name+" — "+pick(openers)+" "+pick(endings)+" (follow-up note "+sequence+")";
+        fingerprint=postFingerprint(text);
+      }
+    }
+    if(fingerprint){state.postSignatures.add(fingerprint);if(state.postSignatures.size>POST_SIGNATURE_LIMIT)state.postSignatures=new Set([...state.postSignatures].slice(-POST_SIGNATURE_LIMIT));}
+    return text;
+  }
   const makePost = (person, customText, context=null) => {
-    const text=customText||generatePostText(person);
+    const text=uniquePostText(person,customText||generatePostText(person));
     const replies=makeReplies(person,text);
     const reactions=buildReactionCounts(person,text);
     return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),person,text,minutes:Math.floor(Math.random()*180),likes:Math.floor(Math.random()*4200),reactions,replies,comments:replies.length,context,origin:pick(["💬 group chat","📎 local noticeboard","🧾 eyewitness account","📡 direct transmission","🗂️ meeting minutes","🛸 public broadcast","🤫 overheard conversation","🕵️ unverified rumour"])};
@@ -335,6 +354,9 @@
     }).filter(Boolean);
     if(!restored.length)return false;
     state.posts=restored;state.generated=Number.isFinite(saved.generated)?saved.generated:0;
+    (Array.isArray(saved.signatures)?saved.signatures:[]).filter(value=>typeof value==="string").slice(-POST_SIGNATURE_LIMIT).forEach(value=>state.postSignatures.add(value));
+    restored.forEach(post=>state.postSignatures.add(postFingerprint(post.text)));
+    state.postSignatures=new Set([...state.postSignatures].slice(-POST_SIGNATURE_LIMIT));
     state.liked=new Set(Array.isArray(saved.liked)?saved.liked.filter(id=>typeof id==="string"):[]);
     state.reactions=saved.reactions&&typeof saved.reactions==="object"?saved.reactions:{};
     return true;
