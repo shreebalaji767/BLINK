@@ -93,4 +93,42 @@ profileButton.dataset = { social: "profile", person: profileMatch[1] };
 documentListeners.click({ target: profileButton, preventDefault() {}, stopPropagation() {} });
 assert.equal(elements.get("feedTitle").textContent, "NPC Profile", "profile navigation must continue working");
 assert.ok(!/Send friend request|Request sent|Accept request/.test(elements.get("feed").innerHTML), "NPC profiles must not show friend request options");
+const savedFeed = JSON.parse(localStorage.getItem("blinkFeedV2") || "null");
+assert.ok(savedFeed && savedFeed.version === 1, "generated feed must be persisted with a versioned schema");
+assert.equal(savedFeed.posts.length, 34, "initial feed must persist all generated posts");
+assert.ok(savedFeed.posts.some((post) => post.context && post.context.person), "initial feed should include connected NPC conversation references");
+const firstPersistedText = savedFeed.posts[0].text;
+const reloadedElements = new Map(ids.map((id) => [id, new FakeElement(id)]));
+const reloadedNavItems = Array.from({ length: 7 }, () => new FakeElement());
+const reloadedListeners = {};
+const reloadedDocument = {
+  querySelector(selector) {
+    if (selector.startsWith("#")) {
+      const id = selector.slice(1);
+      if (!reloadedElements.has(id)) reloadedElements.set(id, new FakeElement(id));
+      return reloadedElements.get(id);
+    }
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === ".nav-item") return reloadedNavItems;
+    if (selector === ".world-filter") return [];
+    return [];
+  },
+  addEventListener(type, callback) { reloadedListeners[type] = callback; },
+};
+vm.runInNewContext(app, {
+  document: reloadedDocument,
+  Element: FakeElement,
+  localStorage,
+  Math: math,
+  Date,
+  console,
+  setTimeout: () => 1,
+  clearTimeout: () => {},
+}, { timeout: 5000 });
+assert.equal(reloadedElements.get("feed").innerHTML.includes(firstPersistedText), true, "refresh must restore the same saved feed content");
+assert.equal(JSON.parse(localStorage.getItem("blinkFeedV2")).posts.length, 34, "refresh must not replace or duplicate the saved feed");
+assert.equal(JSON.parse(localStorage.getItem("blinkSeenNPCs")).length, 34, "refresh must preserve the NPC no-repeat history");
+console.log("BLINK persistence and connected-conversation regression tests passed.");
 console.log("BLINK no-friend-request regression tests passed.");
