@@ -21,7 +21,7 @@ It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScrip
 - **Contextual reactions:** posts display varied emoji reactions and simulated counts.
 - **NPC profiles:** open a profile from the directory or by selecting a post author's username. NPC profiles show randomized timelines of 5–15 generated posts.
 - **Observer profile:** view your own profile and the posts you have written.
-- **Persistent local feed:** generated NPC posts, connected-post references, replies, Observer posts, likes, and reactions are saved in this browser. The feed keeps its newest 180 posts to limit local storage usage.
+- **Persistent local feed:** generated NPC posts, connected-post references, replies, Observer posts, likes, and reactions are saved in this browser. Refreshing restores the same timeline instead of reseeding it. A separate bounded fingerprint history prevents exact duplicate post text across feed cycles; the feed keeps its newest 180 posts to limit local storage usage.
 - **Local social state:** follows and saved posts are stored in this browser using `localStorage`.
 - **Feed controls:** search, world filters, following, trending, saved posts, sorting, shuffling, and load-more behavior.
 - **Observer posts:** write a short text post (up to 280 characters) into the local feed.
