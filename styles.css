@@ -154,3 +154,13 @@ button,input,textarea{max-width:100%}
 
 /* News-origin marker on posts */
 .relationship-tag{white-space:normal}
+
+
+/* Local news dossier controls */
+.news-card-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.news-notes{display:grid;gap:7px;margin-top:16px;padding-top:13px;border-top:1px solid var(--line,#dedbd3)}
+.news-notes label{font-size:.68rem;font-weight:800;letter-spacing:.1em;color:var(--muted,#777)}
+.news-notes textarea{width:100%;min-height:58px;resize:vertical;border:1px solid var(--line,#d8d5cd);border-radius:3px;background:var(--paper,#fff);color:inherit;padding:10px;font:inherit;font-size:.86rem}
+.news-notes textarea:focus-visible{outline:2px solid var(--accent,#c87842);outline-offset:2px}
+.news-notes button{justify-self:end}
+@media(max-width:560px){.news-card-controls{justify-content:stretch}.news-card-controls button{flex:1}.news-notes textarea{font-size:16px}}
