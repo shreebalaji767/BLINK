@@ -133,6 +133,7 @@ assert.ok(app.includes('data-news-action="bookmark"') && app.includes('data-news
 assert.ok(app.includes("item.bookmarked") && app.includes("item.note"), "dossier metadata must be rendered from persistent story fields");
 assert.ok(html.includes('data-view="saved-worlds"'), "navigation must expose Saved Worlds");
 assert.ok(app.includes('data-save-world="') && app.includes('blinkSavedWorlds'), "world filters must expose persistent save controls");
+assert.ok(app.includes("☆ Save World") && app.includes("★ Saved"), "world controls must have visible Save World and Saved button labels");
 assert.ok(app.includes("processWorldCatchups") && app.includes('relationship:"WORLD UPDATE"'), "saved worlds must generate catch-up changes and NPC posts when revisited");
 const saveWorldButton = new FakeElement();
 saveWorldButton.dataset = { saveWorld: "Fantasy" };
