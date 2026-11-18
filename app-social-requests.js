@@ -443,7 +443,10 @@
     }).join('');
   }
   function renderWorldFilters(){
-    $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>'<div class="world-filter-row"><button class="world-filter" data-world="'+escapeHTML(w.name)+'"><i class="world-dot" style="background:'+w.color+'"></i>'+escapeHTML(w.name)+'</button><button class="world-save-toggle" data-save-world="'+escapeHTML(w.name)+'" title="'+(savedWorldRecord(w.name)?"Remove from":"Save to")+' Saved Worlds" aria-label="'+(savedWorldRecord(w.name)?"Remove "+escapeHTML(w.name)+" from":"Save "+escapeHTML(w.name)+" to")+' Saved Worlds">'+(savedWorldRecord(w.name)?"★":"☆")+'</button></div>').join('');
+    $("#worldFilters").innerHTML='<button class="world-filter active" data-world="All"><i class="world-dot" style="background:#999"></i>All worlds</button>'+worlds.map(w=>{
+      const saved=!!savedWorldRecord(w.name);
+      return '<div class="world-filter-row"><button class="world-filter" data-world="'+escapeHTML(w.name)+'"><i class="world-dot" style="background:'+w.color+'"></i>'+escapeHTML(w.name)+'</button><button type="button" class="world-save-toggle '+(saved?"is-saved":"")+'" data-save-world="'+escapeHTML(w.name)+'" title="'+(saved?"Remove from":"Save to")+' Saved Worlds" aria-label="'+(saved?"Remove "+escapeHTML(w.name)+" from":"Save "+escapeHTML(w.name)+" to")+' Saved Worlds">'+(saved?"★ Saved":"☆ Save World")+'</button></div>';
+    }).join('');
   }
   function publishNewsPost(event,sourceName,text,status){
     const person=personByName(sourceName);if(!person)return null;
