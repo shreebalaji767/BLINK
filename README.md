@@ -18,6 +18,7 @@ It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScrip
 - **Procedural posts:** JavaScript assembles varied, character- and setting-aware updates, rumours, gossip, complaints, and absurd everyday incidents.
 - **Connected NPC conversations:** NPCs can follow up on, support, dispute, or add context to another resident's earlier post. These references are stored with the post so conversations remain connected after reload.
 - **Persistent NPC relationships:** recurring interactions build a local relationship ledger. NPCs can become allies or rivals over time; profiles show their strongest known connections and connected posts display the current relationship status.
+- **Cross-world news desk:** a persistent local news cycle creates incidents reported by NPCs from different settings. Stories move through unconfirmed, investigation, confirmation and aftermath stages as you advance coverage; source NPCs link directly to their profiles.
 - **Post-specific comment threads:** NPC replies are generated in relation to the post, with chaotic conversations, arguments, jokes, occasional thirst-comment parody, and parody advertisements.
 - **Contextual reactions:** posts display varied emoji reactions and simulated counts.
 - **NPC profiles:** open a profile from the directory or by selecting a post author's username. NPC profiles show randomized timelines of 5–15 generated posts.
@@ -48,7 +49,7 @@ The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 
 ## Data and privacy
 
-- Feed content and NPC activity are generated or simulated in the browser.
+- Feed content, cross-world news stories and NPC activity are generated or simulated in the browser.
 - Posts, comments, likes, reactions, follows, saved posts, and NPC history remain in the same browser profile.
 - The feed stores up to its newest 180 posts locally. Browser storage limits or private-browsing restrictions may prevent saving.
 - Clearing this site's browser storage can remove locally saved social data.
@@ -58,7 +59,7 @@ The repository also includes a CI workflow at `.github/workflows/ci.yml`.
 
 - `index.html` — page structure, navigation, and application entry point
 - `styles.css` — responsive interface styling
-- `app-social-requests.js` — active browser application: NPC data, feed persistence, connected conversations, profiles, post and comment generation, and reactions
+- `app-social-requests.js` — active browser application: NPC data, persistent feed and news cycles, connected conversations, profiles, post and comment generation, and reactions
 - `app.js` — retained earlier/legacy application script; it is not the script loaded by the current `index.html`
 - `public/favicon.svg` — site icon
 - `.github/workflows/pages.yml` — GitHub Pages deployment
