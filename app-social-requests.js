@@ -391,11 +391,21 @@
     {status:"AFTERMATH",label:"Aftermath",text:"The immediate disruption has eased. Residents are still arguing about who should file the paperwork."}
   ];
   function saveWorldNews(){writeLocalValue(NEWS_STORAGE_KEY,state.worldNews.slice(0,30));}
+  function publishNewsPost(event,sourceName,text,status){
+    const person=personByName(sourceName);if(!person)return null;
+    const post=makePost(person,text,{relation:"reporting on",person:"World News Desk",relationship:"NEWS · "+status,newsEventId:event.id});
+    post.minutes=0;state.posts.unshift(post);state.posts=state.posts.slice(0,FEED_STORAGE_LIMIT);
+    state.generated++;event.postIds=Array.isArray(event.postIds)?event.postIds:[];
+    event.postIds.unshift(post.id);event.postIds=event.postIds.slice(0,20);
+    saveFeed();return post;
+  }
   function createWorldNews(){
     const brief=pick(newsBriefs),pool=[...people].sort(()=>Math.random()-.5),sources=[];
     for(const person of pool){if(!sources.some(source=>source.world===person.world))sources.push(person);if(sources.length===3)break;}
-    const event={id:"news-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),category:brief.category,headline:brief.headline,summary:brief.summary,worlds:sources.map(person=>person.world),sources:sources.map(person=>person.name),stage:0,updates:[{source:sources[0].name,text:"Initial report filed from "+sources[0].place+". "+brief.summary,minutes:0}]};
-    state.worldNews.unshift(event);state.worldNews=state.worldNews.slice(0,30);saveWorldNews();return event;
+    const event={id:"news-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),category:brief.category,headline:brief.headline,summary:brief.summary,worlds:sources.map(person=>person.world),sources:sources.map(person=>person.name),stage:0,updates:[{source:sources[0].name,text:"Initial report filed from "+sources[0].place+". "+brief.summary,minutes:0}],postIds:[]};
+    state.worldNews.unshift(event);state.worldNews=state.worldNews.slice(0,30);
+    sources.slice(0,2).forEach((person,index)=>publishNewsPost(event,person.name,index===0?"First report: "+event.headline+". "+event.summary:"A second witness in "+person.place+" has independently posted about "+event.headline.toLowerCase()+". The details are not lining up neatly.",newsStages[0].status));
+    saveWorldNews();return event;
   }
   function advanceWorldNews(id){
     const event=state.worldNews.find(item=>item.id===id);if(!event)return;
@@ -403,8 +413,10 @@
     event.stage++;
     const sourceName=event.sources[event.stage%event.sources.length],stage=newsStages[event.stage];
     const variations=["Witnesses have supplied a second account, but it conflicts with the first report.","A cross-world review has found matching details in an entirely different setting.","Residents are now demanding a public explanation and a properly labelled form."];
-    event.updates.unshift({source:sourceName,text:stage.text+" "+pick(variations),minutes:0});
-    saveWorldNews();render();toast("Story updated: "+stage.label+".");
+    const updateText=stage.text+" "+pick(variations);
+    event.updates.unshift({source:sourceName,text:updateText,minutes:0});
+    publishNewsPost(event,sourceName,stage.label+": "+event.headline+". "+updateText,stage.status);
+    saveWorldNews();render();toast("Story updated: "+stage.label+". A new NPC report reached the feed.");
   }
   function worldNewsMarkup(){
     const q=$("#searchInput").value.trim().toLowerCase();
@@ -506,8 +518,8 @@
   $("#trendingTopics").addEventListener("click",e=>{const t=e.target.closest("[data-topic]");if(t){$("#searchInput").value=t.dataset.topic.replace(/([A-Z])/g," $1");render()}});
   const storedNews=readLocalValue(NEWS_STORAGE_KEY);
   if(Array.isArray(storedNews)){state.worldNews=storedNews.filter(item=>item&&typeof item.id==="string"&&typeof item.headline==="string"&&Array.isArray(item.sources)&&Array.isArray(item.worlds)&&Array.isArray(item.updates)).slice(0,30);}
-  if(!state.worldNews.length){for(let i=0;i<4;i++)createWorldNews();}
   if(!restoreFeed())seed();
+  if(!state.worldNews.length){for(let i=0;i<4;i++)createWorldNews();}
   saveFeed();
   render();
 })();
