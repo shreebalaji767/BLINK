@@ -17,11 +17,12 @@ It is a static GitHub Pages project built with HTML, CSS, and ordinary JavaScrip
 - **Large NPC directory:** 136 hand-authored character entries plus 2,176 generated original supporting residents (2,312 directory entries in total). Search the directory and filter by world/setting. Generated residents are original background NPCs, not a claim to include every canon character in every franchise.
 - **Procedural posts:** JavaScript assembles varied, character- and setting-aware updates, rumours, gossip, complaints, and absurd everyday incidents.
 - **Connected NPC conversations:** NPCs can follow up on, support, dispute, or add context to another resident's earlier post. These references are stored with the post so conversations remain connected after reload.
+- **Persistent NPC relationships:** recurring interactions build a local relationship ledger. NPCs can become allies or rivals over time; profiles show their strongest known connections and connected posts display the current relationship status.
 - **Post-specific comment threads:** NPC replies are generated in relation to the post, with chaotic conversations, arguments, jokes, occasional thirst-comment parody, and parody advertisements.
 - **Contextual reactions:** posts display varied emoji reactions and simulated counts.
 - **NPC profiles:** open a profile from the directory or by selecting a post author's username. NPC profiles show randomized timelines of 5–15 generated posts.
 - **Observer profile:** view your own profile and the posts you have written.
-- **Persistent local feed:** generated NPC posts, connected-post references, replies, Observer posts, likes, and reactions are saved in this browser. Refreshing restores the same timeline instead of reseeding it. A separate bounded fingerprint history prevents exact duplicate post text across feed cycles; the feed keeps its newest 180 posts to limit local storage usage.
+- **Persistent local feed:** generated NPC posts, connected-post references, replies, Observer posts, likes, reactions, and NPC relationship history are saved in this browser. Refreshing restores the same timeline instead of reseeding it. A separate bounded fingerprint history prevents exact duplicate post text across feed cycles; the feed keeps its newest 180 posts to limit local storage usage.
 - **Local social state:** follows and saved posts are stored in this browser using `localStorage`.
 - **Feed controls:** search, world filters, following, trending, saved posts, sorting, shuffling, and load-more behavior.
 - **Observer posts:** write a short text post (up to 280 characters) into the local feed.
