@@ -151,3 +151,6 @@ button,input,textarea{max-width:100%}
 .news-card-foot{padding-top:9px;border-top:1px dashed var(--line);font:9px var(--mono);color:var(--muted)}
 .news-card-foot button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:520px){.news-intro{align-items:stretch;flex-direction:column}.news-intro .generate-button{align-self:flex-start}.news-card{padding:12px}.news-card h2{font-size:15px}}
+
+/* News-origin marker on posts */
+.relationship-tag{white-space:normal}
