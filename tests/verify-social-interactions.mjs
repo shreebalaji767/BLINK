@@ -124,6 +124,9 @@ assert.ok(newsFeedBeforeAdvance.posts.some(post => post.context && post.context.
 
 assert.ok(html.includes('data-view="news"'), "navigation must expose the World News desk");
 assert.ok(app.includes('data-news-action="advance"') && app.includes('INVESTIGATING'), "news stories must support persistent follow-up stages");
+assert.ok(app.includes('data-news-action="bookmark"') && app.includes('data-news-action="note-save"'), "news desk must provide dossier bookmarks and private notes");
+assert.ok(app.includes("item.bookmarked") && app.includes("item.note"), "dossier metadata must be rendered from persistent story fields");
+
 const newsButton = new FakeElement();
 newsButton.dataset = { newsAction: "advance", newsId: worldNews[0].id };
 documentListeners.click({ target: newsButton, preventDefault() {}, stopPropagation() {} });
