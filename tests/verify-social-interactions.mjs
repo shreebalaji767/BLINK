@@ -111,6 +111,11 @@ const observerPosts = savedFeed.posts.filter((post) => post.person === "You (Obs
 assert.equal(observerPosts.length, 2, "both Observer posts must persist");
 assert.notEqual(observerPosts[0].text, observerPosts[1].text, "duplicate Observer broadcasts must be varied");
 assert.ok(JSON.parse(localStorage.getItem("blinkPostSignatures")).length >= 34, "post fingerprints must be stored separately for migration safety");
+const worldNews = JSON.parse(localStorage.getItem("blinkWorldNewsV1") || "null");
+assert.ok(Array.isArray(worldNews) && worldNews.length >= 4, "cross-world news desk must seed and persist multiple stories");
+assert.ok(worldNews.every(item => item.sources.length >= 2 && item.worlds.length >= 2 && item.updates.length >= 1), "news stories must connect multiple NPC sources and worlds");
+assert.ok(html.includes('data-view="news"'), "navigation must expose the World News desk");
+assert.ok(app.includes('data-news-action="advance"') && app.includes('INVESTIGATING'), "news stories must support persistent follow-up stages");
 const firstPersistedText = savedFeed.posts[0].text;
 const reloadedElements = new Map(ids.map((id) => [id, new FakeElement(id)]));
 const reloadedNavItems = Array.from({ length: 7 }, () => new FakeElement());
