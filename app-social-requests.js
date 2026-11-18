@@ -389,5 +389,5 @@
   $("#postInput").addEventListener("input",e=>{$("#charCount").textContent=e.target.value.length+" / 280";$("#postBtn").disabled=!e.target.value.trim()});
   $("#postBtn").addEventListener("click",()=>{const text=$("#postInput").value.trim();if(!text)return;const person=observer;state.posts.unshift(makePost(person,text));state.generated++;$("#postInput").value="";$("#charCount").textContent="0 / 280";$("#postBtn").disabled=true;state.view="feed";state.profile=null;state.world="All";render();toast("Broadcast delivered to absolutely nobody.");});
   $("#trendingTopics").addEventListener("click",e=>{const t=e.target.closest("[data-topic]");if(t){$("#searchInput").value=t.dataset.topic.replace(/([A-Z])/g," $1");render()}});
-  seed();saveSocial();render();
+  seed();render();
 })();
