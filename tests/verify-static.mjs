@@ -14,6 +14,10 @@ assert.ok(app.includes("action===\"profile\""), "NPC profile links must remain a
 assert.ok(!/friend request|sentRequests|receivedRequests|state\\.friends|data-social="(?:add|accept|decline|cancel)"/i.test(app), "friend request feature must be removed from active app");
 assert.ok(!html.includes("data-view=\"friends\""), "Friends & Requests navigation must be removed");
 assert.ok(app.includes("const readLocalArray=") && app.includes("const writeLocalArray="), "safe local storage helpers must exist");
+assert.ok(app.includes('const FEED_STORAGE_KEY="blinkFeedV2"'), "persistent feed storage key must exist");
+assert.ok(app.includes("function restoreFeed()") && app.includes("function saveFeed()"), "feed restore/save functions must exist");
+assert.ok(app.includes("function buildConnectedUpdate("), "NPC-to-NPC connected conversation generator must exist");
+assert.ok(app.includes("post-context"), "connected post context must be rendered");
 assert.ok(!/JSON\.parse\(localStorage\.getItem/.test(app), "unguarded localStorage JSON parsing found");
 assert.ok(css.length > 1000, "responsive stylesheet missing");
 assert.match(html, /name="viewport"/, "mobile viewport metadata missing");
