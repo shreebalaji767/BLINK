@@ -282,7 +282,6 @@
   const FEED_STORAGE_LIMIT=180;
   const POST_SIGNATURE_LIMIT=500;
   const postFingerprint=value=>String(value||"").normalize("NFKC").toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim().slice(0,500);
-  const readLocalValue=key=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}catch(error){console.warn("BLINK could not read local data:",key,error);return null;}};
   function saveFeed(){
     const posts=state.posts.slice(0,FEED_STORAGE_LIMIT).map(post=>({id:post.id,person:post.person.name,text:post.text,minutes:post.minutes,likes:post.likes,reactions:post.reactions||{},comments:post.comments,origin:post.origin,context:post.context||null,replies:(post.replies||[]).slice(0,16).map(reply=>({person:reply.person.name,text:reply.text,minutes:reply.minutes||0}))}));
     const signatures=[...state.postSignatures].slice(-POST_SIGNATURE_LIMIT);
