@@ -116,7 +116,9 @@ assert.ok(JSON.parse(localStorage.getItem("blinkPostSignatures")).length >= 34, 
 const worldNews = JSON.parse(localStorage.getItem("blinkWorldNewsV1") || "null");
 assert.ok(Array.isArray(worldNews) && worldNews.length >= 4, "cross-world news desk must seed and persist multiple stories");
 assert.ok(worldNews.every(item => item.sources.length >= 2 && item.worlds.length >= 2 && item.updates.length >= 1), "news stories must connect multiple NPC sources and worlds");
-assert.ok(worldNews.every(item => Array.isArray(item.postIds) && item.postIds.length >= 2), "every breaking story must publish multiple NPC reports into the social feed");
+assert.ok(worldNews.every(item => Array.isArray(item.postIds) && item.postIds.length >= 3), "every breaking story must publish reports and a cross-world discussion post into the social feed");
+assert.ok(worldNews.every(item => Array.isArray(item.discussants) && item.discussants.length >= 1), "every breaking story must persist its NPC discussion participants");
+assert.ok(savedFeed.posts.some(post => post.context && post.context.newsEventId && post.context.relationship === "NEWS · DISCUSSION"), "news stories must create NPC discussion posts linked to the source event");
 const newsFeedBeforeAdvance = JSON.parse(localStorage.getItem("blinkFeedV2") || "null");
 assert.ok(newsFeedBeforeAdvance.posts.some(post => post.context && post.context.newsEventId === worldNews[0].id), "news coverage posts must be linked to their source story");
 
@@ -129,7 +131,9 @@ const advancedNews = JSON.parse(localStorage.getItem("blinkWorldNewsV1") || "[]"
 assert.equal(advancedNews[0].stage, 1, "advancing coverage must move the story into investigation");
 assert.equal(advancedNews[0].updates.length, 2, "each story advancement must append a new report");
 const feedAfterNewsUpdate = JSON.parse(localStorage.getItem("blinkFeedV2") || "null");
-assert.equal(advancedNews[0].postIds.length, 3, "advancing a story must publish another NPC feed post");
+assert.equal(advancedNews[0].postIds.length, 5, "advancing a story must publish a report and a separate NPC discussion post");
+assert.equal(advancedNews[0].discussants.length, 2, "story advancement must add a new discussion participant without repeating one");
+assert.ok(feedAfterNewsUpdate.posts.some(post => post.context && post.context.newsEventId === advancedNews[0].id && post.context.relationship === "NEWS · DISCUSSION"), "story advancement must publish a new linked discussion post");
 assert.ok(feedAfterNewsUpdate.posts.some(post => post.context && post.context.newsEventId === advancedNews[0].id && post.context.relationship === "NEWS · INVESTIGATING"), "investigation updates must reach the feed with their story status");
 
 const firstPersistedText = savedFeed.posts[0].text;
