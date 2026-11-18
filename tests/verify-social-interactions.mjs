@@ -86,8 +86,10 @@ assert.ok(firstSeen.every((name) => !name.includes("|")), "NPC history must use 
 assert.ok(!html.includes("Friends & Requests"), "friend requests navigation must be removed");
 assert.ok(!/friend request|sentRequests|receivedRequests|state\\.friends|data-social="(?:add|accept|decline|cancel)"/i.test(app), "friend request feature and controls must be absent from active app");
 assert.ok(!/data-social="(?:add|accept|decline|cancel)"/.test(elements.get("feed").innerHTML), "initial feed must not expose friend request controls");
+const profileMatch = elements.get("feed").innerHTML.match(/data-social="profile" data-person="([^"]+)"/);
+assert.ok(profileMatch, "feed must retain clickable NPC profile links");
 const profileButton = new FakeElement();
-profileButton.dataset = { social: "profile", person: "Mira" };
+profileButton.dataset = { social: "profile", person: profileMatch[1] };
 documentListeners.click({ target: profileButton, preventDefault() {}, stopPropagation() {} });
 assert.equal(elements.get("feedTitle").textContent, "NPC Profile", "profile navigation must continue working");
 assert.ok(!/Send friend request|Request sent|Accept request/.test(elements.get("feed").innerHTML), "NPC profiles must not show friend request options");
